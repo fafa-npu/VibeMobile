@@ -1,0 +1,54 @@
+.terminal {
+  flex: 1;
+  background: var(--terminal-bg);
+  color: var(--terminal-text);
+  font-family: 'SF Mono', Monaco, Consolas, 'Liberation Mono', monospace;
+  font-size: 13px;
+  line-height: 1.6;
+  padding: 16px;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.line {
+  margin-bottom: 2px;
+  word-break: break-word;
+  white-space: pre-wrap;
+}
+
+.placeholder {
+  color: #64748b;
+  font-style: italic;
+}
+
+.input {
+  color: #22c55e;
+}
+
+.response {
+  color: #93c5fd;
+}
+
+.success {
+  color: #22c55e;
+}
+
+.error {
+  color: #ef4444;
+}
+
+.thinking {
+  color: #a78bfa;
+  font-style: italic;
+}
+
+.tool {
+  color: #f59e0b;
+}
+
+.divider {
+  height: 1px;
+  background: #334155;
+  margin: 12px 0;
+  opacity: 0.5;
+}

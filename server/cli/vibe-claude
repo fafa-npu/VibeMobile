@@ -1,0 +1,204 @@
+#!/bin/bash
+# vibe-claude - Claude Code launcher with remote monitoring support
+#
+# Usage:
+#   vibe-claude               # Start a new monitored Claude session
+#   vibe-claude --attach NAME # Attach to an existing session
+#   vibe-claude --list        # List all vibe sessions
+#   vibe-claude --help        # Show help
+#
+# This script wraps the `claude` command in a tmux session,
+# allowing VibeMobile to monitor and send commands remotely.
+
+set -e
+
+SESSION_PREFIX="vibe"
+CLAUDE_CMD="claude"
+
+# Colors
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+NC='\033[0m' # No Color
+
+show_help() {
+    cat << EOF
+vibe-claude - Claude Code with remote monitoring
+
+USAGE:
+    vibe-claude [OPTIONS] [CLAUDE_ARGS...]
+
+OPTIONS:
+    --attach NAME    Attach to an existing session
+    --list           List all vibe sessions
+    --detach         Start session in background (detached)
+    --name NAME      Use a specific session name
+    --help           Show this help message
+
+EXAMPLES:
+    vibe-claude                     # Start new session
+    vibe-claude --attach vibe-1     # Attach to vibe-1
+    vibe-claude --list              # List sessions
+    vibe-claude --name my-task      # Start with custom name
+    vibe-claude -- -p "help me"     # Pass args to claude
+
+NOTES:
+    - Sessions are named ${SESSION_PREFIX}-1, ${SESSION_PREFIX}-2, etc.
+    - Use Ctrl+B then D to detach from a session
+    - The VibeMobile app can monitor and control these sessions
+
+EOF
+}
+
+list_sessions() {
+    echo -e "${BLUE}VibeMobile Sessions:${NC}"
+    echo ""
+
+    if ! command -v tmux &> /dev/null; then
+        echo -e "${RED}Error: tmux is not installed${NC}"
+        echo "Install with: brew install tmux"
+        exit 1
+    fi
+
+    sessions=$(tmux list-sessions -F "#{session_name}:#{session_attached}:#{pane_current_path}" 2>/dev/null | grep "^${SESSION_PREFIX}" || true)
+
+    if [ -z "$sessions" ]; then
+        echo -e "${YELLOW}No active vibe sessions${NC}"
+        echo ""
+        echo "Start a new session with: vibe-claude"
+        return
+    fi
+
+    printf "%-15s %-10s %s\n" "SESSION" "STATUS" "PATH"
+    printf "%-15s %-10s %s\n" "-------" "------" "----"
+
+    echo "$sessions" | while IFS=':' read -r name attached path; do
+        if [ "$attached" = "1" ]; then
+            status="${GREEN}attached${NC}"
+        else
+            status="${YELLOW}detached${NC}"
+        fi
+        printf "%-15s %-10b %s\n" "$name" "$status" "$path"
+    done
+}
+
+get_next_session_name() {
+    existing=$(tmux list-sessions -F "#{session_name}" 2>/dev/null | grep "^${SESSION_PREFIX}-" | sed "s/${SESSION_PREFIX}-//" | sort -n | tail -1 || echo "0")
+    if [ -z "$existing" ]; then
+        existing=0
+    fi
+    echo "${SESSION_PREFIX}-$((existing + 1))"
+}
+
+# Check for tmux
+if ! command -v tmux &> /dev/null; then
+    echo -e "${RED}Error: tmux is not installed${NC}"
+    echo ""
+    echo "tmux is required for VibeMobile remote monitoring."
+    echo "Install with:"
+    echo "  brew install tmux  # macOS"
+    echo "  apt install tmux   # Ubuntu/Debian"
+    exit 1
+fi
+
+# Check for claude
+if ! command -v claude &> /dev/null; then
+    echo -e "${RED}Error: claude is not installed${NC}"
+    echo ""
+    echo "Claude Code CLI is required."
+    echo "Install with: npm install -g @anthropic-ai/claude-code"
+    exit 1
+fi
+
+# Parse arguments
+ATTACH_SESSION=""
+LIST_SESSIONS=false
+DETACHED=false
+SESSION_NAME=""
+CLAUDE_ARGS=()
+
+while [[ $# -gt 0 ]]; do
+    case $1 in
+        --attach)
+            ATTACH_SESSION="$2"
+            shift 2
+            ;;
+        --list)
+            LIST_SESSIONS=true
+            shift
+            ;;
+        --detach)
+            DETACHED=true
+            shift
+            ;;
+        --name)
+            SESSION_NAME="$2"
+            shift 2
+            ;;
+        --help)
+            show_help
+            exit 0
+            ;;
+        --)
+            shift
+            CLAUDE_ARGS+=("$@")
+            break
+            ;;
+        *)
+            CLAUDE_ARGS+=("$1")
+            shift
+            ;;
+    esac
+done
+
+# Handle --list
+if [ "$LIST_SESSIONS" = true ]; then
+    list_sessions
+    exit 0
+fi
+
+# Handle --attach
+if [ -n "$ATTACH_SESSION" ]; then
+    if ! tmux has-session -t "$ATTACH_SESSION" 2>/dev/null; then
+        echo -e "${RED}Error: Session '$ATTACH_SESSION' not found${NC}"
+        echo ""
+        list_sessions
+        exit 1
+    fi
+    echo -e "${GREEN}Attaching to session: $ATTACH_SESSION${NC}"
+    tmux attach -t "$ATTACH_SESSION"
+    exit 0
+fi
+
+# Create new session
+if [ -z "$SESSION_NAME" ]; then
+    SESSION_NAME=$(get_next_session_name)
+fi
+
+# Check if session already exists
+if tmux has-session -t "$SESSION_NAME" 2>/dev/null; then
+    echo -e "${YELLOW}Session '$SESSION_NAME' already exists${NC}"
+    echo "Attaching to existing session..."
+    tmux attach -t "$SESSION_NAME"
+    exit 0
+fi
+
+# Build claude command with args
+if [ ${#CLAUDE_ARGS[@]} -gt 0 ]; then
+    FULL_CMD="$CLAUDE_CMD ${CLAUDE_ARGS[*]}"
+else
+    FULL_CMD="$CLAUDE_CMD"
+fi
+
+echo -e "${GREEN}Starting VibeMobile session: $SESSION_NAME${NC}"
+echo -e "Command: $FULL_CMD"
+echo ""
+
+if [ "$DETACHED" = true ]; then
+    tmux new-session -d -s "$SESSION_NAME" "$FULL_CMD"
+    echo -e "${GREEN}Session started in background${NC}"
+    echo "Attach with: vibe-claude --attach $SESSION_NAME"
+else
+    tmux new-session -s "$SESSION_NAME" "$FULL_CMD"
+fi
