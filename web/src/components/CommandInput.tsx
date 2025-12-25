@@ -6,6 +6,7 @@ import styles from './CommandInput.module.css';
 interface CommandInputProps {
   onSend: (content: string) => void;
   onSpecialKey?: (key: string) => void;
+  onUpload?: (file: File) => void;
   disabled?: boolean;
   placeholder?: string;
 }
@@ -16,22 +17,42 @@ interface QuickAction {
   key?: string;
 }
 
+interface ControlKey {
+  label: string;
+  key: string;
+  className?: string;
+}
+
 const QUICK_ACTIONS: QuickAction[] = [
-  { label: '继续', value: '继续' },
-  { label: '运行测试', value: '运行测试' },
-  { label: '提交代码', value: 'git add . && git commit' },
-  { label: '撤销', value: '撤销最近的修改' },
   { label: 'Ctrl+C', key: 'C-c' },
+];
+
+// Navigation control keys for menu selection
+const NAV_KEYS: ControlKey[] = [
+  { label: '↑', key: 'Up', className: styles.navUp },
+  { label: '←', key: 'Left', className: styles.navLeft },
+  { label: '↓', key: 'Down', className: styles.navDown },
+  { label: '→', key: 'Right', className: styles.navRight },
+];
+
+// Special function keys
+const SPECIAL_KEYS: ControlKey[] = [
+  { label: 'Esc', key: 'Escape' },
+  { label: 'Tab', key: 'Tab' },
+  { label: '⏎', key: 'Enter' },
+  { label: '模式', key: 'BTab' },  // shift+tab for auto-accept/bypass permission mode
 ];
 
 export function CommandInput({
   onSend,
   onSpecialKey,
+  onUpload,
   disabled = false,
   placeholder = '输入指令...',
 }: CommandInputProps) {
   const [value, setValue] = useState('');
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Auto-resize textarea
   useEffect(() => {
@@ -62,6 +83,33 @@ export function CommandInput({
     }
   };
 
+  const handleControlKey = async (key: string) => {
+    // Handle key sequences (e.g., "Escape Escape" for mode switch)
+    if (key.includes(' ')) {
+      const keys = key.split(' ');
+      for (const k of keys) {
+        onSpecialKey?.(k);
+        // Small delay between keys
+        await new Promise(resolve => setTimeout(resolve, 100));
+      }
+    } else {
+      onSpecialKey?.(key);
+    }
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file && onUpload) {
+      onUpload(file);
+    }
+    // Reset input so same file can be selected again
+    e.target.value = '';
+  };
+
+  const handleUploadClick = () => {
+    fileInputRef.current?.click();
+  };
+
   return (
     <div className={`${styles.container} safe-area-bottom`}>
       <div className={styles.quickActions}>
@@ -77,7 +125,66 @@ export function CommandInput({
         ))}
       </div>
 
+      {/* Navigation and special keys control area */}
+      <div className={styles.controlArea}>
+        {/* Arrow keys in cross layout */}
+        <div className={styles.navPad}>
+          {NAV_KEYS.map((navKey) => (
+            <button
+              key={navKey.key}
+              className={`${styles.navKey} ${navKey.className || ''}`}
+              onClick={() => handleControlKey(navKey.key)}
+              disabled={disabled}
+            >
+              {navKey.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Special keys */}
+        <div className={styles.specialKeys}>
+          {SPECIAL_KEYS.map((specialKey) => (
+            <button
+              key={specialKey.key}
+              className={styles.specialKey}
+              onClick={() => handleControlKey(specialKey.key)}
+              disabled={disabled}
+            >
+              {specialKey.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
       <div className={styles.inputRow}>
+        {/* Hidden file input for image upload */}
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*"
+          onChange={handleFileChange}
+          style={{ display: 'none' }}
+        />
+
+        {/* Upload button */}
+        <button
+          className={styles.uploadBtn}
+          onClick={handleUploadClick}
+          disabled={disabled}
+          title="上传图片"
+        >
+          <svg
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+          >
+            <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48" />
+          </svg>
+        </button>
+
         <div className={styles.inputWrapper}>
           <textarea
             ref={textareaRef}

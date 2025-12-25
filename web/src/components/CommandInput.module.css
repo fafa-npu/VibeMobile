@@ -35,10 +35,125 @@
   opacity: 0.5;
 }
 
+/* Navigation and control area */
+.controlArea {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 10px;
+  align-items: center;
+  overflow-x: auto;
+  scrollbar-width: none;
+  padding-bottom: 2px;
+}
+
+.controlArea::-webkit-scrollbar {
+  display: none;
+}
+
+/* D-pad style navigation */
+.navPad {
+  display: grid;
+  grid-template-columns: 36px 36px 36px;
+  grid-template-rows: 36px 36px;
+  gap: 2px;
+}
+
+.navKey {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text);
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.navKey:active {
+  background: var(--primary);
+  color: white;
+  border-color: var(--primary);
+}
+
+.navKey:disabled {
+  opacity: 0.5;
+}
+
+/* Position arrow keys in cross pattern */
+.navUp {
+  grid-column: 2;
+  grid-row: 1;
+}
+
+.navLeft {
+  grid-column: 1;
+  grid-row: 2;
+}
+
+.navDown {
+  grid-column: 2;
+  grid-row: 2;
+}
+
+.navRight {
+  grid-column: 3;
+  grid-row: 2;
+}
+
+/* Special keys row */
+.specialKeys {
+  display: flex;
+  gap: 8px;
+}
+
+.specialKey {
+  padding: 8px 14px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.specialKey:active {
+  background: var(--primary);
+  color: white;
+  border-color: var(--primary);
+}
+
+.specialKey:disabled {
+  opacity: 0.5;
+}
+
 .inputRow {
   display: flex;
   gap: 10px;
   align-items: flex-end;
+}
+
+.uploadBtn {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.uploadBtn:active {
+  background: var(--border);
+  color: var(--text);
+}
+
+.uploadBtn:disabled {
+  opacity: 0.5;
 }
 
 .inputWrapper {

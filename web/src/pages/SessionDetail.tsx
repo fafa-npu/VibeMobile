@@ -37,6 +37,15 @@ export function SessionDetail() {
     }
   };
 
+  const handleUpload = async (file: File) => {
+    if (!currentSessionId) return;
+    try {
+      await api.uploadFile(currentSessionId, file);
+    } catch (e) {
+      console.error('Failed to upload file:', e);
+    }
+  };
+
   if (!currentSessionId) {
     return null;
   }
@@ -72,6 +81,7 @@ export function SessionDetail() {
       <CommandInput
         onSend={handleSend}
         onSpecialKey={handleSpecialKey}
+        onUpload={handleUpload}
         disabled={sendCommand.isPending}
         placeholder={sendCommand.isPending ? '发送中...' : '输入指令...'}
       />

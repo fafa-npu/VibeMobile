@@ -1,12 +1,17 @@
 """Session management API routes."""
 
-from fastapi import APIRouter, HTTPException
+import os
+import uuid
+from fastapi import APIRouter, HTTPException, UploadFile, File
 from datetime import datetime
 
 from ..models import Session, Command
 from ..services import tmux_manager, output_monitor
 
 router = APIRouter(prefix="/api/sessions", tags=["sessions"])
+
+# Upload directory for images
+UPLOAD_DIR = "/tmp/vibe-uploads"
 
 
 @router.get("", response_model=list[Session])
@@ -109,3 +114,48 @@ async def kill_session(session_id: str):
         raise HTTPException(status_code=500, detail="Failed to kill session")
 
     return {"success": True, "session_id": session_id}
+
+
+@router.post("/{session_id}/upload")
+async def upload_file(session_id: str, file: UploadFile = File(...)):
+    """Upload a file (image) and send its path to the session."""
+    if not tmux_manager.session_exists(session_id):
+        raise HTTPException(status_code=404, detail=f"Session '{session_id}' not found")
+
+    # Validate file type (images only)
+    allowed_types = ["image/png", "image/jpeg", "image/gif", "image/webp"]
+    if file.content_type not in allowed_types:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Invalid file type. Allowed: {', '.join(allowed_types)}"
+        )
+
+    # Create upload directory
+    session_dir = os.path.join(UPLOAD_DIR, session_id)
+    os.makedirs(session_dir, exist_ok=True)
+
+    # Generate unique filename
+    ext = os.path.splitext(file.filename or "image.png")[1]
+    unique_name = f"{uuid.uuid4().hex}{ext}"
+    file_path = os.path.join(session_dir, unique_name)
+
+    # Save file
+    content = await file.read()
+    with open(file_path, "wb") as f:
+        f.write(content)
+
+    # First clear any existing input with Escape
+    tmux_manager.send_special_key(session_id, "Escape")
+
+    # Send file path to Claude using @ syntax (without Enter - let Claude handle the file reference)
+    success = tmux_manager.send_keys(session_id, f"@{file_path}", press_enter=False)
+
+    if not success:
+        raise HTTPException(status_code=500, detail="Failed to send file path")
+
+    return {
+        "success": True,
+        "session_id": session_id,
+        "path": file_path,
+        "filename": file.filename,
+    }

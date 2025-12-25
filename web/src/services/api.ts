@@ -68,4 +68,21 @@ export const api = {
       method: 'DELETE',
     });
   },
+
+  async uploadFile(sessionId: string, file: File): Promise<{ success: boolean; path: string }> {
+    const formData = new FormData();
+    formData.append('file', file);
+
+    const response = await fetch(`${API_BASE}/api/sessions/${sessionId}/upload`, {
+      method: 'POST',
+      body: formData,
+    });
+
+    if (!response.ok) {
+      const error = await response.text();
+      throw new Error(error || `HTTP ${response.status}`);
+    }
+
+    return response.json();
+  },
 };
