@@ -1,0 +1,46 @@
+name: vibe_mobile_desktop
+description: "VibeMobile Desktop - Local management app for Claude Code sessions"
+publish_to: 'none'
+
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.5.3
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # State management
+  provider: ^6.1.0
+
+  # Local storage
+  shared_preferences: ^2.2.0
+
+  # HTTP client
+  http: ^1.2.0
+
+  # URL launcher
+  url_launcher: ^6.3.0
+
+  # File picker
+  file_picker: ^8.0.0
+
+  # Date formatting
+  intl: ^0.19.0
+
+  # Window management
+  window_manager: ^0.3.9
+
+  cupertino_icons: ^1.0.8
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^4.0.0
+
+flutter:
+  uses-material-design: true
+
+  assets:
+    - assets/icons/
