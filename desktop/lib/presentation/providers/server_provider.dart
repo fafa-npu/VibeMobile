@@ -57,6 +57,14 @@ class ServerNotifier extends StateNotifier<ServerState> {
 
   int get _apiPort => _ref.read(settingsProvider).apiPort;
 
+  /// Check if server is already running (call on app startup).
+  Future<void> checkExistingStatus() async {
+    final isRunning = await _service.healthCheck(_apiPort);
+    if (isRunning && mounted) {
+      state = state.copyWith(status: ServerStatus.running);
+    }
+  }
+
   Future<void> start() async {
     if (state.isRunning || state.isStarting) return;
 

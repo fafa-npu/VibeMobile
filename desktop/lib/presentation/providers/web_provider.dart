@@ -59,6 +59,14 @@ class WebNotifier extends StateNotifier<WebState> {
 
   int get _webPort => _ref.read(settingsProvider).webPort;
 
+  /// Check if web server is already running (call on app startup).
+  Future<void> checkExistingStatus() async {
+    final isRunning = await _service.healthCheck(_webPort);
+    if (isRunning && mounted) {
+      state = state.copyWith(status: WebStatus.running);
+    }
+  }
+
   Future<void> start() async {
     if (state.isRunning || state.isStarting) return;
 

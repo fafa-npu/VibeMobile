@@ -32,6 +32,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WindowListener {
     // Initialize settings and load sessions on first build
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       await ref.read(settingsProvider.notifier).initialize();
+      // Check if services are already running
+      await ref.read(serverProvider.notifier).checkExistingStatus();
+      await ref.read(webProvider.notifier).checkExistingStatus();
+      // Load sessions
       await ref.read(sessionProvider.notifier).refresh();
       // Start auto-refresh after initial load
       ref.read(sessionProvider.notifier).startAutoRefresh();
