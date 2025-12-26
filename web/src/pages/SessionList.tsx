@@ -2,6 +2,7 @@
 
 import { useSessions, useWebSocket } from '../hooks';
 import { useAppStore } from '../stores/appStore';
+import { useAuthStore } from '../stores/authStore';
 import { Header } from '../components/Header';
 import { SessionCard } from '../components/SessionCard';
 import styles from './SessionList.module.css';
@@ -10,15 +11,36 @@ export function SessionList() {
   const { data: sessions, isLoading, error } = useSessions();
   const { status } = useWebSocket();
   const setCurrentSessionId = useAppStore((s) => s.setCurrentSessionId);
+  const { deviceName, logout } = useAuthStore();
 
   // All non-ended sessions are "running"
   const runningSessions = sessions?.filter((s) => s.status !== 'ended') || [];
+
+  const handleLogout = async () => {
+    if (confirm('确定要退出登录吗？')) {
+      await logout();
+    }
+  };
 
   return (
     <div className={styles.container}>
       <Header
         title="VibeMobile"
+        subtitle={deviceName || undefined}
         status={status}
+        rightElement={
+          <button
+            className={styles.logoutBtn}
+            onClick={handleLogout}
+            title="退出登录"
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+              <polyline points="16 17 21 12 16 7" />
+              <line x1="21" y1="12" x2="9" y2="12" />
+            </svg>
+          </button>
+        }
       />
 
       <div className={styles.content}>

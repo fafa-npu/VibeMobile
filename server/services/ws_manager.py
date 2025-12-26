@@ -19,6 +19,7 @@ class ConnectionManager:
     def __init__(self):
         self.active_connections: dict[str, WebSocket] = {}  # connection_id -> websocket
         self.subscriptions: dict[str, set[str]] = {}  # session_id -> set of connection_ids
+        self.desktop_connections: set[str] = set()  # Desktop app connections
         self._heartbeat_interval = settings.ws_heartbeat_interval
 
     async def connect(self, websocket: WebSocket, connection_id: str) -> None:
@@ -32,6 +33,9 @@ class ConnectionManager:
         if connection_id in self.active_connections:
             del self.active_connections[connection_id]
 
+        # Remove from desktop connections
+        self.desktop_connections.discard(connection_id)
+
         # Remove from all subscriptions
         for session_id in list(self.subscriptions.keys()):
             self.subscriptions[session_id].discard(connection_id)
@@ -39,6 +43,15 @@ class ConnectionManager:
                 del self.subscriptions[session_id]
 
         logger.info(f"WebSocket disconnected: {connection_id}")
+
+    def register_desktop(self, connection_id: str) -> None:
+        """Register a connection as Desktop app."""
+        self.desktop_connections.add(connection_id)
+        logger.info(f"Desktop connection registered: {connection_id}")
+
+    def unregister_desktop(self, connection_id: str) -> None:
+        """Unregister a Desktop connection."""
+        self.desktop_connections.discard(connection_id)
 
     def subscribe(self, connection_id: str, session_ids: list[str]) -> None:
         """Subscribe a connection to session updates."""
@@ -107,6 +120,11 @@ class ConnectionManager:
         for connection_id in list(self.active_connections.keys()):
             await self.send_personal(connection_id, message)
 
+    async def broadcast_to_desktop(self, message: dict) -> None:
+        """Broadcast a message to all Desktop app connections."""
+        for connection_id in list(self.desktop_connections):
+            await self.send_personal(connection_id, message)
+
     async def handle_message(self, connection_id: str, data: dict) -> None:
         """Handle an incoming WebSocket message."""
         msg_type = data.get("type")
@@ -131,6 +149,14 @@ class ConnectionManager:
             await self.send_personal(
                 connection_id,
                 {"type": "pong", "data": {"timestamp": datetime.now().isoformat()}},
+            )
+
+        elif msg_type == "register_desktop":
+            # Register as Desktop app connection
+            self.register_desktop(connection_id)
+            await self.send_personal(
+                connection_id,
+                {"type": "desktop_registered", "data": {"connectionId": connection_id}},
             )
 
         else:

@@ -25,6 +25,31 @@ section {
   margin-bottom: 24px;
 }
 
+/* Logout button */
+.logoutBtn {
+  width: 36px;
+  height: 36px;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.logoutBtn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--text);
+}
+
+.logoutBtn svg {
+  width: 20px;
+  height: 20px;
+}
+
 /* Loading state */
 .loading {
   display: flex;

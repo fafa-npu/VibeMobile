@@ -1,6 +1,7 @@
 // WebSocket connection manager
 
 import type { WSIncomingMessage } from '../types';
+import { useAuthStore } from '../stores/authStore';
 
 type MessageHandler = (message: WSIncomingMessage) => void;
 type StatusHandler = (status: 'connecting' | 'connected' | 'disconnected') => void;
@@ -25,7 +26,16 @@ class WebSocketManager {
     this.notifyStatus('connecting');
 
     try {
-      this.ws = new WebSocket(`${WS_BASE}/ws`);
+      // Include access token in WebSocket URL for remote connections
+      const { accessToken } = useAuthStore.getState();
+      let wsUrl = `${WS_BASE}/ws`;
+
+      // Add token as query parameter for remote connections
+      if (accessToken) {
+        wsUrl += `?token=${encodeURIComponent(accessToken)}`;
+      }
+
+      this.ws = new WebSocket(wsUrl);
 
       this.ws.onopen = () => {
         console.log('[WS] Connected');
@@ -47,9 +57,23 @@ class WebSocketManager {
         }
       };
 
-      this.ws.onclose = () => {
-        console.log('[WS] Disconnected');
+      this.ws.onclose = (event) => {
+        console.log('[WS] Disconnected', event.code, event.reason);
         this.notifyStatus('disconnected');
+
+        // Check if it was an auth error
+        if (event.code === 4001) {
+          console.error('[WS] Authentication failed:', event.reason);
+          // Try to refresh token and reconnect
+          const authStore = useAuthStore.getState();
+          if (authStore.isAuthenticated) {
+            authStore.refreshAccessToken().then(() => {
+              this.attemptReconnect();
+            });
+            return;
+          }
+        }
+
         this.attemptReconnect();
       };
 

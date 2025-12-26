@@ -5,6 +5,25 @@ from typing import Literal, Optional
 from pydantic import BaseModel, Field
 import uuid
 
+from .device import (
+    Device,
+    DeviceCreate,
+    DeviceInfo,
+    PairingCode,
+    PairingRequest,
+    TrustLevel,
+)
+from .audit import (
+    AuditAction,
+    AuditLog,
+    AuditLogCreate,
+    AuditResult,
+    RiskLevel,
+    HIGH_RISK_OPERATIONS,
+    HIGH_RISK_KEYS,
+    is_high_risk_key,
+)
+
 
 class Session(BaseModel):
     """Represents a tmux session running Claude."""

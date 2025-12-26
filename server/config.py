@@ -1,5 +1,6 @@
 """Configuration management for VibeMobile server."""
 
+import os
 from pydantic_settings import BaseSettings
 from typing import Optional
 
@@ -23,6 +24,10 @@ class Settings(BaseSettings):
 
     # Security (for future Cloudflare integration)
     api_key: Optional[str] = None
+
+    # SSL certificates for HTTPS (local development)
+    ssl_certfile: Optional[str] = None
+    ssl_keyfile: Optional[str] = None
 
     class Config:
         env_prefix = "VIBE_"

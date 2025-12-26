@@ -51,3 +51,6 @@ export interface WSStatusMessage {
 }
 
 export type WSIncomingMessage = WSOutputMessage | WSStatusMessage;
+
+// Re-export auth types
+export * from './auth';

@@ -14,6 +14,7 @@ class Settings {
   final bool enableTunnel;
   final String? tunnelName;
   final String? tunnelHostname;
+  final String? proxyUrl; // Proxy for cloudflared (e.g., http://127.0.0.1:7890)
 
   Settings({
     this.apiPort = 8765,
@@ -25,8 +26,11 @@ class Settings {
     this.enableTunnel = false,
     this.tunnelName,
     this.tunnelHostname,
+    this.proxyUrl,
   });
 
+  /// Creates a copy with optional field updates.
+  /// Use explicit null to clear optional fields (tunnelName, tunnelHostname, proxyUrl).
   Settings copyWith({
     int? apiPort,
     int? webPort,
@@ -37,6 +41,10 @@ class Settings {
     bool? enableTunnel,
     String? tunnelName,
     String? tunnelHostname,
+    String? proxyUrl,
+    bool clearTunnelName = false,
+    bool clearTunnelHostname = false,
+    bool clearProxyUrl = false,
   }) {
     return Settings(
       apiPort: apiPort ?? this.apiPort,
@@ -46,8 +54,9 @@ class Settings {
       launchAtLogin: launchAtLogin ?? this.launchAtLogin,
       terminalApp: terminalApp ?? this.terminalApp,
       enableTunnel: enableTunnel ?? this.enableTunnel,
-      tunnelName: tunnelName ?? this.tunnelName,
-      tunnelHostname: tunnelHostname ?? this.tunnelHostname,
+      tunnelName: clearTunnelName ? null : (tunnelName ?? this.tunnelName),
+      tunnelHostname: clearTunnelHostname ? null : (tunnelHostname ?? this.tunnelHostname),
+      proxyUrl: clearProxyUrl ? null : (proxyUrl ?? this.proxyUrl),
     );
   }
 
@@ -64,6 +73,7 @@ class Settings {
       enableTunnel: json['enable_tunnel'] as bool? ?? false,
       tunnelName: json['tunnel_name'] as String?,
       tunnelHostname: json['tunnel_hostname'] as String?,
+      proxyUrl: json['proxy_url'] as String?,
     );
   }
 
@@ -78,6 +88,7 @@ class Settings {
       'enable_tunnel': enableTunnel,
       'tunnel_name': tunnelName,
       'tunnel_hostname': tunnelHostname,
+      'proxy_url': proxyUrl,
     };
   }
 }

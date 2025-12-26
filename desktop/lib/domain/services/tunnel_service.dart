@@ -1,0 +1,284 @@
+import 'dart:async';
+import 'dart:convert';
+import 'dart:io';
+
+import '../../core/logging/app_logger.dart';
+
+/// Callback type for tunnel events.
+typedef TunnelReadyCallback = void Function(String url);
+typedef TunnelDisconnectedCallback = void Function();
+typedef TunnelErrorCallback = void Function(String error);
+
+/// Service for managing Cloudflare Tunnel.
+class TunnelService {
+  Process? _tunnelProcess;
+  bool _isConnected = false;
+  String? _publicUrl;
+  StreamSubscription? _stderrSubscription;
+  bool _isStarting = false;
+  Timer? _startTimeout;
+  static const _processTimeout = Duration(seconds: 10);
+
+  bool get isConnected => _isConnected;
+  bool get isStarting => _isStarting;
+  String? get publicUrl => _publicUrl;
+
+  /// Callback for when tunnel URL is available.
+  TunnelReadyCallback? onTunnelReady;
+
+  /// Callback for when tunnel disconnects.
+  TunnelDisconnectedCallback? onTunnelDisconnected;
+
+  /// Callback for tunnel errors.
+  TunnelErrorCallback? onTunnelError;
+
+  /// Check if cloudflared is installed.
+  Future<bool> isCloudflaredInstalled() async {
+    try {
+      final result = await Process.run('which', ['cloudflared'])
+          .timeout(_processTimeout);
+      return result.exitCode == 0;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  /// Get cloudflared version.
+  Future<String?> getVersion() async {
+    try {
+      final result = await Process.run('cloudflared', ['--version'])
+          .timeout(_processTimeout);
+      if (result.exitCode == 0) {
+        return result.stdout.toString().trim();
+      }
+      return null;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  /// Check if user is logged in to Cloudflare.
+  Future<bool> isLoggedIn() async {
+    final certPath = '${Platform.environment['HOME']}/.cloudflared/cert.pem';
+    return File(certPath).existsSync();
+  }
+
+  /// Start cloudflared login process.
+  Future<bool> login() async {
+    try {
+      final result = await Process.run('cloudflared', ['tunnel', 'login'])
+          .timeout(const Duration(minutes: 5));
+      return result.exitCode == 0;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  /// Start a quick tunnel (no configuration needed).
+  Future<bool> startQuickTunnel(int port, {String? proxyUrl}) async {
+    if (_isConnected || _isStarting) return _isConnected;
+
+    _isStarting = true;
+    String? lastError;
+
+    AppLogger.info('TunnelService: Starting quick tunnel for port $port');
+
+    // Setup timeout timer (30 seconds)
+    _startTimeout = Timer(const Duration(seconds: 30), () {
+      if (_isStarting) {
+        AppLogger.warning('TunnelService: Startup timeout');
+        _cancelStarting();
+        onTunnelError?.call('Tunnel 启动超时，请检查网络连接或代理设置');
+      }
+    });
+
+    try {
+      // Set up environment with proxy if provided
+      final environment = Map<String, String>.from(Platform.environment);
+      if (proxyUrl != null && proxyUrl.isNotEmpty) {
+        environment['HTTPS_PROXY'] = proxyUrl;
+        environment['HTTP_PROXY'] = proxyUrl;
+        AppLogger.info('TunnelService: Using proxy: $proxyUrl');
+      }
+
+      _tunnelProcess = await Process.start(
+        'cloudflared',
+        ['tunnel', '--url', 'http://localhost:$port'],
+        environment: environment,
+      );
+
+      // Parse output to find the public URL
+      _stderrSubscription = _tunnelProcess!.stderr
+          .transform(utf8.decoder)
+          .listen(
+        (data) {
+          AppLogger.debug('cloudflared: $data');
+
+          // cloudflared outputs to stderr
+          final urlMatch = RegExp(r'https://[\w-]+\.trycloudflare\.com')
+              .firstMatch(data);
+          if (urlMatch != null && !_isConnected) {
+            _publicUrl = urlMatch.group(0);
+            _isConnected = true;
+            _isStarting = false;
+            _startTimeout?.cancel();
+            _startTimeout = null;
+            AppLogger.info('TunnelService: Connected at $_publicUrl');
+            onTunnelReady?.call(_publicUrl!);
+          }
+
+          // Check for common errors
+          if (data.contains('failed to request quick Tunnel') ||
+              data.contains('EOF') ||
+              data.contains('connection refused')) {
+            lastError = 'Cloudflare 连接失败，请检查网络或配置代理';
+          }
+        },
+        onError: (error) {
+          AppLogger.warning('cloudflared stderr error: $error');
+          lastError = error.toString();
+        },
+        cancelOnError: false,
+      );
+
+      // Handle process exit
+      _tunnelProcess!.exitCode.then((exitCode) {
+        AppLogger.info('TunnelService: cloudflared exited with code $exitCode');
+        final wasStarting = _isStarting;
+        _cleanup();
+
+        if (wasStarting && exitCode != 0) {
+          onTunnelError?.call(lastError ?? 'cloudflared 启动失败 (code: $exitCode)');
+        } else {
+          onTunnelDisconnected?.call();
+        }
+      });
+
+      // Wait briefly to check if process exits immediately
+      await Future.delayed(const Duration(milliseconds: 500));
+
+      if (_tunnelProcess == null) {
+        _isStarting = false;
+        _startTimeout?.cancel();
+        _startTimeout = null;
+        return false;
+      }
+
+      return true;
+    } catch (e, stack) {
+      AppLogger.error('TunnelService: Failed to start cloudflared', e, stack);
+      _isStarting = false;
+      _startTimeout?.cancel();
+      _startTimeout = null;
+      _cleanup();
+      onTunnelError?.call('无法启动 cloudflared: $e');
+      return false;
+    }
+  }
+
+  void _cleanup() {
+    _stderrSubscription?.cancel();
+    _stderrSubscription = null;
+    _startTimeout?.cancel();
+    _startTimeout = null;
+    _isConnected = false;
+    _isStarting = false;
+    _publicUrl = null;
+    _tunnelProcess = null;
+  }
+
+  void _cancelStarting() {
+    if (!_isStarting) return;
+
+    AppLogger.info('TunnelService: Cancelling tunnel startup');
+    _startTimeout?.cancel();
+    _startTimeout = null;
+    _stderrSubscription?.cancel();
+    _stderrSubscription = null;
+
+    if (_tunnelProcess != null) {
+      _tunnelProcess!.kill();
+      _tunnelProcess = null;
+    }
+
+    _isStarting = false;
+    _isConnected = false;
+    _publicUrl = null;
+  }
+
+  /// Cancel the current tunnel startup process.
+  void cancelStarting() {
+    if (_isStarting) {
+      _cancelStarting();
+      onTunnelError?.call('Tunnel 启动已取消');
+    }
+  }
+
+  /// Start a named tunnel (requires prior configuration).
+  Future<bool> startNamedTunnel(String tunnelName) async {
+    if (_isConnected) return true;
+
+    AppLogger.info('TunnelService: Starting named tunnel: $tunnelName');
+
+    try {
+      _tunnelProcess = await Process.start(
+        'cloudflared',
+        ['tunnel', 'run', tunnelName],
+      );
+
+      // Wait a bit for connection
+      await Future.delayed(const Duration(seconds: 5));
+      _isConnected = true;
+
+      _tunnelProcess!.exitCode.then((_) {
+        _cleanup();
+        onTunnelDisconnected?.call();
+      });
+
+      return true;
+    } catch (e, stack) {
+      AppLogger.error('TunnelService: Failed to start named tunnel', e, stack);
+      return false;
+    }
+  }
+
+  /// Stop the tunnel.
+  Future<void> stop() async {
+    AppLogger.info('TunnelService: Stopping tunnel');
+    _startTimeout?.cancel();
+    _startTimeout = null;
+    _stderrSubscription?.cancel();
+    _stderrSubscription = null;
+    if (_tunnelProcess != null) {
+      _tunnelProcess!.kill();
+      _tunnelProcess = null;
+    }
+    _isConnected = false;
+    _isStarting = false;
+    _publicUrl = null;
+  }
+
+  /// List available tunnels.
+  Future<List<String>> listTunnels() async {
+    try {
+      final result = await Process.run('cloudflared', ['tunnel', 'list'])
+          .timeout(_processTimeout);
+      if (result.exitCode == 0) {
+        final lines = result.stdout.toString().trim().split('\n');
+        // Skip header line
+        return lines.skip(1).map((line) {
+          final parts = line.split(RegExp(r'\s+'));
+          return parts.length > 1 ? parts[1] : '';
+        }).where((name) => name.isNotEmpty).toList();
+      }
+      return [];
+    } catch (e) {
+      return [];
+    }
+  }
+
+  /// Dispose resources.
+  void dispose() {
+    stop();
+  }
+}

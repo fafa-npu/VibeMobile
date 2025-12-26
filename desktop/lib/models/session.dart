@@ -18,9 +18,16 @@ class Session {
     // Parse tmux list-sessions format: name:created:path
     final parts = line.split(':');
     final name = parts[0];
-    final created = parts.length > 1
-        ? DateTime.fromMillisecondsSinceEpoch(int.parse(parts[1]) * 1000)
-        : DateTime.now();
+
+    DateTime created;
+    try {
+      created = parts.length > 1
+          ? DateTime.fromMillisecondsSinceEpoch(int.parse(parts[1]) * 1000)
+          : DateTime.now();
+    } catch (e) {
+      created = DateTime.now();
+    }
+
     final path = parts.length > 2 ? parts[2] : null;
 
     return Session(
