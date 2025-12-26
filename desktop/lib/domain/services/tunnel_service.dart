@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import '../../core/logging/app_logger.dart';
+import '../../core/config/app_config.dart';
 
 /// Callback type for tunnel events.
 typedef TunnelReadyCallback = void Function(String url);
@@ -75,13 +76,16 @@ class TunnelService {
   }
 
   /// Start a quick tunnel (no configuration needed).
+  /// Uses HTTPS origin if SSL certificates are available.
   Future<bool> startQuickTunnel(int port, {String? proxyUrl}) async {
     if (_isConnected || _isStarting) return _isConnected;
 
     _isStarting = true;
     String? lastError;
 
-    AppLogger.info('TunnelService: Starting quick tunnel for port $port');
+    // Use centralized config to determine origin URL
+    final originUrl = AppConfig.apiBaseUrl(port);
+    AppLogger.info('TunnelService: Starting quick tunnel for $originUrl');
 
     // Setup timeout timer (30 seconds)
     _startTimeout = Timer(const Duration(seconds: 30), () {
@@ -101,9 +105,17 @@ class TunnelService {
         AppLogger.info('TunnelService: Using proxy: $proxyUrl');
       }
 
+      // Build cloudflared arguments
+      // For HTTPS origin with self-signed cert, we need --no-tls-verify
+      final args = ['tunnel', '--url', originUrl];
+      if (AppConfig.hasSslCerts) {
+        args.add('--no-tls-verify');
+        AppLogger.info('TunnelService: Using HTTPS origin with --no-tls-verify for self-signed cert');
+      }
+
       _tunnelProcess = await Process.start(
         'cloudflared',
-        ['tunnel', '--url', 'http://localhost:$port'],
+        args,
         environment: environment,
       );
 

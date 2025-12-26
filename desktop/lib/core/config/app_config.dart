@@ -60,6 +60,44 @@ class AppConfig {
     return '${getProjectPath()}/server';
   }
 
+  // ========== SSL Configuration (Centralized) ==========
+
+  /// Get the SSL certificate file path.
+  static String get sslCertFile => '${getProjectPath()}/certs/localhost.pem';
+
+  /// Get the SSL key file path.
+  static String get sslKeyFile => '${getProjectPath()}/certs/localhost-key.pem';
+
+  /// Check if SSL certificates exist.
+  static bool get hasSslCerts =>
+      File(sslCertFile).existsSync() && File(sslKeyFile).existsSync();
+
+  /// Get the protocol scheme (http or https) based on SSL availability.
+  static String get httpScheme => hasSslCerts ? 'https' : 'http';
+
+  /// Get the WebSocket scheme (ws or wss) based on SSL availability.
+  static String get wsScheme => hasSslCerts ? 'wss' : 'ws';
+
+  /// Build API base URL for a given port.
+  static String apiBaseUrl(int port) => '$httpScheme://localhost:$port';
+
+  /// Build WebSocket URL for a given port and path.
+  static String wsUrl(int port, [String path = '']) =>
+      '$wsScheme://localhost:$port$path';
+
+  /// Create an HTTP client configured for self-signed certificates.
+  static HttpClient createHttpClient() {
+    final client = HttpClient();
+    client.connectionTimeout = const Duration(seconds: 5);
+    if (hasSslCerts) {
+      // Accept self-signed certificates for local development
+      client.badCertificateCallback = (cert, host, port) => true;
+    }
+    return client;
+  }
+
+  // ========== End SSL Configuration ==========
+
   /// Check if the project directory exists.
   static bool projectExists() {
     return Directory(getProjectPath()).existsSync();

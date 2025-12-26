@@ -22,33 +22,13 @@ class AuthService {
     _pairingRequestController = StreamController<PairingRequest>.broadcast();
   }
 
-  /// Check if SSL certificates exist.
-  bool get _hasSslCerts {
-    final projectPath = AppConfig.getProjectPath();
-    return File('$projectPath/certs/localhost.pem').existsSync() &&
-        File('$projectPath/certs/localhost-key.pem').existsSync();
-  }
-
-  String get baseUrl => _hasSslCerts
-      ? 'https://localhost:$apiPort'
-      : 'http://localhost:$apiPort';
-
-  String get wsUrl => _hasSslCerts
-      ? 'wss://localhost:$apiPort'
-      : 'ws://localhost:$apiPort';
+  /// Use centralized config for base URLs
+  String get baseUrl => AppConfig.apiBaseUrl(apiPort);
+  String get wsUrl => AppConfig.wsUrl(apiPort, '');
 
   bool get isConnected => _isConnected;
 
   Stream<PairingRequest> get pairingRequests => _pairingRequestController.stream;
-
-  /// Create an HTTP client that accepts self-signed certificates.
-  HttpClient _createHttpClient() {
-    final client = HttpClient();
-    if (_hasSslCerts) {
-      client.badCertificateCallback = (cert, host, port) => true;
-    }
-    return client;
-  }
 
   /// Connect to WebSocket to receive pairing requests.
   Future<void> connectWebSocket() async {
@@ -57,12 +37,12 @@ class AuthService {
     AppLogger.info('AuthService: Connecting to WebSocket at $wsUrl');
 
     try {
-      if (_hasSslCerts) {
+      if (AppConfig.hasSslCerts) {
         // Use IOWebSocketChannel for secure connections with custom SSL handling
         final uri = Uri.parse('$wsUrl/ws?client_type=desktop');
         final socket = await WebSocket.connect(
           uri.toString(),
-          customClient: _createHttpClient(),
+          customClient: AppConfig.createHttpClient(),
         );
         _wsChannel = IOWebSocketChannel(socket);
       } else {
@@ -141,7 +121,7 @@ class AuthService {
   Future<PairingCode?> generatePairingCode() async {
     AppLogger.info('AuthService: Generating pairing code from $baseUrl');
 
-    final client = _createHttpClient();
+    final client = AppConfig.createHttpClient();
     try {
       final request = await client.postUrl(
         Uri.parse('$baseUrl/api/auth/pair/initiate'),
@@ -169,7 +149,7 @@ class AuthService {
   Future<bool> approvePairing(String approvalId) async {
     AppLogger.info('AuthService: Approving pairing $approvalId');
 
-    final client = _createHttpClient();
+    final client = AppConfig.createHttpClient();
     try {
       final request = await client.postUrl(
         Uri.parse('$baseUrl/api/auth/approve'),
@@ -195,7 +175,7 @@ class AuthService {
   Future<bool> rejectPairing(String approvalId) async {
     AppLogger.info('AuthService: Rejecting pairing $approvalId');
 
-    final client = _createHttpClient();
+    final client = AppConfig.createHttpClient();
     try {
       final request = await client.postUrl(
         Uri.parse('$baseUrl/api/auth/approve'),
@@ -219,7 +199,7 @@ class AuthService {
 
   /// Get list of paired devices.
   Future<List<Device>> getDevices() async {
-    final client = _createHttpClient();
+    final client = AppConfig.createHttpClient();
     try {
       final request = await client.getUrl(
         Uri.parse('$baseUrl/api/auth/devices'),
@@ -246,7 +226,7 @@ class AuthService {
   Future<bool> updateDeviceTrust(String deviceId, String trustLevel) async {
     AppLogger.info('AuthService: Updating device $deviceId trust to $trustLevel');
 
-    final client = _createHttpClient();
+    final client = AppConfig.createHttpClient();
     try {
       final request = await client.openUrl(
         'PUT',
@@ -270,7 +250,7 @@ class AuthService {
   Future<bool> revokeDevice(String deviceId) async {
     AppLogger.info('AuthService: Revoking device $deviceId');
 
-    final client = _createHttpClient();
+    final client = AppConfig.createHttpClient();
     try {
       final request = await client.deleteUrl(
         Uri.parse('$baseUrl/api/auth/devices/$deviceId'),

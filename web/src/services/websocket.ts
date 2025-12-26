@@ -6,7 +6,29 @@ import { useAuthStore } from '../stores/authStore';
 type MessageHandler = (message: WSIncomingMessage) => void;
 type StatusHandler = (status: 'connecting' | 'connected' | 'disconnected') => void;
 
-const WS_BASE = import.meta.env.VITE_WS_URL || 'ws://localhost:8765';
+// Determine WebSocket base URL
+// In development, use empty string to leverage Vite's proxy (relative path /ws)
+// In production or when VITE_WS_URL is set, use the provided URL
+const getWsBase = (): string => {
+  // If explicitly set, use it
+  if (import.meta.env.VITE_WS_URL) {
+    return import.meta.env.VITE_WS_URL;
+  }
+
+  // In development with Vite proxy, use relative path
+  if (import.meta.env.DEV) {
+    // Use relative WebSocket URL - browser will use current host
+    // This works with Vite's proxy configuration
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    return `${protocol}//${window.location.host}`;
+  }
+
+  // Fallback for production without VITE_WS_URL
+  const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+  return `${protocol}//${window.location.host}`;
+};
+
+const WS_BASE = getWsBase();
 
 class WebSocketManager {
   private ws: WebSocket | null = null;

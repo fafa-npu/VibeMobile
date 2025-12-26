@@ -59,6 +59,7 @@ class DeviceNotifier extends StateNotifier<DeviceListState> {
   final AuthService _service;
   StreamSubscription? _pairingSubscription;
   Timer? _pairingCodeTimer;
+  Timer? _countdownTimer;
 
   DeviceNotifier(this._service) : super(const DeviceListState.initial()) {
     _setupPairingListener();
@@ -75,6 +76,7 @@ class DeviceNotifier extends StateNotifier<DeviceListState> {
   void dispose() {
     _pairingSubscription?.cancel();
     _pairingCodeTimer?.cancel();
+    _countdownTimer?.cancel();
     _service.dispose();
     super.dispose();
   }
@@ -109,6 +111,7 @@ class DeviceNotifier extends StateNotifier<DeviceListState> {
   /// Generate a new pairing code.
   Future<void> generatePairingCode() async {
     _pairingCodeTimer?.cancel();
+    _countdownTimer?.cancel();
 
     try {
       final code = await _service.generatePairingCode();
@@ -117,7 +120,16 @@ class DeviceNotifier extends StateNotifier<DeviceListState> {
 
         // Set up timer to clear expired code
         _pairingCodeTimer = Timer(Duration(seconds: code.expiresIn), () {
+          _countdownTimer?.cancel();
           state = state.copyWith(clearPairingCode: true);
+        });
+
+        // Set up countdown timer to update UI every second
+        _countdownTimer = Timer.periodic(const Duration(seconds: 1), (_) {
+          if (state.currentPairingCode != null) {
+            // Trigger state update to refresh countdown display
+            state = state.copyWith(currentPairingCode: state.currentPairingCode);
+          }
         });
       } else {
         state = state.copyWith(error: 'Failed to generate pairing code');
@@ -130,6 +142,7 @@ class DeviceNotifier extends StateNotifier<DeviceListState> {
   /// Cancel pairing code.
   void cancelPairingCode() {
     _pairingCodeTimer?.cancel();
+    _countdownTimer?.cancel();
     state = state.copyWith(clearPairingCode: true);
   }
 

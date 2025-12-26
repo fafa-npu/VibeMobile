@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 
 import '../../core/logging/app_logger.dart';
+import '../../core/config/app_config.dart';
 
 /// Callback for web service status updates.
 typedef WebServiceStatusCallback = void Function(bool isRunning, String? error);
@@ -20,16 +21,6 @@ class WebService {
 
   bool get isRunning => _isRunning;
   int? get pid => _startedPid;
-
-  /// Get the SSL certificate path.
-  String get _sslCertFile => '$_projectPath/certs/localhost.pem';
-
-  /// Get the SSL key path.
-  String get _sslKeyFile => '$_projectPath/certs/localhost-key.pem';
-
-  /// Check if SSL certificates exist.
-  bool get _hasSslCerts =>
-      File(_sslCertFile).existsSync() && File(_sslKeyFile).existsSync();
 
   /// Start the Vite dev server.
   /// Returns immediately after starting the process.
@@ -184,17 +175,12 @@ class WebService {
 
   /// Check if Vite dev server is responding.
   Future<bool> healthCheck(int port) async {
-    final useHttps = _hasSslCerts;
-    final scheme = useHttps ? 'https' : 'http';
-    final client = HttpClient();
+    final client = AppConfig.createHttpClient();
     client.connectionTimeout = const Duration(seconds: 2);
 
-    // For self-signed certificates, disable certificate verification
-    if (useHttps) {
-      client.badCertificateCallback = (cert, host, port) => true;
-    }
-
     try {
+      // Web UI uses its own port but same SSL config
+      final scheme = AppConfig.httpScheme;
       final request = await client
           .getUrl(Uri.parse('$scheme://localhost:$port/'))
           .timeout(_healthCheckTimeout);

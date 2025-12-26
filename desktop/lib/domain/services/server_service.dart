@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 
 import '../../core/logging/app_logger.dart';
+import '../../core/config/app_config.dart';
 
 /// Callback for server service status updates.
 typedef ServerServiceStatusCallback = void Function(bool isRunning, String? error);
@@ -20,16 +21,6 @@ class ServerService {
 
   bool get isRunning => _isRunning;
   int? get pid => _startedPid;
-
-  /// Get the SSL certificate path.
-  String get _sslCertFile => '$_projectPath/certs/localhost.pem';
-
-  /// Get the SSL key path.
-  String get _sslKeyFile => '$_projectPath/certs/localhost-key.pem';
-
-  /// Check if SSL certificates exist.
-  bool get _hasSslCerts =>
-      File(_sslCertFile).existsSync() && File(_sslKeyFile).existsSync();
 
   /// Start the backend server.
   /// Returns immediately after starting the process.
@@ -50,15 +41,15 @@ class ServerService {
     _processExited = false; // Reset exit flag
 
     try {
-      // Build uvicorn command with optional SSL
+      // Build uvicorn command with optional SSL (using centralized config)
       String uvicornCmd = 'exec python -m uvicorn server.main:app --host 0.0.0.0 --port $port';
 
-      if (_hasSslCerts) {
-        uvicornCmd += ' --ssl-certfile $_sslCertFile --ssl-keyfile $_sslKeyFile';
+      if (AppConfig.hasSslCerts) {
+        uvicornCmd += ' --ssl-certfile ${AppConfig.sslCertFile} --ssl-keyfile ${AppConfig.sslKeyFile}';
         AppLogger.info('ServerService: Using HTTPS with SSL certificates');
       } else {
         AppLogger.warning('ServerService: SSL certificates not found, starting HTTP server');
-        AppLogger.warning('ServerService: Expected certs at: $_sslCertFile');
+        AppLogger.warning('ServerService: Expected certs at: ${AppConfig.sslCertFile}');
       }
 
       // Use 'exec' to replace bash with uvicorn process
@@ -198,19 +189,13 @@ class ServerService {
 
   /// Check if server is responding.
   Future<bool> healthCheck(int port) async {
-    final useHttps = _hasSslCerts;
-    final scheme = useHttps ? 'https' : 'http';
-    final client = HttpClient();
+    final client = AppConfig.createHttpClient();
     client.connectionTimeout = const Duration(seconds: 2);
 
-    // For self-signed certificates, disable certificate verification
-    if (useHttps) {
-      client.badCertificateCallback = (cert, host, port) => true;
-    }
-
     try {
+      final url = '${AppConfig.apiBaseUrl(port)}/health';
       final request = await client
-          .getUrl(Uri.parse('$scheme://localhost:$port/health'))
+          .getUrl(Uri.parse(url))
           .timeout(_healthCheckTimeout);
       final response = await request.close().timeout(_healthCheckTimeout);
       // 200 means healthy, 401 means server is running but needs auth

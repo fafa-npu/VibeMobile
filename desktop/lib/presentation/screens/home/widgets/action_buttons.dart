@@ -68,8 +68,8 @@ class ActionButtons extends StatelessWidget {
             icon: Icons.cloud_upload,
             isLoading: false,
             isActive: false,
-            onPressed: serverState.isRunning ? onStartTunnel : null,
-            tooltip: serverState.isRunning ? null : 'Start API server first',
+            onPressed: webState.isRunning ? onStartTunnel : null,
+            tooltip: webState.isRunning ? null : 'Start Web UI first',
           ),
 
         // Start All button
