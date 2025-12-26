@@ -120,11 +120,13 @@ class TunnelService {
       );
 
       // Parse output to find the public URL
+      // 只提取 URL 和错误，不打印全部输出（避免日志风暴）
       _stderrSubscription = _tunnelProcess!.stderr
           .transform(utf8.decoder)
           .listen(
         (data) {
-          AppLogger.debug('cloudflared: $data');
+          // 删除: AppLogger.debug('cloudflared: $data');
+          // cloudflared 输出非常多，会造成日志风暴
 
           // cloudflared outputs to stderr
           final urlMatch = RegExp(r'https://[\w-]+\.trycloudflare\.com')
@@ -139,11 +141,12 @@ class TunnelService {
             onTunnelReady?.call(_publicUrl!);
           }
 
-          // Check for common errors
+          // Check for common errors - 只记录错误
           if (data.contains('failed to request quick Tunnel') ||
               data.contains('EOF') ||
               data.contains('connection refused')) {
             lastError = 'Cloudflare 连接失败，请检查网络或配置代理';
+            AppLogger.warning('TunnelService: $lastError');
           }
         },
         onError: (error) {

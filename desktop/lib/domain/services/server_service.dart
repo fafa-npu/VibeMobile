@@ -63,12 +63,19 @@ class ServerService {
       );
 
       // Consume stdout/stderr to prevent blocking
+      // 只记录关键状态，不逐段全量 debug（避免日志风暴）
       _serverProcess!.stdout.listen(
         (data) {
           final output = String.fromCharCodes(data).trim();
-          if (output.isNotEmpty) {
-            AppLogger.debug('Server stdout: $output');
+          if (output.isEmpty) return;
+          // 只记录关键状态
+          if (output.contains('Application startup complete') ||
+              output.contains('Uvicorn running')) {
+            AppLogger.info('Server: Started successfully');
+          } else if (output.toLowerCase().contains('error')) {
+            AppLogger.warning('Server stdout: $output');
           }
+          // 其他输出静默消费，不打印
         },
         onError: (error) => AppLogger.warning('Server stdout error: $error'),
       );
@@ -76,9 +83,14 @@ class ServerService {
       _serverProcess!.stderr.listen(
         (data) {
           final output = String.fromCharCodes(data).trim();
-          if (output.isNotEmpty) {
-            AppLogger.debug('Server stderr: $output');
+          if (output.isEmpty) return;
+          // stderr 只记录真正的错误
+          if (output.toLowerCase().contains('error') ||
+              output.toLowerCase().contains('exception') ||
+              output.toLowerCase().contains('failed')) {
+            AppLogger.warning('Server stderr: $output');
           }
+          // 其他 stderr 输出静默消费
         },
         onError: (error) => AppLogger.warning('Server stderr error: $error'),
       );
@@ -178,8 +190,9 @@ class ServerService {
       }
     }
 
-    // Also try to kill anything on the port
-    await forceKillPort(port);
+    // 注意：移除了 forceKillPort 调用
+    // 我们已经显式 kill 了子进程，不需要再按端口杀进程
+    // forceKillPort 可能会意外杀死其他监听同端口的进程（包括 VibeMobile 自身）
 
     _isRunning = false;
     _startedPid = null;

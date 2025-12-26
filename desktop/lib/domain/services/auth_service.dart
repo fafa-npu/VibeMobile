@@ -17,6 +17,7 @@ class AuthService {
   bool _shouldReconnect = true;
   int _reconnectAttempts = 0;
   static const int _maxReconnectAttempts = 5;
+  static const Duration _requestTimeout = Duration(seconds: 10);
 
   AuthService({required this.apiPort}) {
     _pairingRequestController = StreamController<PairingRequest>.broadcast();
@@ -43,7 +44,7 @@ class AuthService {
         final socket = await WebSocket.connect(
           uri.toString(),
           customClient: AppConfig.createHttpClient(),
-        );
+        ).timeout(_requestTimeout);
         _wsChannel = IOWebSocketChannel(socket);
       } else {
         _wsChannel = WebSocketChannel.connect(Uri.parse('$wsUrl/ws?client_type=desktop'));
@@ -125,23 +126,26 @@ class AuthService {
     try {
       final request = await client.postUrl(
         Uri.parse('$baseUrl/api/auth/pair/initiate'),
-      );
+      ).timeout(_requestTimeout);
       request.headers.set('Content-Type', 'application/json');
-      final response = await request.close();
+      final response = await request.close().timeout(_requestTimeout);
 
       if (response.statusCode == 200) {
-        final body = await response.transform(utf8.decoder).join();
+        final body = await response.transform(utf8.decoder).join().timeout(_requestTimeout);
         final data = jsonDecode(body);
         return PairingCode.fromJson(data);
       } else {
         AppLogger.warning('AuthService: Failed to generate pairing code: ${response.statusCode}');
         return null;
       }
+    } on TimeoutException {
+      AppLogger.warning('AuthService: Request timeout generating pairing code');
+      return null;
     } catch (e, stack) {
       AppLogger.error('AuthService: Error generating pairing code', e, stack);
       return null;
     } finally {
-      client.close();
+      client.close(force: true);
     }
   }
 
@@ -153,21 +157,24 @@ class AuthService {
     try {
       final request = await client.postUrl(
         Uri.parse('$baseUrl/api/auth/approve'),
-      );
+      ).timeout(_requestTimeout);
       request.headers.set('Content-Type', 'application/json');
       request.write(jsonEncode({
         'approval_id': approvalId,
         'action': 'approve',
       }));
-      final response = await request.close();
+      final response = await request.close().timeout(_requestTimeout);
       await response.drain<void>();
 
       return response.statusCode == 200;
+    } on TimeoutException {
+      AppLogger.warning('AuthService: Request timeout approving pairing');
+      return false;
     } catch (e, stack) {
       AppLogger.error('AuthService: Error approving pairing', e, stack);
       return false;
     } finally {
-      client.close();
+      client.close(force: true);
     }
   }
 
@@ -179,21 +186,24 @@ class AuthService {
     try {
       final request = await client.postUrl(
         Uri.parse('$baseUrl/api/auth/approve'),
-      );
+      ).timeout(_requestTimeout);
       request.headers.set('Content-Type', 'application/json');
       request.write(jsonEncode({
         'approval_id': approvalId,
         'action': 'reject',
       }));
-      final response = await request.close();
+      final response = await request.close().timeout(_requestTimeout);
       await response.drain<void>();
 
       return response.statusCode == 200;
+    } on TimeoutException {
+      AppLogger.warning('AuthService: Request timeout rejecting pairing');
+      return false;
     } catch (e, stack) {
       AppLogger.error('AuthService: Error rejecting pairing', e, stack);
       return false;
     } finally {
-      client.close();
+      client.close(force: true);
     }
   }
 
@@ -203,22 +213,25 @@ class AuthService {
     try {
       final request = await client.getUrl(
         Uri.parse('$baseUrl/api/auth/devices'),
-      );
-      final response = await request.close();
+      ).timeout(_requestTimeout);
+      final response = await request.close().timeout(_requestTimeout);
 
       if (response.statusCode == 200) {
-        final body = await response.transform(utf8.decoder).join();
+        final body = await response.transform(utf8.decoder).join().timeout(_requestTimeout);
         final data = jsonDecode(body) as List;
         return data.map((d) => Device.fromJson(d)).toList();
       } else {
         AppLogger.warning('AuthService: Failed to get devices: ${response.statusCode}');
         return [];
       }
+    } on TimeoutException {
+      AppLogger.warning('AuthService: Request timeout getting devices');
+      return [];
     } catch (e, stack) {
       AppLogger.error('AuthService: Error getting devices', e, stack);
       return [];
     } finally {
-      client.close();
+      client.close(force: true);
     }
   }
 
@@ -231,18 +244,21 @@ class AuthService {
       final request = await client.openUrl(
         'PUT',
         Uri.parse('$baseUrl/api/auth/devices/$deviceId/trust'),
-      );
+      ).timeout(_requestTimeout);
       request.headers.set('Content-Type', 'application/json');
       request.write(jsonEncode({'trust_level': trustLevel}));
-      final response = await request.close();
+      final response = await request.close().timeout(_requestTimeout);
       await response.drain<void>();
 
       return response.statusCode == 200;
+    } on TimeoutException {
+      AppLogger.warning('AuthService: Request timeout updating device trust');
+      return false;
     } catch (e, stack) {
       AppLogger.error('AuthService: Error updating device trust', e, stack);
       return false;
     } finally {
-      client.close();
+      client.close(force: true);
     }
   }
 
@@ -254,16 +270,19 @@ class AuthService {
     try {
       final request = await client.deleteUrl(
         Uri.parse('$baseUrl/api/auth/devices/$deviceId'),
-      );
-      final response = await request.close();
+      ).timeout(_requestTimeout);
+      final response = await request.close().timeout(_requestTimeout);
       await response.drain<void>();
 
       return response.statusCode == 200;
+    } on TimeoutException {
+      AppLogger.warning('AuthService: Request timeout revoking device');
+      return false;
     } catch (e, stack) {
       AppLogger.error('AuthService: Error revoking device', e, stack);
       return false;
     } finally {
-      client.close();
+      client.close(force: true);
     }
   }
 

@@ -52,12 +52,20 @@ class WebService {
       );
 
       // Consume stdout/stderr to prevent blocking
+      // 只记录关键状态，不逐段全量 debug（避免日志风暴）
       _webProcess!.stdout.listen(
         (data) {
           final output = String.fromCharCodes(data).trim();
-          if (output.isNotEmpty) {
-            AppLogger.debug('Web stdout: $output');
+          if (output.isEmpty) return;
+          // 只记录关键状态
+          if (output.contains('ready in') ||
+              output.contains('Local:') ||
+              output.contains('VITE')) {
+            AppLogger.info('Web: Vite server ready');
+          } else if (output.toLowerCase().contains('error')) {
+            AppLogger.warning('Web stdout: $output');
           }
+          // 其他输出静默消费，不打印
         },
         onError: (error) => AppLogger.warning('Web stdout error: $error'),
       );
@@ -65,9 +73,13 @@ class WebService {
       _webProcess!.stderr.listen(
         (data) {
           final output = String.fromCharCodes(data).trim();
-          if (output.isNotEmpty) {
-            AppLogger.debug('Web stderr: $output');
+          if (output.isEmpty) return;
+          // stderr 只记录真正的错误
+          if (output.toLowerCase().contains('error') ||
+              output.toLowerCase().contains('failed')) {
+            AppLogger.warning('Web stderr: $output');
           }
+          // 其他 stderr 输出静默消费
         },
         onError: (error) => AppLogger.warning('Web stderr error: $error'),
       );

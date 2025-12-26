@@ -48,6 +48,7 @@ class SessionNotifier extends StateNotifier<SessionListState> {
   final TmuxService _service;
   final Ref _ref;
   Timer? _refreshTimer;
+  bool _refreshInFlight = false;  // 互斥标志，防止并发刷新堆积
 
   SessionNotifier(this._service, this._ref) : super(const SessionListState.initial()) {
     // Don't auto-refresh in constructor - let UI trigger refreshes
@@ -70,9 +71,12 @@ class SessionNotifier extends StateNotifier<SessionListState> {
   }
 
   /// Refresh sessions in background without blocking UI.
+  /// 使用 _refreshInFlight 互斥锁防止并发刷新堆积。
   Future<void> _refreshInBackground() async {
-    if (state.isLoading) return;
+    // 如果已有刷新在进行中，跳过本次（防止堆积）
+    if (state.isLoading || _refreshInFlight) return;
 
+    _refreshInFlight = true;
     try {
       final sessions = await _service.listSessions();
       if (mounted) {
@@ -80,6 +84,8 @@ class SessionNotifier extends StateNotifier<SessionListState> {
       }
     } catch (e) {
       // Silently ignore background refresh errors
+    } finally {
+      _refreshInFlight = false;
     }
   }
 

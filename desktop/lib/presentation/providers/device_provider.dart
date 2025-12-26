@@ -6,8 +6,9 @@ import '../../domain/services/auth_service.dart';
 import 'settings_provider.dart';
 
 /// Provider for AuthService instance.
+/// 使用 ref.read 避免不必要的重新创建，settings 变化时不需要重建 AuthService
 final authServiceProvider = Provider<AuthService>((ref) {
-  final settings = ref.watch(settingsProvider);
+  final settings = ref.read(settingsProvider);
   return AuthService(apiPort: settings.apiPort);
 });
 
@@ -215,8 +216,9 @@ class DeviceNotifier extends StateNotifier<DeviceListState> {
 }
 
 /// Provider for DeviceNotifier.
+/// 使用 ref.read 避免不必要的重新创建
 final deviceProvider = StateNotifierProvider<DeviceNotifier, DeviceListState>((ref) {
-  final service = ref.watch(authServiceProvider);
+  final service = ref.read(authServiceProvider);
   return DeviceNotifier(service);
 });
 
