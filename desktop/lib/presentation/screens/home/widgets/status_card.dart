@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 /// Status card widget for displaying service status.
 class StatusCard extends StatelessWidget {
   final String title;
+  final String? subtitle;
   final int port;
   final String status;
   final Color statusColor;
@@ -12,6 +13,7 @@ class StatusCard extends StatelessWidget {
   const StatusCard({
     super.key,
     required this.title,
+    this.subtitle,
     required this.port,
     required this.status,
     required this.statusColor,
@@ -38,11 +40,24 @@ class StatusCard extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: 8),
-                Text(
-                  title,
-                  style: Theme.of(context).textTheme.titleMedium,
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        title,
+                        style: Theme.of(context).textTheme.titleMedium,
+                      ),
+                      if (subtitle != null)
+                        Text(
+                          subtitle!,
+                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: Theme.of(context).colorScheme.outline,
+                          ),
+                        ),
+                    ],
+                  ),
                 ),
-                const Spacer(),
                 if (isLoading)
                   const SizedBox(
                     width: 16,
@@ -51,20 +66,39 @@ class StatusCard extends StatelessWidget {
                   ),
               ],
             ),
-            const SizedBox(height: 8),
-            Text(
-              'Port: $port',
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: Theme.of(context).colorScheme.outline,
-              ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              status,
-              style: TextStyle(
-                color: statusColor,
-                fontWeight: FontWeight.w500,
-              ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Icon(
+                  Icons.dns_outlined,
+                  size: 16,
+                  color: Theme.of(context).colorScheme.outline,
+                ),
+                const SizedBox(width: 4),
+                Text(
+                  'localhost:$port',
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: Theme.of(context).colorScheme.outline,
+                    fontFamily: 'monospace',
+                  ),
+                ),
+                const Spacer(),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: statusColor.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: Text(
+                    status,
+                    style: TextStyle(
+                      color: statusColor,
+                      fontWeight: FontWeight.w500,
+                      fontSize: 12,
+                    ),
+                  ),
+                ),
+              ],
             ),
             if (errorMessage != null) ...[
               const SizedBox(height: 8),

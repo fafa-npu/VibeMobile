@@ -57,20 +57,13 @@ class ServerService {
         AppLogger.info('ServerService: Running development mode');
       }
 
-      // Set environment variables
+      // Set environment variables (HTTP by default, Cloudflare handles HTTPS)
       final environment = <String, String>{
         'PORT': port.toString(),
         'HOST': '0.0.0.0',
       };
 
-      if (AppConfig.hasSslCerts) {
-        environment['SSL_CERT'] = AppConfig.sslCertFile;
-        environment['SSL_KEY'] = AppConfig.sslKeyFile;
-        AppLogger.info('ServerService: Using HTTPS with SSL certificates');
-      } else {
-        AppLogger.warning('ServerService: SSL certificates not found, starting HTTP server');
-        AppLogger.warning('ServerService: Expected certs at: ${AppConfig.sslCertFile}');
-      }
+      AppLogger.info('ServerService: Starting HTTP server (Cloudflare Tunnel handles HTTPS)');
 
       _serverProcess = await Process.start(
         '/bin/bash',

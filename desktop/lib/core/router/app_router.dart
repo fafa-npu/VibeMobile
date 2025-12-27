@@ -5,6 +5,7 @@ import '../../presentation/screens/home/home_screen.dart';
 import '../../presentation/screens/settings/settings_screen.dart';
 import '../../presentation/screens/devices/devices_screen.dart';
 import '../../presentation/screens/logs/logs_screen.dart';
+import '../../presentation/screens/setup/setup_screen.dart';
 
 /// Application router configuration.
 class AppRouter {
@@ -16,6 +17,11 @@ class AppRouter {
         path: '/',
         name: 'home',
         builder: (context, state) => const HomeScreen(),
+      ),
+      GoRoute(
+        path: '/setup',
+        name: 'setup',
+        builder: (context, state) => const SetupScreen(),
       ),
       GoRoute(
         path: '/settings',

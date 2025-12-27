@@ -6,7 +6,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:desktop/main.dart' as app;
 import 'package:desktop/presentation/providers/server_provider.dart';
-import 'package:desktop/presentation/providers/web_provider.dart';
 import 'package:desktop/presentation/providers/session_provider.dart';
 
 void main() {
@@ -21,19 +20,18 @@ void main() {
       // Verify app launched
       expect(find.text('VibeMobile'), findsOneWidget);
 
-      // Verify main UI elements are present
-      expect(find.text('API Server'), findsOneWidget);
-      expect(find.text('Web UI'), findsOneWidget);
+      // Verify main UI elements are present (unified server card)
+      expect(find.text('Server'), findsOneWidget);
     });
 
-    testWidgets('Start API Server without UI freeze', (WidgetTester tester) async {
+    testWidgets('Start Server without UI freeze', (WidgetTester tester) async {
       app.main();
       await tester.pumpAndSettle(const Duration(seconds: 3));
 
-      // Find and tap "Start API" button
-      final startApiButton = find.text('Start API');
-      if (startApiButton.evaluate().isNotEmpty) {
-        await tester.tap(startApiButton);
+      // Find and tap "Start Server" button
+      final startServerButton = find.text('Start Server');
+      if (startServerButton.evaluate().isNotEmpty) {
+        await tester.tap(startServerButton);
 
         // Should NOT freeze - pump frames for a few seconds
         for (int i = 0; i < 20; i++) {
@@ -42,25 +40,6 @@ void main() {
 
         // UI should still be responsive
         expect(find.byType(CircularProgressIndicator), findsAny);
-      }
-    });
-
-    testWidgets('Start Web Server without UI freeze', (WidgetTester tester) async {
-      app.main();
-      await tester.pumpAndSettle(const Duration(seconds: 3));
-
-      // Find and tap "Start Web" button
-      final startWebButton = find.text('Start Web');
-      if (startWebButton.evaluate().isNotEmpty) {
-        await tester.tap(startWebButton);
-
-        // Should NOT freeze - pump frames for a few seconds
-        for (int i = 0; i < 30; i++) {
-          await tester.pump(const Duration(milliseconds: 500));
-        }
-
-        // UI should still be responsive
-        expect(find.byType(Scaffold), findsOneWidget);
       }
     });
 

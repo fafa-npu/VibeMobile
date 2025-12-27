@@ -424,63 +424,77 @@
     <h3>系统要求</h3>
     <ul>
         <li>macOS 12.0 或更高版本</li>
-        <li>Node.js 18+ (推荐使用 nvm 管理)</li>
-        <li>tmux (通过 Homebrew 安装)</li>
-        <li>mkcert (用于生成本地 HTTPS 证书)</li>
     </ul>
 
-    <h3>安装步骤</h3>
-    <div class="steps">
-        <div class="step">
-            <h4>安装依赖工具</h4>
-            <pre><code># 安装 Homebrew (如果没有)
-/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-
-# 安装必需工具
-brew install tmux mkcert node
-
-# 安装证书根 CA
-mkcert -install</code></pre>
-        </div>
-
-        <div class="step">
-            <h4>克隆项目</h4>
-            <pre><code>git clone https://github.com/your-repo/VibeMobile.git
-cd VibeMobile</code></pre>
-        </div>
-
-        <div class="step">
-            <h4>生成 SSL 证书</h4>
-            <pre><code># 创建证书目录
-mkdir -p ~/.vibemobile/certs
-
-# 生成本地证书
-mkcert -key-file ~/.vibemobile/certs/localhost-key.pem \
-       -cert-file ~/.vibemobile/certs/localhost.pem \
-       localhost 127.0.0.1</code></pre>
-        </div>
-
-        <div class="step">
-            <h4>安装 Web 依赖并构建</h4>
-            <pre><code>cd web
-npm install
-npm run build</code></pre>
-        </div>
-
-        <div class="step">
-            <h4>构建桌面应用 (可选)</h4>
-            <pre><code>cd desktop
-flutter pub get
-flutter build macos --release
-
-# 应用位于: build/macos/Build/Products/Release/VibeMobile.app</code></pre>
+    <div class="alert alert-success">
+        <span class="alert-icon">✨</span>
+        <div>
+            <strong>一键安装</strong>：VibeMobile 支持自动配置，首次启动会自动检测并安装所需依赖。
         </div>
     </div>
+
+    <h3>方式一：一键脚本安装（推荐）</h3>
+    <p>打开终端，运行以下命令：</p>
+    <pre><code>curl -fsSL https://vibemobile.dev/install | bash</code></pre>
+    <p>脚本会自动完成以下操作：</p>
+    <ul>
+        <li>✓ 检测并安装 Homebrew（如需要）</li>
+        <li>✓ 安装 tmux、mkcert、Node.js</li>
+        <li>✓ 生成 SSL 证书</li>
+        <li>✓ 下载并安装 VibeMobile.app</li>
+        <li>✓ 启动应用</li>
+    </ul>
+
+    <h3>方式二：下载 DMG 安装包</h3>
+    <div class="steps">
+        <div class="step">
+            <h4>下载安装包</h4>
+            <p>从 <a href="https://github.com/your-repo/VibeMobile/releases">GitHub Releases</a> 下载最新版本的 DMG 安装包。</p>
+        </div>
+
+        <div class="step">
+            <h4>安装应用</h4>
+            <p>打开 DMG 文件，将 VibeMobile.app 拖入 Applications 文件夹。</p>
+        </div>
+
+        <div class="step">
+            <h4>首次启动</h4>
+            <p>运行 VibeMobile.app，应用会自动检测环境并引导你完成配置：</p>
+            <ul>
+                <li>如果缺少依赖，会自动显示安装向导</li>
+                <li>点击 <strong>Install All</strong> 一键安装所有依赖</li>
+                <li>安装完成后自动进入主界面</li>
+            </ul>
+        </div>
+    </div>
+
+    <h3>方式三：从源码构建（开发者）</h3>
+    <details>
+        <summary>点击展开详细步骤</summary>
+        <div class="steps" style="margin-top: 16px;">
+            <div class="step">
+                <h4>克隆项目并构建</h4>
+                <pre><code># 克隆项目
+git clone https://github.com/your-repo/VibeMobile.git
+cd VibeMobile
+
+# 安装依赖并构建 Web 服务
+cd web
+npm install
+npm run build
+
+# 构建桌面应用（可选）
+cd ../desktop
+flutter pub get
+flutter build macos --release</code></pre>
+            </div>
+        </div>
+    </details>
 
     <div class="alert alert-info">
         <span class="alert-icon">💡</span>
         <div>
-            <strong>提示</strong>：如果只需要 Web 功能，可以跳过桌面应用的构建步骤，直接运行 <code>npm start</code> 启动服务器。
+            <strong>提示</strong>：大多数用户只需使用方式一或方式二即可，无需手动配置任何依赖。
         </div>
     </div>
 </section>

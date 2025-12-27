@@ -83,9 +83,10 @@ if (fs.existsSync(distPath)) {
   });
 }
 
-// Create server (HTTPS or HTTP)
+// Create server (HTTP by default, HTTPS only if explicitly configured)
 let server: https.Server | http.Server;
 
+// Only use HTTPS if SSL environment variables are explicitly set
 if (config.sslCertFile && config.sslKeyFile) {
   try {
     const sslOptions = {
@@ -99,48 +100,10 @@ if (config.sslCertFile && config.sslKeyFile) {
     server = http.createServer(app);
   }
 } else {
-  // Try default cert paths
-  const defaultCertPaths = [
-    path.join(process.env.HOME || '', '.vibemobile', 'certs', 'localhost.pem'),
-    path.join(currentDir, '..', 'certs', 'localhost.pem'),
-  ];
-  const defaultKeyPaths = [
-    path.join(process.env.HOME || '', '.vibemobile', 'certs', 'localhost-key.pem'),
-    path.join(currentDir, '..', 'certs', 'localhost-key.pem'),
-  ];
-
-  let certFile: string | undefined;
-  let keyFile: string | undefined;
-
-  for (const p of defaultCertPaths) {
-    if (fs.existsSync(p)) {
-      certFile = p;
-      break;
-    }
-  }
-  for (const p of defaultKeyPaths) {
-    if (fs.existsSync(p)) {
-      keyFile = p;
-      break;
-    }
-  }
-
-  if (certFile && keyFile) {
-    try {
-      const sslOptions = {
-        key: fs.readFileSync(keyFile),
-        cert: fs.readFileSync(certFile),
-      };
-      server = https.createServer(sslOptions, app);
-      console.log(`HTTPS server created with certs from ${path.dirname(certFile)}`);
-    } catch (e) {
-      console.error('Failed to load default SSL certificates, falling back to HTTP:', e);
-      server = http.createServer(app);
-    }
-  } else {
-    console.log('No SSL certificates found, using HTTP');
-    server = http.createServer(app);
-  }
+  // Default to HTTP - no SSL certificate lookup
+  // Cloudflare Tunnel handles HTTPS termination
+  console.log('Using HTTP server (Cloudflare Tunnel handles HTTPS)');
+  server = http.createServer(app);
 }
 
 // WebSocket server

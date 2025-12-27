@@ -5,8 +5,8 @@ import 'package:go_router/go_router.dart';
 import 'package:window_manager/window_manager.dart';
 
 import '../../../core/logging/app_logger.dart';
+import '../../../domain/services/setup_service.dart';
 import '../../providers/server_provider.dart';
-import '../../providers/web_provider.dart';
 import '../../providers/tunnel_provider.dart';
 import '../../providers/session_provider.dart';
 import '../../providers/settings_provider.dart';
@@ -24,6 +24,7 @@ class HomeScreen extends ConsumerStatefulWidget {
 
 class _HomeScreenState extends ConsumerState<HomeScreen> with WindowListener {
   bool _isWindowFocused = true;
+  bool _hasCheckedSetup = false;
 
   @override
   void initState() {
@@ -32,14 +33,46 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WindowListener {
     // Initialize settings and load sessions on first build
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       await ref.read(settingsProvider.notifier).initialize();
+
+      // Check if first-time setup is needed
+      await _checkFirstTimeSetup();
+
       // Check if services are already running
       await ref.read(serverProvider.notifier).checkExistingStatus();
-      await ref.read(webProvider.notifier).checkExistingStatus();
       // Load sessions
       await ref.read(sessionProvider.notifier).refresh();
       // Start auto-refresh after initial load
       ref.read(sessionProvider.notifier).startAutoRefresh();
     });
+  }
+
+  Future<void> _checkFirstTimeSetup() async {
+    if (_hasCheckedSetup) return;
+    _hasCheckedSetup = true;
+
+    final setupService = SetupService();
+
+    // Check if setup was already completed
+    final hasCompleted = await setupService.hasCompletedSetup();
+    if (hasCompleted) {
+      AppLogger.info('HomeScreen: Setup already completed');
+      return;
+    }
+
+    // Check current environment
+    final status = await setupService.checkEnvironment();
+
+    if (!status.isReady) {
+      // Missing dependencies - redirect to setup screen
+      AppLogger.info('HomeScreen: Missing dependencies, redirecting to setup');
+      if (mounted) {
+        context.go('/setup');
+      }
+    } else {
+      // All dependencies ready - mark as completed
+      await setupService.markSetupCompleted();
+      AppLogger.info('HomeScreen: Environment ready, marked setup as completed');
+    }
   }
 
   @override
@@ -70,7 +103,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WindowListener {
   @override
   Widget build(BuildContext context) {
     final serverState = ref.watch(serverProvider);
-    final webState = ref.watch(webProvider);
     final tunnelState = ref.watch(tunnelProvider);
     final sessionState = ref.watch(sessionProvider);
     final settings = ref.watch(settingsProvider);
@@ -106,31 +138,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WindowListener {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Status Cards Row
-              Row(
-                children: [
-                  Expanded(
-                    child: StatusCard(
-                      title: 'API Server',
-                      port: settings.apiPort,
-                      status: _getStatusText(serverState.status),
-                      statusColor: _getStatusColor(serverState.status),
-                      isLoading: serverState.isStarting || serverState.isStopping,
-                      errorMessage: serverState.errorMessage,
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: StatusCard(
-                      title: 'Web UI',
-                      port: settings.webPort,
-                      status: _getWebStatusText(webState.status),
-                      statusColor: _getWebStatusColor(webState.status),
-                      isLoading: webState.isStarting || webState.isStopping || webState.isInstallingDeps,
-                      errorMessage: webState.errorMessage,
-                    ),
-                  ),
-                ],
+              // Server Status Card (unified API + Web UI)
+              StatusCard(
+                title: 'Server',
+                subtitle: 'API + Web UI',
+                port: settings.apiPort,
+                status: _getStatusText(serverState.status),
+                statusColor: _getStatusColor(serverState.status),
+                isLoading: serverState.isStarting || serverState.isStopping,
+                errorMessage: serverState.errorMessage,
               ),
               const SizedBox(height: 16),
 
@@ -143,13 +159,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WindowListener {
               // Action Buttons
               ActionButtons(
                 serverState: serverState,
-                webState: webState,
                 tunnelState: tunnelState,
                 settings: settings,
                 onStartServer: () => ref.read(serverProvider.notifier).start(),
                 onStopServer: () => ref.read(serverProvider.notifier).stop(),
-                onStartWeb: () => ref.read(webProvider.notifier).start(),
-                onStopWeb: () => ref.read(webProvider.notifier).stop(),
                 onStartTunnel: () {
                   // Use named tunnel if configured, otherwise use quick tunnel
                   if (settings.tunnelName != null && settings.tunnelName!.isNotEmpty) {
@@ -264,38 +277,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WindowListener {
       case ServerStatus.running:
         return Colors.green;
       case ServerStatus.error:
-        return Colors.red;
-    }
-  }
-
-  String _getWebStatusText(WebStatus status) {
-    switch (status) {
-      case WebStatus.stopped:
-        return 'Stopped';
-      case WebStatus.starting:
-        return 'Starting...';
-      case WebStatus.running:
-        return 'Running';
-      case WebStatus.stopping:
-        return 'Stopping...';
-      case WebStatus.error:
-        return 'Error';
-      case WebStatus.installingDeps:
-        return 'Installing...';
-    }
-  }
-
-  Color _getWebStatusColor(WebStatus status) {
-    switch (status) {
-      case WebStatus.stopped:
-        return Colors.grey;
-      case WebStatus.starting:
-      case WebStatus.stopping:
-      case WebStatus.installingDeps:
-        return Colors.orange;
-      case WebStatus.running:
-        return Colors.green;
-      case WebStatus.error:
         return Colors.red;
     }
   }

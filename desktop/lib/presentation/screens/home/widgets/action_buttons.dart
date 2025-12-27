@@ -1,20 +1,17 @@
 import 'package:flutter/material.dart';
 
 import '../../../providers/server_provider.dart';
-import '../../../providers/web_provider.dart';
 import '../../../providers/tunnel_provider.dart';
 import '../../../../data/models/settings.dart';
 
 /// Action buttons for controlling services.
+/// Note: API Server and Web UI are now unified into a single server.
 class ActionButtons extends StatelessWidget {
   final ServerState serverState;
-  final WebState webState;
   final TunnelState tunnelState;
   final Settings settings;
   final VoidCallback onStartServer;
   final VoidCallback onStopServer;
-  final VoidCallback onStartWeb;
-  final VoidCallback onStopWeb;
   final VoidCallback onStartTunnel;
   final VoidCallback onStopTunnel;
   final VoidCallback onCancelTunnel;
@@ -22,13 +19,10 @@ class ActionButtons extends StatelessWidget {
   const ActionButtons({
     super.key,
     required this.serverState,
-    required this.webState,
     required this.tunnelState,
     required this.settings,
     required this.onStartServer,
     required this.onStopServer,
-    required this.onStartWeb,
-    required this.onStopWeb,
     required this.onStartTunnel,
     required this.onStopTunnel,
     required this.onCancelTunnel,
@@ -40,24 +34,15 @@ class ActionButtons extends StatelessWidget {
       spacing: 8,
       runSpacing: 8,
       children: [
-        // API Server button
+        // Server button (unified API + Web UI)
         _buildServiceButton(
           context: context,
-          label: serverState.isRunning ? 'Stop API' : 'Start API',
+          label: serverState.isRunning ? 'Stop Server' : 'Start Server',
           icon: serverState.isRunning ? Icons.stop : Icons.play_arrow,
           isLoading: serverState.isStarting || serverState.isStopping,
           isActive: serverState.isRunning,
+          isPrimary: !serverState.isRunning,
           onPressed: serverState.isRunning ? onStopServer : onStartServer,
-        ),
-
-        // Web UI button
-        _buildServiceButton(
-          context: context,
-          label: webState.isRunning ? 'Stop Web' : 'Start Web',
-          icon: webState.isRunning ? Icons.stop : Icons.web,
-          isLoading: webState.isStarting || webState.isStopping || webState.isInstallingDeps,
-          isActive: webState.isRunning,
-          onPressed: webState.isRunning ? onStopWeb : onStartWeb,
         ),
 
         // Tunnel button
@@ -68,33 +53,12 @@ class ActionButtons extends StatelessWidget {
             icon: Icons.cloud_upload,
             isLoading: false,
             isActive: false,
-            onPressed: webState.isRunning ? onStartTunnel : null,
-            tooltip: webState.isRunning ? null : 'Start Web UI first',
+            onPressed: serverState.isRunning ? onStartTunnel : null,
+            tooltip: serverState.isRunning ? null : 'Start server first',
           ),
 
-        // Start All button
-        if (!serverState.isRunning || !webState.isRunning)
-          _buildServiceButton(
-            context: context,
-            label: 'Start All',
-            icon: Icons.rocket_launch,
-            isLoading: false,
-            isActive: false,
-            isPrimary: true,
-            onPressed: () async {
-              if (!serverState.isRunning) {
-                onStartServer();
-              }
-              // Small delay to ensure server starts first
-              await Future.delayed(const Duration(milliseconds: 500));
-              if (!webState.isRunning) {
-                onStartWeb();
-              }
-            },
-          ),
-
-        // Stop All button
-        if (serverState.isRunning || webState.isRunning || tunnelState.isConnected)
+        // Stop All button (only show when tunnel is connected)
+        if (tunnelState.isConnected && serverState.isRunning)
           _buildServiceButton(
             context: context,
             label: 'Stop All',
@@ -105,9 +69,6 @@ class ActionButtons extends StatelessWidget {
             onPressed: () async {
               if (tunnelState.isConnected) {
                 onStopTunnel();
-              }
-              if (webState.isRunning) {
-                onStopWeb();
               }
               if (serverState.isRunning) {
                 onStopServer();
