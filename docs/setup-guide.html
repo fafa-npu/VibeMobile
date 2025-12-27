@@ -1,0 +1,1143 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VibeMobile 安装配置指南</title>
+    <style>
+        :root {
+            --primary: #6366f1;
+            --primary-dark: #4f46e5;
+            --bg-dark: #0f172a;
+            --bg-card: #1e293b;
+            --text: #e2e8f0;
+            --text-muted: #94a3b8;
+            --border: #334155;
+            --success: #22c55e;
+            --warning: #f59e0b;
+            --error: #ef4444;
+            --code-bg: #0d1117;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: var(--bg-dark);
+            color: var(--text);
+            line-height: 1.7;
+            padding: 0;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+
+        header {
+            text-align: center;
+            padding: 60px 20px;
+            background: linear-gradient(135deg, var(--bg-card) 0%, var(--bg-dark) 100%);
+            border-bottom: 1px solid var(--border);
+        }
+
+        header h1 {
+            font-size: 3rem;
+            margin-bottom: 16px;
+            background: linear-gradient(135deg, var(--primary) 0%, #a855f7 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        header p {
+            color: var(--text-muted);
+            font-size: 1.2rem;
+        }
+
+        .toc {
+            background: var(--bg-card);
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 40px;
+            border: 1px solid var(--border);
+        }
+
+        .toc h2 {
+            font-size: 1.2rem;
+            margin-bottom: 16px;
+            color: var(--primary);
+        }
+
+        .toc ul {
+            list-style: none;
+        }
+
+        .toc li {
+            margin: 8px 0;
+        }
+
+        .toc a {
+            color: var(--text);
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+
+        .toc a:hover {
+            color: var(--primary);
+        }
+
+        .toc .sub {
+            margin-left: 20px;
+            font-size: 0.9rem;
+            color: var(--text-muted);
+        }
+
+        section {
+            margin-bottom: 48px;
+        }
+
+        h2 {
+            font-size: 1.8rem;
+            margin-bottom: 24px;
+            padding-bottom: 12px;
+            border-bottom: 2px solid var(--primary);
+            color: var(--text);
+        }
+
+        h3 {
+            font-size: 1.3rem;
+            margin: 32px 0 16px;
+            color: var(--text);
+        }
+
+        h4 {
+            font-size: 1.1rem;
+            margin: 24px 0 12px;
+            color: var(--text-muted);
+        }
+
+        p {
+            margin-bottom: 16px;
+            color: var(--text);
+        }
+
+        ul, ol {
+            margin: 16px 0;
+            padding-left: 24px;
+        }
+
+        li {
+            margin: 8px 0;
+        }
+
+        code {
+            background: var(--code-bg);
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-family: 'SF Mono', 'Monaco', 'Consolas', monospace;
+            font-size: 0.9em;
+            color: #e06c75;
+        }
+
+        pre {
+            background: var(--code-bg);
+            border-radius: 8px;
+            padding: 20px;
+            overflow-x: auto;
+            margin: 16px 0;
+            border: 1px solid var(--border);
+        }
+
+        pre code {
+            padding: 0;
+            background: none;
+            color: var(--text);
+            font-size: 0.85rem;
+            line-height: 1.6;
+        }
+
+        .card {
+            background: var(--bg-card);
+            border-radius: 12px;
+            padding: 24px;
+            margin: 20px 0;
+            border: 1px solid var(--border);
+        }
+
+        .card-title {
+            font-weight: 600;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .badge-required {
+            background: var(--error);
+            color: white;
+        }
+
+        .badge-optional {
+            background: var(--text-muted);
+            color: var(--bg-dark);
+        }
+
+        .alert {
+            padding: 16px 20px;
+            border-radius: 8px;
+            margin: 16px 0;
+            border-left: 4px solid;
+        }
+
+        .alert-info {
+            background: rgba(99, 102, 241, 0.1);
+            border-color: var(--primary);
+        }
+
+        .alert-warning {
+            background: rgba(245, 158, 11, 0.1);
+            border-color: var(--warning);
+        }
+
+        .alert-success {
+            background: rgba(34, 197, 94, 0.1);
+            border-color: var(--success);
+        }
+
+        .alert-error {
+            background: rgba(239, 68, 68, 0.1);
+            border-color: var(--error);
+        }
+
+        .step {
+            display: flex;
+            gap: 16px;
+            margin: 24px 0;
+        }
+
+        .step-number {
+            width: 32px;
+            height: 32px;
+            background: var(--primary);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            flex-shrink: 0;
+        }
+
+        .step-content {
+            flex: 1;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 16px 0;
+        }
+
+        th, td {
+            padding: 12px 16px;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+
+        th {
+            background: var(--bg-card);
+            font-weight: 600;
+            color: var(--text-muted);
+        }
+
+        tr:hover {
+            background: rgba(99, 102, 241, 0.05);
+        }
+
+        .architecture-diagram {
+            background: var(--code-bg);
+            padding: 24px;
+            border-radius: 8px;
+            font-family: 'SF Mono', 'Monaco', monospace;
+            font-size: 0.8rem;
+            overflow-x: auto;
+            white-space: pre;
+            line-height: 1.4;
+        }
+
+        .file-tree {
+            background: var(--code-bg);
+            padding: 20px;
+            border-radius: 8px;
+            font-family: 'SF Mono', 'Monaco', monospace;
+            font-size: 0.85rem;
+        }
+
+        .file-tree .folder {
+            color: #61afef;
+        }
+
+        .file-tree .file {
+            color: var(--text);
+        }
+
+        footer {
+            text-align: center;
+            padding: 40px;
+            color: var(--text-muted);
+            border-top: 1px solid var(--border);
+            margin-top: 60px;
+        }
+
+        @media (max-width: 768px) {
+            header h1 {
+                font-size: 2rem;
+            }
+
+            .container {
+                padding: 20px 16px;
+            }
+
+            pre {
+                padding: 16px;
+                font-size: 0.8rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>📱 VibeMobile</h1>
+        <p>Claude Code 远程监控与控制系统 - 完整安装配置指南</p>
+    </header>
+
+    <div class="container">
+        <!-- 目录 -->
+        <nav class="toc">
+            <h2>📑 目录</h2>
+            <ul>
+                <li><a href="#overview">1. 系统概述</a></li>
+                <li><a href="#architecture">2. 系统架构</a></li>
+                <li><a href="#prerequisites">3. 前置条件</a></li>
+                <li><a href="#installation">4. 安装步骤</a>
+                    <ul class="sub">
+                        <li><a href="#install-tools">4.1 安装必要工具</a></li>
+                        <li><a href="#install-certs">4.2 生成 SSL 证书</a></li>
+                        <li><a href="#install-deps">4.3 安装项目依赖</a></li>
+                    </ul>
+                </li>
+                <li><a href="#tunnel-config">5. Cloudflare Tunnel 配置</a>
+                    <ul class="sub">
+                        <li><a href="#tunnel-create">5.1 创建 Tunnel</a></li>
+                        <li><a href="#tunnel-dns">5.2 配置 DNS</a></li>
+                        <li><a href="#tunnel-config-file">5.3 配置文件</a></li>
+                    </ul>
+                </li>
+                <li><a href="#startup">6. 启动服务</a></li>
+                <li><a href="#usage">7. 使用方法</a></li>
+                <li><a href="#notification">8. 任务完成通知配置</a></li>
+                <li><a href="#troubleshooting">9. 故障排除</a></li>
+                <li><a href="#reference">10. 参考信息</a></li>
+            </ul>
+        </nav>
+
+        <!-- 1. 系统概述 -->
+        <section id="overview">
+            <h2>1. 系统概述</h2>
+            <p>VibeMobile 是一个用于远程监控和控制 Claude Code 会话的系统。它允许你通过手机或其他设备远程查看 Claude Code 的输出、发送命令，并在任务完成时收到推送通知。</p>
+
+            <div class="card">
+                <div class="card-title">✨ 主要功能</div>
+                <ul>
+                    <li><strong>实时监控</strong> - 通过 WebSocket 实时查看 Claude Code 会话输出</li>
+                    <li><strong>远程控制</strong> - 从任何设备发送命令到 Claude Code</li>
+                    <li><strong>安全访问</strong> - 通过 Cloudflare Tunnel 安全访问，支持 Cloudflare Access 认证</li>
+                    <li><strong>任务通知</strong> - Claude 任务完成时收到浏览器推送通知</li>
+                    <li><strong>多会话管理</strong> - 同时管理多个 Claude Code 会话</li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- 2. 系统架构 -->
+        <section id="architecture">
+            <h2>2. 系统架构</h2>
+
+            <div class="architecture-diagram">
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                              VibeMobile 系统架构                              │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+┌──────────────┐     ┌──────────────────┐     ┌─────────────────────────────┐
+│   手机/平板   │────▶│  Cloudflare      │────▶│       本地服务器             │
+│   浏览器      │◀────│  Tunnel          │◀────│                             │
+└──────────────┘     └──────────────────┘     │  ┌─────────────────────────┐│
+                                               │  │ Web UI (Vite)           ││
+┌──────────────┐                               │  │ https://localhost:5173  ││
+│ Claude Code  │                               │  └───────────┬─────────────┘│
+│   Hooks      │───────────────────────────────│──────────────┼──────────────│
+└──────────────┘                               │  ┌───────────▼─────────────┐│
+       │                                       │  │ API Server (FastAPI)    ││
+       │  POST /api/notifications              │  │ https://localhost:8765  ││
+       └──────────────────────────────────────▶│  └───────────┬─────────────┘│
+                                               │              │ WebSocket    │
+                                               │  ┌───────────▼─────────────┐│
+                                               │  │ tmux Sessions           ││
+                                               │  │ Claude Code Instances   ││
+                                               │  └─────────────────────────┘│
+                                               └─────────────────────────────┘
+
+数据流:
+1. 用户通过浏览器访问 Cloudflare Tunnel 公开的 URL
+2. Cloudflare 将请求转发到本地服务器
+3. Web UI 通过 WebSocket 实时获取 Claude Code 输出
+4. Claude Code 任务完成时，通过 Hook 发送通知到 API
+5. API 通过 WebSocket 广播通知到所有连接的客户端
+            </div>
+
+            <h3>组件说明</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>组件</th>
+                        <th>技术栈</th>
+                        <th>默认端口</th>
+                        <th>说明</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>API Server</td>
+                        <td>Python / FastAPI</td>
+                        <td>8765</td>
+                        <td>提供 REST API 和 WebSocket 服务</td>
+                    </tr>
+                    <tr>
+                        <td>Web UI</td>
+                        <td>React / Vite / TypeScript</td>
+                        <td>5173</td>
+                        <td>用户界面，支持 PWA</td>
+                    </tr>
+                    <tr>
+                        <td>Desktop App</td>
+                        <td>Flutter</td>
+                        <td>-</td>
+                        <td>桌面管理应用</td>
+                    </tr>
+                    <tr>
+                        <td>Tunnel</td>
+                        <td>cloudflared</td>
+                        <td>-</td>
+                        <td>安全隧道，暴露本地服务</td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+
+        <!-- 3. 前置条件 -->
+        <section id="prerequisites">
+            <h2>3. 前置条件</h2>
+
+            <div class="card">
+                <div class="card-title">🖥️ 系统要求</div>
+                <ul>
+                    <li>macOS 12+ / Linux / Windows (WSL)</li>
+                    <li>8GB+ RAM</li>
+                    <li>稳定的网络连接</li>
+                </ul>
+            </div>
+
+            <div class="card">
+                <div class="card-title">📦 必要软件 <span class="badge badge-required">必需</span></div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>软件</th>
+                            <th>版本要求</th>
+                            <th>用途</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Node.js</td>
+                            <td>18.x+</td>
+                            <td>运行 Web UI</td>
+                        </tr>
+                        <tr>
+                            <td>Python</td>
+                            <td>3.10+</td>
+                            <td>运行 API Server</td>
+                        </tr>
+                        <tr>
+                            <td>tmux</td>
+                            <td>3.0+</td>
+                            <td>管理 Claude Code 会话</td>
+                        </tr>
+                        <tr>
+                            <td>cloudflared</td>
+                            <td>最新版</td>
+                            <td>Cloudflare Tunnel 客户端</td>
+                        </tr>
+                        <tr>
+                            <td>mkcert</td>
+                            <td>最新版</td>
+                            <td>生成本地 SSL 证书</td>
+                        </tr>
+                        <tr>
+                            <td>Claude Code</td>
+                            <td>最新版</td>
+                            <td>Anthropic CLI 工具</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="card">
+                <div class="card-title">☁️ 云服务账号 <span class="badge badge-optional">远程访问需要</span></div>
+                <ul>
+                    <li><strong>Cloudflare 账号</strong> - 用于创建 Tunnel 和配置域名</li>
+                    <li><strong>已托管在 Cloudflare 的域名</strong> - 用于自定义访问地址</li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- 4. 安装步骤 -->
+        <section id="installation">
+            <h2>4. 安装步骤</h2>
+
+            <h3 id="install-tools">4.1 安装必要工具</h3>
+
+            <h4>macOS (使用 Homebrew)</h4>
+            <pre><code># 安装 Homebrew (如果没有)
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+
+# 安装必要工具
+brew install node python tmux cloudflared mkcert
+
+# 安装 mkcert 根证书
+mkcert -install
+
+# 验证安装
+node --version      # 应显示 v18.x.x 或更高
+python3 --version   # 应显示 Python 3.10.x 或更高
+tmux -V             # 应显示 tmux 3.x
+cloudflared --version</code></pre>
+
+            <h4>Ubuntu/Debian</h4>
+            <pre><code># 更新包管理器
+sudo apt update
+
+# 安装 Node.js (通过 NodeSource)
+curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
+sudo apt install -y nodejs
+
+# 安装 Python
+sudo apt install -y python3 python3-pip python3-venv
+
+# 安装 tmux
+sudo apt install -y tmux
+
+# 安装 cloudflared
+curl -L https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64.deb -o cloudflared.deb
+sudo dpkg -i cloudflared.deb
+
+# 安装 mkcert
+sudo apt install -y libnss3-tools
+curl -L https://github.com/FiloSottile/mkcert/releases/latest/download/mkcert-v*-linux-amd64 -o mkcert
+chmod +x mkcert
+sudo mv mkcert /usr/local/bin/
+mkcert -install</code></pre>
+
+            <h3 id="install-certs">4.2 生成 SSL 证书</h3>
+            <div class="alert alert-info">
+                <strong>ℹ️ 为什么需要 SSL？</strong><br>
+                浏览器的推送通知 API 和 Service Worker 需要安全上下文 (HTTPS)。本地开发使用自签名证书。
+            </div>
+
+            <pre><code># 进入项目目录
+cd /path/to/VibeMobile
+
+# 创建证书目录
+mkdir -p certs
+
+# 生成本地证书
+mkcert -key-file certs/localhost-key.pem -cert-file certs/localhost.pem localhost 127.0.0.1 ::1
+
+# 验证证书
+ls -la certs/
+# 应该看到:
+# - localhost-key.pem (私钥)
+# - localhost.pem (证书)</code></pre>
+
+            <h3 id="install-deps">4.3 安装项目依赖</h3>
+
+            <h4>API Server (Python)</h4>
+            <pre><code># 进入 server 目录
+cd /path/to/VibeMobile/server
+
+# 创建虚拟环境 (推荐)
+python3 -m venv venv
+source venv/bin/activate  # macOS/Linux
+# 或 venv\Scripts\activate  # Windows
+
+# 安装依赖
+pip install -r requirements.txt</code></pre>
+
+            <h4>Web UI (Node.js)</h4>
+            <pre><code># 进入 web 目录
+cd /path/to/VibeMobile/web
+
+# 安装依赖
+npm install</code></pre>
+
+            <h4>Desktop App (Flutter) - 可选</h4>
+            <pre><code># 安装 Flutter (如果没有)
+# 参考: https://docs.flutter.dev/get-started/install
+
+# 进入 desktop 目录
+cd /path/to/VibeMobile/desktop
+
+# 获取依赖
+flutter pub get
+
+# 构建并运行
+flutter run -d macos</code></pre>
+        </section>
+
+        <!-- 5. Cloudflare Tunnel 配置 -->
+        <section id="tunnel-config">
+            <h2>5. Cloudflare Tunnel 配置</h2>
+
+            <div class="alert alert-warning">
+                <strong>⚠️ 前提条件</strong><br>
+                需要拥有 Cloudflare 账号和已托管在 Cloudflare 的域名。如果只在本地使用，可以跳过此部分。
+            </div>
+
+            <h3 id="tunnel-create">5.1 创建 Tunnel</h3>
+
+            <div class="step">
+                <div class="step-number">1</div>
+                <div class="step-content">
+                    <h4>登录 Cloudflare</h4>
+                    <pre><code>cloudflared tunnel login</code></pre>
+                    <p>这将打开浏览器，授权后会在 <code>~/.cloudflared/</code> 创建 <code>cert.pem</code> 文件。</p>
+                </div>
+            </div>
+
+            <div class="step">
+                <div class="step-number">2</div>
+                <div class="step-content">
+                    <h4>创建隧道</h4>
+                    <pre><code># 创建名为 VibeMobile 的隧道
+cloudflared tunnel create VibeMobile
+
+# 输出示例:
+# Tunnel credentials written to /Users/xxx/.cloudflared/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx.json
+# Created tunnel VibeMobile with id xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx</code></pre>
+                    <p>记下生成的 Tunnel ID 和 credentials 文件路径。</p>
+                </div>
+            </div>
+
+            <div class="step">
+                <div class="step-number">3</div>
+                <div class="step-content">
+                    <h4>验证隧道</h4>
+                    <pre><code>cloudflared tunnel list
+
+# 应显示:
+# ID                                   NAME       CREATED
+# xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx VibeMobile 2025-xx-xxTxx:xx:xxZ</code></pre>
+                </div>
+            </div>
+
+            <h3 id="tunnel-dns">5.2 配置 DNS</h3>
+
+            <pre><code># 将域名路由到隧道
+cloudflared tunnel route dns VibeMobile your-subdomain.your-domain.com
+
+# 示例:
+cloudflared tunnel route dns VibeMobile vibe.example.com
+
+# 输出:
+# Added CNAME vibe.example.com which will route to this tunnel</code></pre>
+
+            <div class="alert alert-info">
+                <strong>ℹ️ DNS 记录</strong><br>
+                此命令会自动在 Cloudflare DNS 中创建 CNAME 记录，指向隧道。
+            </div>
+
+            <h3 id="tunnel-config-file">5.3 配置文件</h3>
+
+            <p>创建 <code>~/.cloudflared/config.yml</code> 文件:</p>
+
+            <pre><code># ~/.cloudflared/config.yml
+
+tunnel: VibeMobile
+credentials-file: /Users/YOUR_USERNAME/.cloudflared/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx.json
+
+ingress:
+  # API 端点 - 路由到后端服务器
+  # 使用正则表达式确保只匹配 /api/ 开头的路径
+  - hostname: your-subdomain.your-domain.com
+    path: ^/api/.*$
+    service: https://localhost:8765
+    originRequest:
+      noTLSVerify: true
+
+  # WebSocket 端点
+  - hostname: your-subdomain.your-domain.com
+    path: ^/ws$
+    service: https://localhost:8765
+    originRequest:
+      noTLSVerify: true
+
+  # 健康检查端点
+  - hostname: your-subdomain.your-domain.com
+    path: ^/health$
+    service: https://localhost:8765
+    originRequest:
+      noTLSVerify: true
+
+  # Web UI - 默认路由
+  - hostname: your-subdomain.your-domain.com
+    service: https://localhost:5173
+    originRequest:
+      noTLSVerify: true
+
+  # 兜底规则
+  - service: http_status:404</code></pre>
+
+            <div class="alert alert-error">
+                <strong>🚨 重要提示</strong><br>
+                <ul>
+                    <li>必须使用正则表达式 <code>^/api/.*$</code> 而不是 <code>/api/*</code>，否则可能错误匹配包含 "api" 的其他路径</li>
+                    <li><code>credentials-file</code> 路径必须是绝对路径</li>
+                    <li><code>noTLSVerify: true</code> 是必需的，因为使用自签名证书</li>
+                </ul>
+            </div>
+
+            <h4>验证配置</h4>
+            <pre><code>cloudflared tunnel ingress validate
+
+# 应显示:
+# Validating rules from /Users/xxx/.cloudflared/config.yml
+# OK</code></pre>
+        </section>
+
+        <!-- 6. 启动服务 -->
+        <section id="startup">
+            <h2>6. 启动服务</h2>
+
+            <h3>方式一: 使用 Desktop App (推荐)</h3>
+            <p>Desktop App 提供图形界面，可以一键启动/停止所有服务。</p>
+
+            <pre><code># 启动 Desktop App
+cd /path/to/VibeMobile/desktop
+flutter run -d macos</code></pre>
+
+            <p>在 Desktop App 中:</p>
+            <ol>
+                <li>点击 <strong>Start API</strong> 启动 API Server</li>
+                <li>点击 <strong>Start Web</strong> 启动 Web UI</li>
+                <li>点击 <strong>Start Tunnel</strong> 启动 Cloudflare Tunnel</li>
+                <li>或者点击 <strong>Start All</strong> 一键启动所有服务</li>
+            </ol>
+
+            <h3>方式二: 命令行手动启动</h3>
+
+            <h4>1. 启动 API Server</h4>
+            <pre><code># 终端 1
+cd /path/to/VibeMobile/server
+source venv/bin/activate  # 如果使用虚拟环境
+python -m server.main
+
+# 或使用 uvicorn
+uvicorn server.main:app --host 0.0.0.0 --port 8765 --ssl-keyfile ../certs/localhost-key.pem --ssl-certfile ../certs/localhost.pem</code></pre>
+
+            <h4>2. 启动 Web UI</h4>
+            <pre><code># 终端 2
+cd /path/to/VibeMobile/web
+npm run dev
+
+# 输出:
+#   VITE v5.x.x  ready in xxx ms
+#   ➜  Local:   https://localhost:5173/</code></pre>
+
+            <h4>3. 启动 Cloudflare Tunnel</h4>
+            <pre><code># 终端 3
+cloudflared tunnel run VibeMobile
+
+# 看到以下输出表示连接成功:
+# INF Registered tunnel connection connIndex=0 ...
+# INF Registered tunnel connection connIndex=1 ...</code></pre>
+
+            <h3>服务状态检查</h3>
+            <pre><code># 检查 API Server
+curl -k https://localhost:8765/health
+# 应返回: {"status":"healthy"}
+
+# 检查 Web UI
+curl -k https://localhost:5173/ | head -5
+# 应返回 HTML 内容
+
+# 检查 Tunnel (通过公网访问)
+curl https://your-subdomain.your-domain.com/health
+# 应返回: {"status":"healthy"}</code></pre>
+        </section>
+
+        <!-- 7. 使用方法 -->
+        <section id="usage">
+            <h2>7. 使用方法</h2>
+
+            <h3>7.1 首次设备配对</h3>
+            <ol>
+                <li>在手机或其他设备的浏览器中访问 <code>https://your-subdomain.your-domain.com</code></li>
+                <li>如果配置了 Cloudflare Access，需要先完成身份验证</li>
+                <li>看到"设备配对"页面</li>
+                <li>在 Desktop App 中点击 <strong>Devices</strong> → <strong>配对新设备</strong></li>
+                <li>将显示的 6 位配对码输入到手机浏览器中</li>
+                <li>点击"连接设备"完成配对</li>
+            </ol>
+
+            <h3>7.2 查看 Claude Code 会话</h3>
+            <ol>
+                <li>配对成功后，会看到当前所有 Claude Code 会话列表</li>
+                <li>点击会话卡片查看详细输出</li>
+                <li>输出会实时更新 (通过 WebSocket)</li>
+            </ol>
+
+            <h3>7.3 发送命令</h3>
+            <ol>
+                <li>在会话详情页底部有命令输入框</li>
+                <li>输入要发送给 Claude 的消息</li>
+                <li>点击发送或按 Enter</li>
+            </ol>
+
+            <h3>7.4 创建新会话</h3>
+            <ol>
+                <li>在会话列表页点击 <strong>+</strong> 按钮</li>
+                <li>输入工作目录路径</li>
+                <li>输入启动命令 (默认为 <code>claude</code>)</li>
+                <li>点击创建</li>
+            </ol>
+        </section>
+
+        <!-- 8. 任务完成通知配置 -->
+        <section id="notification">
+            <h2>8. 任务完成通知配置</h2>
+
+            <p>VibeMobile 支持在 Claude Code 任务完成时发送浏览器推送通知。这通过 Claude Code 的 <strong>Hooks</strong> 机制实现。</p>
+
+            <h3>8.1 配置 Claude Code Hook</h3>
+
+            <p>在项目目录或全局 Claude 配置中添加 Stop hook:</p>
+
+            <h4>方法一: 项目级配置</h4>
+            <p>创建或编辑 <code>.claude/settings.json</code>:</p>
+            <pre><code>{
+  "hooks": {
+    "Stop": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": ".claude/hooks/notify.sh"
+          }
+        ]
+      }
+    ]
+  }
+}</code></pre>
+
+            <h4>方法二: 全局配置</h4>
+            <p>编辑 <code>~/.claude/settings.json</code>:</p>
+            <pre><code>{
+  "hooks": {
+    "Stop": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "curl -k -s -X POST https://localhost:8765/api/notifications -H 'Content-Type: application/json' -d '{\"type\":\"task_complete\",\"message\":\"Claude 任务已完成\",\"priority\":\"high\",\"sound\":true}'"
+          }
+        ]
+      }
+    ]
+  }
+}</code></pre>
+
+            <h3>8.2 通知脚本 (可选)</h3>
+            <p>创建 <code>.claude/hooks/notify.sh</code> 获得更灵活的配置:</p>
+            <pre><code>#!/bin/bash
+#
+# VibeMobile Task Completion Notification Hook
+#
+
+# 配置
+VIBE_SERVER_URL="${VIBE_SERVER_URL:-https://localhost:8765}"
+VIBE_NOTIFICATION_ENABLED="${VIBE_NOTIFICATION_ENABLED:-true}"
+
+# 如果禁用则退出
+if [ "$VIBE_NOTIFICATION_ENABLED" = "false" ]; then
+    exit 0
+fi
+
+# 发送通知
+curl -k -s -o /dev/null \
+    -X POST "${VIBE_SERVER_URL}/api/notifications" \
+    -H "Content-Type: application/json" \
+    -d '{
+        "type": "task_complete",
+        "message": "Claude 任务已完成",
+        "priority": "high",
+        "sound": true
+    }' \
+    --connect-timeout 5 \
+    --max-time 10
+
+exit 0</code></pre>
+
+            <p>设置执行权限:</p>
+            <pre><code>chmod +x .claude/hooks/notify.sh</code></pre>
+
+            <h3>8.3 通知类型</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>类型</th>
+                        <th>说明</th>
+                        <th>触发场景</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code>task_complete</code></td>
+                        <td>任务完成</td>
+                        <td>Claude Stop hook</td>
+                    </tr>
+                    <tr>
+                        <td><code>task_error</code></td>
+                        <td>任务出错</td>
+                        <td>自定义错误处理</td>
+                    </tr>
+                    <tr>
+                        <td><code>permission_required</code></td>
+                        <td>需要权限</td>
+                        <td>Claude 等待用户确认</td>
+                    </tr>
+                    <tr>
+                        <td><code>session_idle</code></td>
+                        <td>会话空闲</td>
+                        <td>长时间无活动</td>
+                    </tr>
+                    <tr>
+                        <td><code>custom</code></td>
+                        <td>自定义</td>
+                        <td>任意场景</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3>8.4 浏览器通知权限</h3>
+            <div class="alert alert-info">
+                <strong>ℹ️ 权限请求</strong><br>
+                首次使用时，浏览器会请求通知权限。请点击"允许"以接收推送通知。
+            </div>
+        </section>
+
+        <!-- 9. 故障排除 -->
+        <section id="troubleshooting">
+            <h2>9. 故障排除</h2>
+
+            <div class="card">
+                <div class="card-title">❌ Tunnel 连接失败: "VibeMobile is neither the ID nor the name of any of your tunnels"</div>
+                <p><strong>原因:</strong> 隧道未创建或名称错误</p>
+                <p><strong>解决:</strong></p>
+                <pre><code># 检查隧道列表
+cloudflared tunnel list
+
+# 如果没有，创建隧道
+cloudflared tunnel create VibeMobile</code></pre>
+            </div>
+
+            <div class="card">
+                <div class="card-title">❌ 页面显示空白</div>
+                <p><strong>原因:</strong> cloudflared path 规则匹配错误</p>
+                <p><strong>解决:</strong> 确保 config.yml 中使用正则表达式:</p>
+                <pre><code># 正确 ✅
+path: ^/api/.*$
+
+# 错误 ❌
+path: /api/*</code></pre>
+            </div>
+
+            <div class="card">
+                <div class="card-title">❌ WebSocket 连接失败</div>
+                <p><strong>原因:</strong> WebSocket 端点未正确配置或被 Cloudflare Access 拦截</p>
+                <p><strong>解决:</strong></p>
+                <ol>
+                    <li>确保 <code>/ws</code> 路由在 config.yml 中正确配置</li>
+                    <li>如果使用 Cloudflare Access，考虑为 WebSocket 路径添加 Bypass 策略</li>
+                </ol>
+            </div>
+
+            <div class="card">
+                <div class="card-title">❌ SSL 证书错误</div>
+                <p><strong>原因:</strong> 证书未生成或路径错误</p>
+                <p><strong>解决:</strong></p>
+                <pre><code># 重新生成证书
+cd /path/to/VibeMobile
+mkcert -key-file certs/localhost-key.pem -cert-file certs/localhost.pem localhost 127.0.0.1 ::1
+
+# 验证证书存在
+ls -la certs/</code></pre>
+            </div>
+
+            <div class="card">
+                <div class="card-title">❌ "Unable to reach the origin service"</div>
+                <p><strong>原因:</strong> 本地服务未启动</p>
+                <p><strong>解决:</strong></p>
+                <pre><code># 检查服务是否运行
+lsof -i :8765  # API Server
+lsof -i :5173  # Web UI
+
+# 如果没有输出，启动相应服务</code></pre>
+            </div>
+
+            <div class="card">
+                <div class="card-title">❌ 通知不显示</div>
+                <p><strong>原因:</strong> 浏览器通知权限未授予</p>
+                <p><strong>解决:</strong></p>
+                <ol>
+                    <li>检查浏览器地址栏左侧的锁图标</li>
+                    <li>点击并确保"通知"权限为"允许"</li>
+                    <li>刷新页面</li>
+                </ol>
+            </div>
+        </section>
+
+        <!-- 10. 参考信息 -->
+        <section id="reference">
+            <h2>10. 参考信息</h2>
+
+            <h3>项目结构</h3>
+            <div class="file-tree">
+<span class="folder">VibeMobile/</span>
+├── <span class="folder">server/</span>              # Python API Server
+│   ├── <span class="folder">api/</span>             # API 路由
+│   │   ├── auth.py         # 认证 API
+│   │   ├── notifications.py # 通知 API
+│   │   ├── sessions.py     # 会话 API
+│   │   └── websocket.py    # WebSocket 处理
+│   ├── <span class="folder">services/</span>        # 业务服务
+│   ├── config.py           # 配置
+│   └── main.py             # 入口
+├── <span class="folder">web/</span>                 # React Web UI
+│   ├── <span class="folder">src/</span>
+│   │   ├── <span class="folder">components/</span>  # React 组件
+│   │   ├── <span class="folder">pages/</span>       # 页面
+│   │   ├── <span class="folder">services/</span>    # API/WebSocket 服务
+│   │   └── <span class="folder">stores/</span>      # Zustand 状态管理
+│   ├── package.json
+│   └── vite.config.ts
+├── <span class="folder">desktop/</span>             # Flutter Desktop App
+│   └── <span class="folder">lib/</span>
+├── <span class="folder">certs/</span>               # SSL 证书
+│   ├── localhost.pem
+│   └── localhost-key.pem
+├── <span class="folder">.claude/</span>             # Claude Code 配置
+│   ├── <span class="folder">hooks/</span>
+│   │   └── notify.sh       # 通知脚本
+│   └── settings.json       # Hook 配置
+└── <span class="folder">docs/</span>                # 文档
+    └── setup-guide.html    # 本文档
+            </div>
+
+            <h3>默认端口</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>服务</th>
+                        <th>端口</th>
+                        <th>协议</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>API Server</td>
+                        <td>8765</td>
+                        <td>HTTPS</td>
+                    </tr>
+                    <tr>
+                        <td>Web UI</td>
+                        <td>5173</td>
+                        <td>HTTPS</td>
+                    </tr>
+                    <tr>
+                        <td>WebSocket</td>
+                        <td>8765</td>
+                        <td>WSS</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3>环境变量</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>变量</th>
+                        <th>默认值</th>
+                        <th>说明</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code>VIBE_SERVER_URL</code></td>
+                        <td>https://localhost:8765</td>
+                        <td>API Server URL</td>
+                    </tr>
+                    <tr>
+                        <td><code>VIBE_NOTIFICATION_ENABLED</code></td>
+                        <td>true</td>
+                        <td>是否启用通知</td>
+                    </tr>
+                    <tr>
+                        <td><code>VITE_API_URL</code></td>
+                        <td>(空)</td>
+                        <td>Web UI 的 API 基础 URL</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3>相关链接</h3>
+            <ul>
+                <li><a href="https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/" target="_blank">Cloudflare Tunnel 文档</a></li>
+                <li><a href="https://docs.anthropic.com/en/docs/claude-code" target="_blank">Claude Code 文档</a></li>
+                <li><a href="https://code.claude.com/docs/en/hooks" target="_blank">Claude Code Hooks 文档</a></li>
+                <li><a href="https://vitejs.dev/" target="_blank">Vite 文档</a></li>
+                <li><a href="https://fastapi.tiangolo.com/" target="_blank">FastAPI 文档</a></li>
+            </ul>
+        </section>
+    </div>
+
+    <footer>
+        <p>VibeMobile - Claude Code 远程监控与控制系统</p>
+        <p>文档版本: 1.0.0 | 更新日期: 2025-12-27</p>
+    </footer>
+</body>
+</html>

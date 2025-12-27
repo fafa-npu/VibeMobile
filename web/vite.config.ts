@@ -8,10 +8,13 @@ export default defineConfig({
   plugins: [react()],
   server: {
     port: 5173,
+    host: true, // Allow external access
     https: {
       key: fs.readFileSync(path.resolve(__dirname, '../certs/localhost-key.pem')),
       cert: fs.readFileSync(path.resolve(__dirname, '../certs/localhost.pem')),
     },
+    // Disable HMR when accessed via tunnel (or configure for tunnel hostname)
+    hmr: false,
     proxy: {
       '/api': {
         target: 'https://localhost:8765',

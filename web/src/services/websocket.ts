@@ -1,10 +1,12 @@
 // WebSocket connection manager
 
-import type { WSIncomingMessage } from '../types';
+import type { WSIncomingMessage, WSNotificationMessage } from '../types';
 import { useAuthStore } from '../stores/authStore';
+import { notificationService } from './notification';
 
 type MessageHandler = (message: WSIncomingMessage) => void;
 type StatusHandler = (status: 'connecting' | 'connected' | 'disconnected') => void;
+type NotificationHandler = (notification: WSNotificationMessage['data']) => void;
 
 // Determine WebSocket base URL
 // In development, use empty string to leverage Vite's proxy (relative path /ws)
@@ -34,6 +36,7 @@ class WebSocketManager {
   private ws: WebSocket | null = null;
   private messageHandlers: Set<MessageHandler> = new Set();
   private statusHandlers: Set<StatusHandler> = new Set();
+  private notificationHandlers: Set<NotificationHandler> = new Set();
   private reconnectAttempts = 0;
   private maxReconnectAttempts = 10;
   private reconnectDelay = 1000;
@@ -73,6 +76,12 @@ class WebSocketManager {
       this.ws.onmessage = (event) => {
         try {
           const message = JSON.parse(event.data) as WSIncomingMessage;
+
+          // Handle notification messages specially
+          if (message.type === 'notification') {
+            this.handleNotification(message as WSNotificationMessage);
+          }
+
           this.messageHandlers.forEach((handler) => handler(message));
         } catch (e) {
           console.error('[WS] Failed to parse message:', e);
@@ -164,8 +173,52 @@ class WebSocketManager {
     return () => this.statusHandlers.delete(handler);
   }
 
+  /**
+   * Subscribe to notification events
+   * @param handler Callback for notification data
+   * @returns Unsubscribe function
+   */
+  onNotification(handler: NotificationHandler): () => void {
+    this.notificationHandlers.add(handler);
+    return () => this.notificationHandlers.delete(handler);
+  }
+
   private notifyStatus(status: 'connecting' | 'connected' | 'disconnected'): void {
     this.statusHandlers.forEach((handler) => handler(status));
+  }
+
+  /**
+   * Handle incoming notification messages
+   * Shows browser notification and notifies subscribers
+   */
+  private handleNotification(message: WSNotificationMessage): void {
+    const { notificationType, message: msg, priority, sound } = message.data;
+
+    console.log('[WS] Notification received:', notificationType, msg);
+
+    // Show browser notification based on type
+    switch (notificationType) {
+      case 'task_complete':
+        notificationService.showTaskComplete(msg, { sound });
+        break;
+      case 'task_error':
+        notificationService.showTaskError(msg, { sound });
+        break;
+      case 'permission_required':
+        notificationService.showPermissionRequired(msg, { sound });
+        break;
+      default:
+        notificationService.show({
+          title: 'Claude Code',
+          body: msg,
+          type: notificationType,
+          priority,
+          sound,
+        });
+    }
+
+    // Notify all registered handlers
+    this.notificationHandlers.forEach((handler) => handler(message.data));
   }
 
   get isConnected(): boolean {

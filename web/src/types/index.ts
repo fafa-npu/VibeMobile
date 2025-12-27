@@ -50,7 +50,25 @@ export interface WSStatusMessage {
   };
 }
 
-export type WSIncomingMessage = WSOutputMessage | WSStatusMessage;
+/**
+ * Notification message from server
+ * Triggered by Claude Code hooks (e.g., Stop hook)
+ */
+export interface WSNotificationMessage {
+  type: 'notification';
+  data: {
+    notificationId: string;
+    notificationType: 'task_complete' | 'task_error' | 'permission_required' | 'session_idle' | 'custom';
+    message: string;
+    sessionId?: string;
+    priority: 'low' | 'normal' | 'high' | 'urgent';
+    details?: Record<string, unknown>;
+    sound: boolean;
+    timestamp: string;
+  };
+}
+
+export type WSIncomingMessage = WSOutputMessage | WSStatusMessage | WSNotificationMessage;
 
 // Re-export auth types
 export * from './auth';

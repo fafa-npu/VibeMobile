@@ -11,7 +11,7 @@ from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
 
 from .config import settings
-from .api import sessions_router, websocket_router, auth_router
+from .api import sessions_router, websocket_router, auth_router, notifications_router
 from .services import output_monitor, ws_manager
 
 # Configure logging
@@ -75,6 +75,7 @@ app.add_middleware(
 app.include_router(sessions_router)
 app.include_router(websocket_router)
 app.include_router(auth_router)
+app.include_router(notifications_router)
 
 
 @app.get("/")

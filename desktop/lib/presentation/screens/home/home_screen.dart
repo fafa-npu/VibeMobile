@@ -150,7 +150,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WindowListener {
                 onStopServer: () => ref.read(serverProvider.notifier).stop(),
                 onStartWeb: () => ref.read(webProvider.notifier).start(),
                 onStopWeb: () => ref.read(webProvider.notifier).stop(),
-                onStartTunnel: () => ref.read(tunnelProvider.notifier).startQuick(settings.webPort),
+                onStartTunnel: () {
+                  // Use named tunnel if configured, otherwise use quick tunnel
+                  if (settings.tunnelName != null && settings.tunnelName!.isNotEmpty) {
+                    ref.read(tunnelProvider.notifier).startNamed(settings.tunnelName!);
+                  } else {
+                    ref.read(tunnelProvider.notifier).startQuick(settings.apiPort);
+                  }
+                },
                 onStopTunnel: () => ref.read(tunnelProvider.notifier).stop(),
                 onCancelTunnel: () => ref.read(tunnelProvider.notifier).cancelConnecting(),
               ),

@@ -6,6 +6,7 @@ import { SessionList } from './pages/SessionList';
 import { SessionDetail } from './pages/SessionDetail';
 import { PairingScreen } from './components/PairingScreen';
 import { LoadingScreen } from './components/LoadingScreen';
+import { notificationService } from './services/notification';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -24,6 +25,15 @@ function AppContent() {
   useEffect(() => {
     initialize();
   }, [initialize]);
+
+  // Initialize notification service (request permission)
+  useEffect(() => {
+    if (isAuthenticated) {
+      notificationService.initialize().then((status) => {
+        console.log('[App] Notification permission:', status);
+      });
+    }
+  }, [isAuthenticated]);
 
   // Show loading screen while checking auth
   if (isLoading) {

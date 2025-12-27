@@ -124,23 +124,19 @@ class TunnelNotifier extends StateNotifier<TunnelState> {
     );
 
     try {
-      final success = await _service.startNamedTunnel(tunnelName);
-      if (success) {
-        // For named tunnels, we don't get the URL from output
-        // It's based on the configured hostname
-        final settings = _ref.read(settingsProvider);
-        state = state.copyWith(
-          status: TunnelStatus.connected,
-          publicUrl: settings.tunnelHostname != null
-              ? 'https://${settings.tunnelHostname}'
-              : null,
-        );
-      } else {
+      // Get hostname from settings
+      final settings = _ref.read(settingsProvider);
+      final success = await _service.startNamedTunnel(
+        tunnelName,
+        hostname: settings.tunnelHostname,
+      );
+      if (!success) {
         state = state.copyWith(
           status: TunnelStatus.error,
           errorMessage: 'Failed to start named tunnel',
         );
       }
+      // State will be updated via callbacks when connected
     } catch (e) {
       state = state.copyWith(
         status: TunnelStatus.error,

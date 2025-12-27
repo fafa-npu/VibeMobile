@@ -230,10 +230,22 @@ class TunnelService {
   }
 
   /// Start a named tunnel (requires prior configuration).
-  Future<bool> startNamedTunnel(String tunnelName) async {
-    if (_isConnected) return true;
+  /// Uses the tunnel's configured hostname from ~/.cloudflared/config.yml
+  /// or the hostname parameter if provided.
+  Future<bool> startNamedTunnel(String tunnelName, {String? hostname}) async {
+    if (_isConnected || _isStarting) return _isConnected;
 
+    _isStarting = true;
     AppLogger.info('TunnelService: Starting named tunnel: $tunnelName');
+
+    // Setup timeout timer (30 seconds)
+    _startTimeout = Timer(const Duration(seconds: 30), () {
+      if (_isStarting) {
+        AppLogger.warning('TunnelService: Named tunnel startup timeout');
+        _cancelStarting();
+        onTunnelError?.call('Named tunnel 启动超时');
+      }
+    });
 
     try {
       _tunnelProcess = await Process.start(
@@ -241,18 +253,64 @@ class TunnelService {
         ['tunnel', 'run', tunnelName],
       );
 
-      // Wait a bit for connection
-      await Future.delayed(const Duration(seconds: 5));
-      _isConnected = true;
+      // Monitor stderr for connection status
+      _stderrSubscription = _tunnelProcess!.stderr
+          .transform(utf8.decoder)
+          .listen(
+        (data) {
+          // Check for successful connection indicators
+          if (data.contains('Connection') && data.contains('registered') ||
+              data.contains('Registered tunnel connection')) {
+            if (!_isConnected) {
+              _isConnected = true;
+              _isStarting = false;
+              _startTimeout?.cancel();
+              _startTimeout = null;
 
-      _tunnelProcess!.exitCode.then((_) {
+              // Use provided hostname or construct from tunnel name
+              if (hostname != null && hostname.isNotEmpty) {
+                _publicUrl = hostname.startsWith('http') ? hostname : 'https://$hostname';
+              } else {
+                _publicUrl = 'https://$tunnelName.your-domain.com';
+              }
+
+              AppLogger.info('TunnelService: Named tunnel connected at $_publicUrl');
+              onTunnelReady?.call(_publicUrl!);
+            }
+          }
+
+          // Check for errors
+          if (data.contains('error') || data.contains('failed')) {
+            AppLogger.warning('TunnelService: Named tunnel error: $data');
+          }
+        },
+        onError: (error) {
+          AppLogger.warning('TunnelService: Named tunnel stderr error: $error');
+        },
+        cancelOnError: false,
+      );
+
+      // Handle process exit
+      _tunnelProcess!.exitCode.then((exitCode) {
+        AppLogger.info('TunnelService: Named tunnel exited with code $exitCode');
+        final wasStarting = _isStarting;
         _cleanup();
-        onTunnelDisconnected?.call();
+
+        if (wasStarting && exitCode != 0) {
+          onTunnelError?.call('Named tunnel 启动失败 (code: $exitCode)');
+        } else {
+          onTunnelDisconnected?.call();
+        }
       });
 
       return true;
     } catch (e, stack) {
       AppLogger.error('TunnelService: Failed to start named tunnel', e, stack);
+      _isStarting = false;
+      _startTimeout?.cancel();
+      _startTimeout = null;
+      _cleanup();
+      onTunnelError?.call('无法启动 named tunnel: $e');
       return false;
     }
   }

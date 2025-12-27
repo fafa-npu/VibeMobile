@@ -1,0 +1,2118 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VibeMobile 完整使用指南</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #6366f1;
+            --primary-light: #818cf8;
+            --primary-dark: #4f46e5;
+            --secondary: #0ea5e9;
+            --accent: #f59e0b;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --error: #ef4444;
+            --bg-primary: #0f172a;
+            --bg-secondary: #1e293b;
+            --bg-tertiary: #334155;
+            --bg-card: #1e293b;
+            --text-primary: #f1f5f9;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+            --border: #334155;
+            --border-light: #475569;
+            --gradient-1: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #d946ef 100%);
+            --gradient-2: linear-gradient(135deg, #0ea5e9 0%, #6366f1 100%);
+            --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.3);
+            --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.3), 0 2px 4px -2px rgb(0 0 0 / 0.3);
+            --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.3), 0 4px 6px -4px rgb(0 0 0 / 0.3);
+            --shadow-glow: 0 0 40px rgba(99, 102, 241, 0.15);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: 'Inter', 'Noto Sans SC', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.7;
+            font-size: 16px;
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--bg-secondary);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--border-light);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--text-muted);
+        }
+
+        /* Header */
+        .hero {
+            background: var(--gradient-1);
+            padding: 80px 20px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.05'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+            opacity: 0.5;
+        }
+
+        .hero-content {
+            position: relative;
+            z-index: 1;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .hero h1 {
+            font-size: 3.5rem;
+            font-weight: 700;
+            margin-bottom: 20px;
+            text-shadow: 0 2px 10px rgba(0,0,0,0.3);
+            letter-spacing: -0.02em;
+        }
+
+        .hero .tagline {
+            font-size: 1.4rem;
+            opacity: 0.95;
+            font-weight: 300;
+            max-width: 600px;
+            margin: 0 auto 30px;
+        }
+
+        .hero .version {
+            display: inline-block;
+            background: rgba(255,255,255,0.2);
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            backdrop-filter: blur(10px);
+        }
+
+        /* Navigation */
+        .nav-container {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background: rgba(15, 23, 42, 0.95);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .nav {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 20px;
+            display: flex;
+            align-items: center;
+            height: 60px;
+            overflow-x: auto;
+            gap: 8px;
+        }
+
+        .nav a {
+            color: var(--text-secondary);
+            text-decoration: none;
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            white-space: nowrap;
+            transition: all 0.2s ease;
+        }
+
+        .nav a:hover {
+            color: var(--text-primary);
+            background: var(--bg-tertiary);
+        }
+
+        .nav a.active {
+            color: var(--primary-light);
+            background: rgba(99, 102, 241, 0.1);
+        }
+
+        /* Main Layout */
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 60px 20px;
+        }
+
+        /* Sections */
+        .section {
+            margin-bottom: 80px;
+            scroll-margin-top: 80px;
+        }
+
+        .section-header {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            margin-bottom: 40px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid var(--border);
+        }
+
+        .section-number {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 48px;
+            height: 48px;
+            background: var(--gradient-1);
+            border-radius: 12px;
+            font-size: 1.4rem;
+            font-weight: 700;
+            flex-shrink: 0;
+        }
+
+        .section-title {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        h3 {
+            font-size: 1.4rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin: 40px 0 20px;
+            padding-left: 16px;
+            border-left: 4px solid var(--primary);
+        }
+
+        h4 {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            margin: 24px 0 12px;
+        }
+
+        p {
+            margin-bottom: 16px;
+            color: var(--text-secondary);
+        }
+
+        /* Cards */
+        .card {
+            background: var(--bg-card);
+            border-radius: 16px;
+            padding: 24px;
+            margin-bottom: 24px;
+            border: 1px solid var(--border);
+            box-shadow: var(--shadow-md);
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .card-icon {
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--gradient-2);
+            border-radius: 10px;
+            font-size: 1.2rem;
+        }
+
+        .card-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        /* Feature Grid */
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+            margin: 24px 0;
+        }
+
+        .feature-card {
+            background: var(--bg-secondary);
+            border-radius: 12px;
+            padding: 20px;
+            border: 1px solid var(--border);
+            transition: all 0.3s ease;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-glow);
+            border-color: var(--primary);
+        }
+
+        .feature-icon {
+            font-size: 2rem;
+            margin-bottom: 12px;
+        }
+
+        .feature-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 8px;
+        }
+
+        .feature-desc {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+        }
+
+        /* Tables */
+        .table-container {
+            overflow-x: auto;
+            margin: 20px 0;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.95rem;
+        }
+
+        thead {
+            background: var(--bg-tertiary);
+        }
+
+        th {
+            padding: 14px 16px;
+            text-align: left;
+            font-weight: 600;
+            color: var(--text-primary);
+            border-bottom: 2px solid var(--border);
+        }
+
+        td {
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--border);
+            color: var(--text-secondary);
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        tr:hover td {
+            background: rgba(99, 102, 241, 0.05);
+        }
+
+        /* Code Blocks */
+        pre {
+            background: #0d1117;
+            border-radius: 12px;
+            padding: 20px;
+            overflow-x: auto;
+            margin: 16px 0;
+            border: 1px solid var(--border);
+            position: relative;
+        }
+
+        pre::before {
+            content: attr(data-lang);
+            position: absolute;
+            top: 8px;
+            right: 12px;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            font-weight: 500;
+        }
+
+        code {
+            font-family: 'JetBrains Mono', 'Fira Code', monospace;
+            font-size: 0.9rem;
+            line-height: 1.6;
+        }
+
+        pre code {
+            color: #e6edf3;
+        }
+
+        :not(pre) > code {
+            background: var(--bg-tertiary);
+            padding: 2px 8px;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            color: var(--primary-light);
+        }
+
+        /* Syntax Highlighting */
+        .token-comment { color: #8b949e; }
+        .token-keyword { color: #ff7b72; }
+        .token-string { color: #a5d6ff; }
+        .token-function { color: #d2a8ff; }
+        .token-number { color: #79c0ff; }
+        .token-variable { color: #ffa657; }
+
+        /* Architecture Diagram */
+        .architecture-diagram {
+            background: var(--bg-secondary);
+            border-radius: 16px;
+            padding: 32px;
+            margin: 24px 0;
+            border: 1px solid var(--border);
+            overflow-x: auto;
+        }
+
+        .diagram-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 24px;
+            min-width: 700px;
+        }
+
+        .diagram-row {
+            display: flex;
+            gap: 24px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .diagram-box {
+            background: var(--bg-card);
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            padding: 16px 24px;
+            text-align: center;
+            min-width: 140px;
+            transition: all 0.3s ease;
+        }
+
+        .diagram-box:hover {
+            border-color: var(--primary);
+            transform: scale(1.02);
+        }
+
+        .diagram-box.primary {
+            border-color: var(--primary);
+            background: rgba(99, 102, 241, 0.1);
+        }
+
+        .diagram-box.secondary {
+            border-color: var(--secondary);
+            background: rgba(14, 165, 233, 0.1);
+        }
+
+        .diagram-box.accent {
+            border-color: var(--accent);
+            background: rgba(245, 158, 11, 0.1);
+        }
+
+        .diagram-box-title {
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 4px;
+        }
+
+        .diagram-box-subtitle {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+
+        .diagram-arrow {
+            color: var(--text-muted);
+            font-size: 1.5rem;
+        }
+
+        .diagram-label {
+            background: var(--bg-tertiary);
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+
+        /* Lists */
+        ul, ol {
+            margin: 16px 0;
+            padding-left: 24px;
+        }
+
+        li {
+            margin-bottom: 8px;
+            color: var(--text-secondary);
+        }
+
+        li strong {
+            color: var(--text-primary);
+        }
+
+        /* Alert/Notice Boxes */
+        .notice {
+            display: flex;
+            gap: 16px;
+            padding: 16px 20px;
+            border-radius: 12px;
+            margin: 20px 0;
+            border-left: 4px solid;
+        }
+
+        .notice-icon {
+            font-size: 1.4rem;
+            flex-shrink: 0;
+        }
+
+        .notice-content {
+            flex: 1;
+        }
+
+        .notice-title {
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .notice.info {
+            background: rgba(14, 165, 233, 0.1);
+            border-color: var(--secondary);
+        }
+
+        .notice.info .notice-icon { color: var(--secondary); }
+
+        .notice.warning {
+            background: rgba(245, 158, 11, 0.1);
+            border-color: var(--warning);
+        }
+
+        .notice.warning .notice-icon { color: var(--warning); }
+
+        .notice.success {
+            background: rgba(16, 185, 129, 0.1);
+            border-color: var(--success);
+        }
+
+        .notice.success .notice-icon { color: var(--success); }
+
+        .notice.error {
+            background: rgba(239, 68, 68, 0.1);
+            border-color: var(--error);
+        }
+
+        .notice.error .notice-icon { color: var(--error); }
+
+        /* Steps */
+        .steps {
+            margin: 24px 0;
+        }
+
+        .step {
+            display: flex;
+            gap: 16px;
+            margin-bottom: 24px;
+            padding-bottom: 24px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .step:last-child {
+            border-bottom: none;
+            padding-bottom: 0;
+        }
+
+        .step-number {
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--gradient-1);
+            border-radius: 50%;
+            font-weight: 700;
+            font-size: 0.9rem;
+            flex-shrink: 0;
+        }
+
+        .step-content {
+            flex: 1;
+        }
+
+        .step-title {
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 8px;
+        }
+
+        /* ASCII Art Container */
+        .ascii-art {
+            background: #0d1117;
+            border-radius: 12px;
+            padding: 20px;
+            overflow-x: auto;
+            margin: 20px 0;
+            border: 1px solid var(--border);
+        }
+
+        .ascii-art pre {
+            background: transparent;
+            border: none;
+            padding: 0;
+            margin: 0;
+            font-size: 0.8rem;
+            line-height: 1.4;
+        }
+
+        /* Badge */
+        .badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+
+        .badge-primary {
+            background: rgba(99, 102, 241, 0.2);
+            color: var(--primary-light);
+        }
+
+        .badge-success {
+            background: rgba(16, 185, 129, 0.2);
+            color: var(--success);
+        }
+
+        .badge-warning {
+            background: rgba(245, 158, 11, 0.2);
+            color: var(--warning);
+        }
+
+        /* Footer */
+        .footer {
+            background: var(--bg-secondary);
+            border-top: 1px solid var(--border);
+            padding: 40px 20px;
+            text-align: center;
+        }
+
+        .footer-content {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .footer-links {
+            display: flex;
+            gap: 24px;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+
+        .footer-links a {
+            color: var(--text-secondary);
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+
+        .footer-links a:hover {
+            color: var(--primary-light);
+        }
+
+        .footer-meta {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+
+        /* Back to top */
+        .back-to-top {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            width: 48px;
+            height: 48px;
+            background: var(--gradient-1);
+            border: none;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.4rem;
+            color: white;
+            box-shadow: var(--shadow-lg);
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+            z-index: 99;
+        }
+
+        .back-to-top.visible {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .back-to-top:hover {
+            transform: translateY(-4px);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .hero h1 {
+                font-size: 2.2rem;
+            }
+
+            .hero .tagline {
+                font-size: 1.1rem;
+            }
+
+            .section-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 12px;
+            }
+
+            .section-title {
+                font-size: 1.6rem;
+            }
+
+            h3 {
+                font-size: 1.2rem;
+            }
+
+            .diagram-container {
+                min-width: auto;
+            }
+
+            .nav {
+                padding: 0 12px;
+            }
+
+            .nav a {
+                padding: 6px 12px;
+                font-size: 0.85rem;
+            }
+        }
+
+        /* Print styles */
+        @media print {
+            .nav-container, .back-to-top {
+                display: none;
+            }
+
+            .hero {
+                background: #6366f1;
+                -webkit-print-color-adjust: exact;
+            }
+
+            body {
+                background: white;
+                color: black;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Hero Section -->
+    <header class="hero">
+        <div class="hero-content">
+            <h1>VibeMobile</h1>
+            <p class="tagline">远程监控和控制 Claude Code 会话的移动端解决方案</p>
+            <span class="version">v1.0 | 完整使用指南</span>
+        </div>
+    </header>
+
+    <!-- Navigation -->
+    <nav class="nav-container">
+        <div class="nav">
+            <a href="#overview">系统概述</a>
+            <a href="#requirements">系统要求</a>
+            <a href="#installation">安装配置</a>
+            <a href="#desktop">Desktop 应用</a>
+            <a href="#webui">Web UI</a>
+            <a href="#tunnel">Tunnel 配置</a>
+            <a href="#advanced">高级配置</a>
+            <a href="#troubleshooting">故障排除</a>
+        </div>
+    </nav>
+
+    <main class="container">
+
+        <!-- Section 1: Overview -->
+        <section id="overview" class="section">
+            <div class="section-header">
+                <div class="section-number">1</div>
+                <h2 class="section-title">系统概述</h2>
+            </div>
+
+            <h3>1.1 什么是 VibeMobile？</h3>
+            <p>VibeMobile 是一个远程监控和控制工具，允许你从移动设备（手机、平板）上管理 Claude Code 会话。</p>
+
+            <div class="feature-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">👁️</div>
+                    <div class="feature-title">实时查看</div>
+                    <div class="feature-desc">Claude Code 终端输出实时同步到移动设备</div>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">💬</div>
+                    <div class="feature-title">远程发送</div>
+                    <div class="feature-desc">从手机发送消息和命令给 Claude</div>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">📷</div>
+                    <div class="feature-title">上传图片</div>
+                    <div class="feature-desc">直接上传截图或图片到 Claude Code 会话</div>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">⌨️</div>
+                    <div class="feature-title">发送特殊键</div>
+                    <div class="feature-desc">支持 Ctrl+C、Escape 等特殊键操作</div>
+                </div>
+            </div>
+
+            <h3>1.2 系统架构</h3>
+            <div class="architecture-diagram">
+                <div class="diagram-container">
+                    <div class="diagram-label">你的 Mac 电脑</div>
+                    <div class="diagram-row">
+                        <div class="diagram-box primary">
+                            <div class="diagram-box-title">Desktop App</div>
+                            <div class="diagram-box-subtitle">Flutter</div>
+                        </div>
+                        <div class="diagram-arrow">→</div>
+                        <div class="diagram-box secondary">
+                            <div class="diagram-box-title">API Server</div>
+                            <div class="diagram-box-subtitle">FastAPI :8765</div>
+                        </div>
+                        <div class="diagram-arrow">←</div>
+                        <div class="diagram-box accent">
+                            <div class="diagram-box-title">Web UI</div>
+                            <div class="diagram-box-subtitle">React :5173</div>
+                        </div>
+                    </div>
+                    <div class="diagram-arrow">↓</div>
+                    <div class="diagram-box">
+                        <div class="diagram-box-title">Tmux 会话</div>
+                        <div class="diagram-box-subtitle">claude code</div>
+                    </div>
+                    <div class="diagram-arrow">↑ ↓</div>
+                    <div class="diagram-box primary">
+                        <div class="diagram-box-title">Cloudflare Tunnel</div>
+                        <div class="diagram-box-subtitle">远程访问通道</div>
+                    </div>
+                    <div class="diagram-arrow">↓</div>
+                    <div class="diagram-box accent">
+                        <div class="diagram-box-title">移动设备浏览器</div>
+                        <div class="diagram-box-subtitle">privatechannel1.vibemobile.net</div>
+                    </div>
+                </div>
+            </div>
+
+            <h3>1.3 组件说明</h3>
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>组件</th>
+                            <th>技术栈</th>
+                            <th>端口</th>
+                            <th>功能</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>Desktop App</strong></td>
+                            <td>Flutter (macOS)</td>
+                            <td>-</td>
+                            <td>本地管理应用，控制服务启停</td>
+                        </tr>
+                        <tr>
+                            <td><strong>API Server</strong></td>
+                            <td>Python FastAPI</td>
+                            <td>8765</td>
+                            <td>REST API + WebSocket 后端</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Web UI</strong></td>
+                            <td>React + Vite</td>
+                            <td>5173</td>
+                            <td>移动端友好的 Web 界面</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Tunnel</strong></td>
+                            <td>cloudflared</td>
+                            <td>-</td>
+                            <td>安全的远程访问通道</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <h3>1.4 数据流</h3>
+            <div class="card">
+                <pre data-lang="流程"><code>移动设备浏览器
+      │
+      ▼ (HTTPS)
+Cloudflare Tunnel (privatechannel1.vibemobile.net)
+      │
+      ├──▶ /api/* ──▶ API Server (:8765) ──▶ Tmux 会话
+      ├──▶ /ws     ──▶ WebSocket (:8765) ──▶ 实时输出
+      └──▶ /*      ──▶ Web UI (:5173)    ──▶ React 应用</code></pre>
+            </div>
+        </section>
+
+        <!-- Section 2: Requirements -->
+        <section id="requirements" class="section">
+            <div class="section-header">
+                <div class="section-number">2</div>
+                <h2 class="section-title">系统要求</h2>
+            </div>
+
+            <h3>2.1 硬件要求</h3>
+            <ul>
+                <li><strong>Mac 电脑</strong> (macOS 12.0+)</li>
+                <li><strong>移动设备</strong> (iPhone/iPad/Android) 用于远程访问</li>
+            </ul>
+
+            <h3>2.2 软件依赖</h3>
+            <h4>必需软件</h4>
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>软件</th>
+                            <th>版本要求</th>
+                            <th>用途</th>
+                            <th>安装命令</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>Python</strong></td>
+                            <td>3.11+</td>
+                            <td>API Server 运行环境</td>
+                            <td><code>brew install python@3.11</code></td>
+                        </tr>
+                        <tr>
+                            <td><strong>Node.js</strong></td>
+                            <td>18+</td>
+                            <td>Web UI 构建运行</td>
+                            <td><code>brew install node</code></td>
+                        </tr>
+                        <tr>
+                            <td><strong>Flutter</strong></td>
+                            <td>3.5+</td>
+                            <td>Desktop App 构建</td>
+                            <td><a href="https://flutter.dev" target="_blank">flutter.dev</a></td>
+                        </tr>
+                        <tr>
+                            <td><strong>tmux</strong></td>
+                            <td>3.0+</td>
+                            <td>会话管理</td>
+                            <td><code>brew install tmux</code></td>
+                        </tr>
+                        <tr>
+                            <td><strong>mkcert</strong></td>
+                            <td>-</td>
+                            <td>生成本地 HTTPS 证书</td>
+                            <td><code>brew install mkcert</code></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <h4>可选软件</h4>
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>软件</th>
+                            <th>用途</th>
+                            <th>安装命令</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>cloudflared</strong></td>
+                            <td>远程访问隧道</td>
+                            <td><code>brew install cloudflared</code></td>
+                        </tr>
+                        <tr>
+                            <td><strong>uv</strong></td>
+                            <td>Python 包管理器（推荐）</td>
+                            <td><code>brew install uv</code></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <h3>2.3 网络要求</h3>
+            <div class="feature-grid">
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-icon">🏠</div>
+                        <div class="card-title">本地访问模式</div>
+                    </div>
+                    <ul>
+                        <li>移动设备与 Mac 在同一局域网</li>
+                        <li>Mac 防火墙允许 5173、8765 端口</li>
+                    </ul>
+                </div>
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-icon">🌐</div>
+                        <div class="card-title">远程访问模式（推荐）</div>
+                    </div>
+                    <ul>
+                        <li>Cloudflare 账号</li>
+                        <li>自定义域名（可选，或使用 TryCloudflare 临时域名）</li>
+                    </ul>
+                </div>
+            </div>
+
+            <h3>2.4 检查依赖安装</h3>
+            <p>运行以下命令验证所有依赖：</p>
+            <pre data-lang="bash"><code><span class="token-comment"># 检查 Python</span>
+python3 --version  <span class="token-comment"># 应显示 3.11+</span>
+
+<span class="token-comment"># 检查 Node.js</span>
+node --version     <span class="token-comment"># 应显示 v18+</span>
+
+<span class="token-comment"># 检查 Flutter</span>
+flutter --version  <span class="token-comment"># 应显示 3.5+</span>
+
+<span class="token-comment"># 检查 tmux</span>
+tmux -V           <span class="token-comment"># 应显示 tmux 3.x</span>
+
+<span class="token-comment"># 检查 mkcert</span>
+mkcert --version  <span class="token-comment"># 应显示版本号</span>
+
+<span class="token-comment"># 检查 cloudflared（可选）</span>
+cloudflared --version</code></pre>
+        </section>
+
+        <!-- Section 3: Installation -->
+        <section id="installation" class="section">
+            <div class="section-header">
+                <div class="section-number">3</div>
+                <h2 class="section-title">安装配置</h2>
+            </div>
+
+            <h3>3.1 克隆项目</h3>
+            <pre data-lang="bash"><code>git clone https://github.com/your-repo/VibeMobile.git
+cd VibeMobile</code></pre>
+
+            <h3>3.2 生成 SSL 证书</h3>
+            <p>VibeMobile 使用 HTTPS 确保通信安全。首先需要生成本地 SSL 证书：</p>
+            <div class="steps">
+                <div class="step">
+                    <div class="step-number">1</div>
+                    <div class="step-content">
+                        <div class="step-title">安装 mkcert 根证书（首次运行）</div>
+                        <pre data-lang="bash"><code>mkcert -install</code></pre>
+                    </div>
+                </div>
+                <div class="step">
+                    <div class="step-number">2</div>
+                    <div class="step-content">
+                        <div class="step-title">创建证书目录</div>
+                        <pre data-lang="bash"><code>mkdir -p certs</code></pre>
+                    </div>
+                </div>
+                <div class="step">
+                    <div class="step-number">3</div>
+                    <div class="step-content">
+                        <div class="step-title">生成证书</div>
+                        <pre data-lang="bash"><code>mkcert -key-file certs/localhost-key.pem -cert-file certs/localhost.pem localhost 127.0.0.1</code></pre>
+                    </div>
+                </div>
+            </div>
+
+            <div class="notice info">
+                <div class="notice-icon">💡</div>
+                <div class="notice-content">
+                    <div class="notice-title">验证证书生成成功</div>
+                    <p>运行 <code>ls -la certs/</code> 应看到 localhost.pem 和 localhost-key.pem 两个文件</p>
+                </div>
+            </div>
+
+            <h3>3.3 安装 API Server 依赖</h3>
+            <div class="feature-grid">
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-icon">⚡</div>
+                        <div class="card-title">方式一：使用 uv（推荐）</div>
+                    </div>
+                    <pre data-lang="bash"><code><span class="token-comment"># 安装 uv（如果还没安装）</span>
+brew install uv
+
+<span class="token-comment"># 安装依赖</span>
+uv sync</code></pre>
+                </div>
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-icon">🐍</div>
+                        <div class="card-title">方式二：使用 pip</div>
+                    </div>
+                    <pre data-lang="bash"><code><span class="token-comment"># 创建虚拟环境</span>
+python3 -m venv .venv
+source .venv/bin/activate
+
+<span class="token-comment"># 安装依赖</span>
+pip install -e .</code></pre>
+                </div>
+            </div>
+
+            <h3>3.4 安装 Web UI 依赖</h3>
+            <pre data-lang="bash"><code>cd web
+npm install
+cd ..</code></pre>
+
+            <h3>3.5 构建 Desktop App</h3>
+            <pre data-lang="bash"><code>cd desktop
+flutter pub get
+flutter build macos --release
+cd ..</code></pre>
+
+            <div class="notice success">
+                <div class="notice-icon">✅</div>
+                <div class="notice-content">
+                    <div class="notice-title">构建完成</div>
+                    <p>应用位于：<code>desktop/build/macos/Build/Products/Release/VibeMobile.app</code></p>
+                    <p>可以将其拖到 <code>/Applications</code> 目录使用。</p>
+                </div>
+            </div>
+
+            <h3>3.6 验证安装</h3>
+            <h4>测试 API Server</h4>
+            <pre data-lang="bash"><code><span class="token-comment"># 启动 API Server</span>
+uv run python -m server.main
+
+<span class="token-comment"># 另开终端，测试健康检查</span>
+curl -k https://localhost:8765/health
+<span class="token-comment"># 应返回: {"status":"healthy"}</span></code></pre>
+
+            <h4>测试 Web UI</h4>
+            <pre data-lang="bash"><code>cd web
+npm run dev
+<span class="token-comment"># 访问 https://localhost:5173</span></code></pre>
+
+            <h3>3.7 目录结构</h3>
+            <pre data-lang="tree"><code>VibeMobile/
+├── certs/                    # SSL 证书
+│   ├── localhost.pem         # 证书文件
+│   └── localhost-key.pem     # 私钥文件
+├── server/                   # API Server (Python)
+├── web/                      # Web UI (React)
+├── desktop/                  # Desktop App (Flutter)
+│   └── build/macos/...       # 构建产物
+└── .venv/ 或 uv.lock         # Python 依赖</code></pre>
+        </section>
+
+        <!-- Section 4: Desktop App -->
+        <section id="desktop" class="section">
+            <div class="section-header">
+                <div class="section-number">4</div>
+                <h2 class="section-title">Desktop 应用使用</h2>
+            </div>
+
+            <h3>4.1 启动应用</h3>
+            <div class="feature-grid">
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-icon">🖱️</div>
+                        <div class="card-title">方式一：直接启动</div>
+                    </div>
+                    <p>双击 <code>VibeMobile.app</code>（如果已安装到 Applications）</p>
+                </div>
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-icon">💻</div>
+                        <div class="card-title">方式二：开发模式</div>
+                    </div>
+                    <pre data-lang="bash"><code>cd desktop
+flutter run -d macos</code></pre>
+                </div>
+            </div>
+
+            <h3>4.2 主界面概览</h3>
+            <div class="ascii-art">
+                <pre><code>┌─────────────────────────────────────────────────────────────────┐
+│  VibeMobile                                         [设置] [_][x]│
+├─────────────────────────────────────────────────────────────────┤
+│                                                                 │
+│  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐ │
+│  │   API Server    │  │    Web UI       │  │    Tunnel       │ │
+│  │    ● 运行中     │  │    ● 运行中     │  │    ○ 未启动     │ │
+│  │   :8765        │  │   :5173         │  │                 │ │
+│  │   [停止]       │  │   [停止]        │  │   [启动]        │ │
+│  └─────────────────┘  └─────────────────┘  └─────────────────┘ │
+│                                                                 │
+│  ┌─────────────────────────────────────────────────────────────┐│
+│  │ 会话列表                                            [+ 新建]││
+│  ├─────────────────────────────────────────────────────────────┤│
+│  │ ○ vibe-main       活跃   12:30   [打开] [终止]             ││
+│  │ ○ vibe-debug      活跃   11:45   [打开] [终止]             ││
+│  └─────────────────────────────────────────────────────────────┘│
+│                                                                 │
+│  ┌─────────────────────────────────────────────────────────────┐│
+│  │ 已配对设备                                      [生成配对码]││
+│  ├─────────────────────────────────────────────────────────────┤│
+│  │ iPhone 15 Pro    完全信任    最后活跃: 5分钟前   [管理]    ││
+│  │ iPad Air         只读       最后活跃: 2小时前    [管理]    ││
+│  └─────────────────────────────────────────────────────────────┘│
+│                                                                 │
+│  [全部启动]                              [全部停止]             │
+└─────────────────────────────────────────────────────────────────┘</code></pre>
+            </div>
+
+            <h3>4.3 服务管理</h3>
+            <h4>启动所有服务</h4>
+            <p>点击 <strong>"全部启动"</strong> 按钮，将依次启动：</p>
+            <ol>
+                <li>API Server（端口 8765）</li>
+                <li>Web UI（端口 5173）</li>
+            </ol>
+
+            <h4>服务状态指示</h4>
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>状态</th>
+                            <th>图标</th>
+                            <th>说明</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>运行中</td>
+                            <td><span class="badge badge-success">● 绿色</span></td>
+                            <td>服务正常运行</td>
+                        </tr>
+                        <tr>
+                            <td>启动中</td>
+                            <td><span class="badge badge-warning">○ 黄色</span></td>
+                            <td>服务正在启动</td>
+                        </tr>
+                        <tr>
+                            <td>已停止</td>
+                            <td><span class="badge" style="background: rgba(100,116,139,0.2); color: #94a3b8;">○ 灰色</span></td>
+                            <td>服务未运行</td>
+                        </tr>
+                        <tr>
+                            <td>错误</td>
+                            <td><span class="badge" style="background: rgba(239,68,68,0.2); color: #ef4444;">● 红色</span></td>
+                            <td>服务出错</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <h3>4.4 会话管理</h3>
+            <div class="feature-grid">
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-icon">➕</div>
+                        <div class="card-title">创建新会话</div>
+                    </div>
+                    <ol>
+                        <li>点击会话列表右上角的 <strong>"+ 新建"</strong> 按钮</li>
+                        <li>输入会话名称（可选，默认为 <code>vibe-{timestamp}</code>）</li>
+                        <li>选择工作目录</li>
+                        <li>点击 "创建"</li>
+                    </ol>
+                </div>
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-icon">🗑️</div>
+                        <div class="card-title">终止会话</div>
+                    </div>
+                    <p>点击会话行的 <strong>"终止"</strong> 按钮，将终止该 tmux 会话及其中运行的所有程序。</p>
+                </div>
+            </div>
+
+            <h3>4.5 设备配对</h3>
+            <div class="architecture-diagram">
+                <div class="diagram-container">
+                    <div class="diagram-row">
+                        <div class="diagram-box primary">
+                            <div class="diagram-box-title">Desktop App</div>
+                        </div>
+                        <div style="display: flex; flex-direction: column; align-items: center; gap: 8px;">
+                            <div class="diagram-arrow">1. 生成配对码 →</div>
+                            <div class="diagram-arrow">← 2. 输入配对码</div>
+                            <div class="diagram-arrow">3. 显示配对请求 →</div>
+                            <div class="diagram-arrow">← 4. 批准配对</div>
+                        </div>
+                        <div class="diagram-box accent">
+                            <div class="diagram-box-title">Mobile Browser</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <h3>4.6 信任级别说明</h3>
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>级别</th>
+                            <th>权限</th>
+                            <th>适用场景</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><span class="badge badge-success">完全信任</span></td>
+                            <td>所有操作，包括创建/终止会话</td>
+                            <td>自己的设备</td>
+                        </tr>
+                        <tr>
+                            <td><span class="badge badge-warning">部分信任</span></td>
+                            <td>发送消息、上传文件</td>
+                            <td>临时使用的设备</td>
+                        </tr>
+                        <tr>
+                            <td><span class="badge badge-primary">只读</span></td>
+                            <td>仅查看会话输出</td>
+                            <td>演示或监控用途</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <h3>4.7 设置选项</h3>
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>设置项</th>
+                            <th>默认值</th>
+                            <th>说明</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr><td>API 端口</td><td>8765</td><td>API Server 监听端口</td></tr>
+                        <tr><td>Web 端口</td><td>5173</td><td>Web UI 监听端口</td></tr>
+                        <tr><td>会话前缀</td><td>vibe</td><td>tmux 会话名称前缀</td></tr>
+                        <tr><td>终端应用</td><td>Terminal</td><td>打开会话使用的终端（Terminal/iTerm）</td></tr>
+                        <tr><td>开机启动</td><td>否</td><td>是否随系统启动</td></tr>
+                        <tr><td>自动启动服务</td><td>否</td><td>启动应用时自动启动所有服务</td></tr>
+                        <tr><td>Tunnel 名称</td><td>空</td><td>自定义 Cloudflare Tunnel 名称</td></tr>
+                        <tr><td>Tunnel 域名</td><td>空</td><td>自定义域名（如 privatechannel1.vibemobile.net）</td></tr>
+                        <tr><td>代理地址</td><td>空</td><td>cloudflared 使用的代理</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <h3>4.8 快速开始流程</h3>
+            <div class="steps">
+                <div class="step">
+                    <div class="step-number">1</div>
+                    <div class="step-content">
+                        <div class="step-title">启动 Desktop App</div>
+                        <pre data-lang="bash"><code>open /Applications/VibeMobile.app</code></pre>
+                    </div>
+                </div>
+                <div class="step">
+                    <div class="step-number">2</div>
+                    <div class="step-content">
+                        <div class="step-title">点击 "全部启动" 启动 API 和 Web</div>
+                    </div>
+                </div>
+                <div class="step">
+                    <div class="step-number">3</div>
+                    <div class="step-content">
+                        <div class="step-title">点击 "启动 Tunnel"（可选，用于远程访问）</div>
+                    </div>
+                </div>
+                <div class="step">
+                    <div class="step-number">4</div>
+                    <div class="step-content">
+                        <div class="step-title">在移动设备上打开 Tunnel URL 或 https://localhost:5173</div>
+                    </div>
+                </div>
+                <div class="step">
+                    <div class="step-number">5</div>
+                    <div class="step-content">
+                        <div class="step-title">输入配对码完成配对</div>
+                    </div>
+                </div>
+                <div class="step">
+                    <div class="step-number">6</div>
+                    <div class="step-content">
+                        <div class="step-title">开始远程控制 Claude Code！</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 5: Web UI -->
+        <section id="webui" class="section">
+            <div class="section-header">
+                <div class="section-number">5</div>
+                <h2 class="section-title">Web UI 使用</h2>
+            </div>
+
+            <h3>5.1 访问 Web UI</h3>
+            <div class="feature-grid">
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-icon">🏠</div>
+                        <div class="card-title">本地访问（同一网络）</div>
+                    </div>
+                    <pre data-lang="url"><code>https://localhost:5173</code></pre>
+                    <p>或使用 Mac 的 IP 地址：</p>
+                    <pre data-lang="url"><code>https://192.168.x.x:5173</code></pre>
+                </div>
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-icon">🌐</div>
+                        <div class="card-title">远程访问（通过 Tunnel）</div>
+                    </div>
+                    <pre data-lang="url"><code>https://privatechannel1.vibemobile.net</code></pre>
+                </div>
+            </div>
+
+            <div class="notice warning">
+                <div class="notice-icon">⚠️</div>
+                <div class="notice-content">
+                    <div class="notice-title">注意</div>
+                    <p>首次访问时浏览器会显示证书警告，需要点击"继续访问"。</p>
+                </div>
+            </div>
+
+            <h3>5.2 设备配对</h3>
+            <div class="ascii-art">
+                <pre><code>┌─────────────────────────────────────────┐
+│                                         │
+│           设备配对                       │
+│                                         │
+│  请输入 Desktop 应用显示的 6 位配对码    │
+│                                         │
+│     ┌───┬───┬───┬───┬───┬───┐         │
+│     │ 1 │ 2 │ 3 │ 4 │ 5 │ 6 │         │
+│     └───┴───┴───┴───┴───┴───┘         │
+│                                         │
+│           [ 配对 ]                      │
+│                                         │
+│  没有配对码？在 Desktop 应用中生成       │
+│                                         │
+└─────────────────────────────────────────┘</code></pre>
+            </div>
+
+            <h3>5.3 会话交互界面</h3>
+            <div class="ascii-art">
+                <pre><code>┌─────────────────────────────────────────┐
+│  ← vibe-main                           │
+├─────────────────────────────────────────┤
+│                                         │
+│  $ claude                               │
+│                                         │
+│  ╭─────────────────────────────────────╮│
+│  │ 我来帮你分析这段代码...             ││
+│  │                                     ││
+│  │ 这个函数主要做了以下几件事：        ││
+│  │ 1. 首先验证输入参数                 ││
+│  │ 2. 然后调用 API 获取数据            ││
+│  │ 3. 最后格式化输出结果               ││
+│  ╰─────────────────────────────────────╯│
+│                                         │
+│  ● Claude 正在思考...                   │
+│                                         │
+├─────────────────────────────────────────┤
+│  [Ctrl+C] [Esc] [↵] [📷]               │
+│  ┌─────────────────────────────────────┐│
+│  │ 请帮我优化这个函数的性能...        ││
+│  └─────────────────────────────────────┘│
+│                        [发送]           │
+└─────────────────────────────────────────┘</code></pre>
+            </div>
+
+            <h3>5.4 交互功能</h3>
+            <h4>特殊键</h4>
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>按钮</th>
+                            <th>功能</th>
+                            <th>说明</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>Ctrl+C</strong></td>
+                            <td>中断</td>
+                            <td>中断当前命令执行</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Esc</strong></td>
+                            <td>取消</td>
+                            <td>取消当前操作或退出模式</td>
+                        </tr>
+                        <tr>
+                            <td><strong>↵ Enter</strong></td>
+                            <td>确认</td>
+                            <td>发送回车键</td>
+                        </tr>
+                        <tr>
+                            <td><strong>📷 图片</strong></td>
+                            <td>上传图片</td>
+                            <td>上传截图或图片给 Claude</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <h4>上传图片使用场景</h4>
+            <ul>
+                <li>截图展示 UI 问题</li>
+                <li>发送设计稿图片</li>
+                <li>分享错误截图</li>
+            </ul>
+
+            <h3>5.5 权限限制</h3>
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>功能</th>
+                            <th>完全信任</th>
+                            <th>部分信任</th>
+                            <th>只读</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>查看输出</td>
+                            <td style="color: var(--success);">✓</td>
+                            <td style="color: var(--success);">✓</td>
+                            <td style="color: var(--success);">✓</td>
+                        </tr>
+                        <tr>
+                            <td>发送消息</td>
+                            <td style="color: var(--success);">✓</td>
+                            <td style="color: var(--success);">✓</td>
+                            <td style="color: var(--error);">✗</td>
+                        </tr>
+                        <tr>
+                            <td>上传图片</td>
+                            <td style="color: var(--success);">✓</td>
+                            <td style="color: var(--success);">✓</td>
+                            <td style="color: var(--error);">✗</td>
+                        </tr>
+                        <tr>
+                            <td>发送特殊键</td>
+                            <td style="color: var(--success);">✓</td>
+                            <td style="color: var(--success);">✓</td>
+                            <td style="color: var(--error);">✗</td>
+                        </tr>
+                        <tr>
+                            <td>创建会话</td>
+                            <td style="color: var(--success);">✓</td>
+                            <td style="color: var(--error);">✗</td>
+                            <td style="color: var(--error);">✗</td>
+                        </tr>
+                        <tr>
+                            <td>终止会话</td>
+                            <td style="color: var(--success);">✓</td>
+                            <td style="color: var(--error);">✗</td>
+                            <td style="color: var(--error);">✗</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <h3>5.6 移动端优化</h3>
+            <div class="feature-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">📱</div>
+                    <div class="feature-title">响应式布局</div>
+                    <div class="feature-desc">适配各种屏幕尺寸</div>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">👆</div>
+                    <div class="feature-title">触摸友好</div>
+                    <div class="feature-desc">按钮足够大，易于点击</div>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">⌨️</div>
+                    <div class="feature-title">软键盘适配</div>
+                    <div class="feature-desc">输入时自动调整布局</div>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🔄</div>
+                    <div class="feature-title">横屏支持</div>
+                    <div class="feature-desc">横屏时显示更多内容</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 6: Tunnel -->
+        <section id="tunnel" class="section">
+            <div class="section-header">
+                <div class="section-number">6</div>
+                <h2 class="section-title">Cloudflare Tunnel 配置</h2>
+            </div>
+
+            <p>Cloudflare Tunnel 允许你从任何地方安全地访问 VibeMobile，无需公网 IP 或端口映射。</p>
+
+            <h3>6.1 两种 Tunnel 模式</h3>
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>模式</th>
+                            <th>域名</th>
+                            <th>持久性</th>
+                            <th>适用场景</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><span class="badge badge-warning">Quick Tunnel</span></td>
+                            <td>随机 <code>.trycloudflare.com</code></td>
+                            <td>每次启动变化</td>
+                            <td>临时使用、测试</td>
+                        </tr>
+                        <tr>
+                            <td><span class="badge badge-success">Named Tunnel</span></td>
+                            <td>自定义域名</td>
+                            <td>永久固定</td>
+                            <td>长期使用、生产环境</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <h3>6.2 Quick Tunnel（快速隧道）</h3>
+            <p>最简单的方式，无需任何配置：</p>
+            <ol>
+                <li>在 Desktop App 中点击 <strong>"启动 Tunnel"</strong></li>
+                <li>等待连接成功，显示类似：<code>https://abc123-xyz.trycloudflare.com</code></li>
+                <li>在移动设备上打开此 URL</li>
+            </ol>
+
+            <div class="notice warning">
+                <div class="notice-icon">⚠️</div>
+                <div class="notice-content">
+                    <div class="notice-title">Quick Tunnel 缺点</div>
+                    <ul>
+                        <li>URL 每次启动都会变化</li>
+                        <li>无法使用自定义域名</li>
+                        <li>无法配置 Cloudflare Access 等高级功能</li>
+                    </ul>
+                </div>
+            </div>
+
+            <h3>6.3 Named Tunnel（命名隧道）</h3>
+            <p>使用自定义域名的永久隧道，推荐用于长期使用。</p>
+
+            <h4>前提条件</h4>
+            <ul>
+                <li>Cloudflare 账号</li>
+                <li>已添加到 Cloudflare 的域名（如 <code>vibemobile.net</code>）</li>
+                <li>安装 cloudflared CLI</li>
+            </ul>
+
+            <div class="steps">
+                <div class="step">
+                    <div class="step-number">1</div>
+                    <div class="step-content">
+                        <div class="step-title">登录 Cloudflare</div>
+                        <pre data-lang="bash"><code>cloudflared login</code></pre>
+                        <p>浏览器会打开 Cloudflare 登录页面，选择要使用的域名并授权。</p>
+                    </div>
+                </div>
+                <div class="step">
+                    <div class="step-number">2</div>
+                    <div class="step-content">
+                        <div class="step-title">创建 Tunnel</div>
+                        <pre data-lang="bash"><code><span class="token-comment"># 创建名为 VibeMobile 的 tunnel</span>
+cloudflared tunnel create VibeMobile
+
+<span class="token-comment"># 输出类似：</span>
+<span class="token-comment"># Created tunnel VibeMobile with id 0c18c362-77a4-4a22-ab5c-114f39f6ceca</span></code></pre>
+                    </div>
+                </div>
+                <div class="step">
+                    <div class="step-number">3</div>
+                    <div class="step-content">
+                        <div class="step-title">配置 DNS 路由</div>
+                        <pre data-lang="bash"><code><span class="token-comment"># 将域名指向 tunnel</span>
+cloudflared tunnel route dns VibeMobile privatechannel1.vibemobile.net</code></pre>
+                    </div>
+                </div>
+                <div class="step">
+                    <div class="step-number">4</div>
+                    <div class="step-content">
+                        <div class="step-title">创建配置文件</div>
+                        <p>创建 <code>~/.cloudflared/config.yml</code>：</p>
+                        <pre data-lang="yaml"><code><span class="token-comment"># Tunnel 标识</span>
+<span class="token-variable">tunnel</span>: VibeMobile
+<span class="token-variable">credentials-file</span>: /Users/你的用户名/.cloudflared/0c18c362-xxxx.json
+
+<span class="token-variable">ingress</span>:
+  <span class="token-comment"># API 端点 - 代理到后端服务器（必须以 /api/ 开头）</span>
+  - <span class="token-variable">hostname</span>: privatechannel1.vibemobile.net
+    <span class="token-variable">path</span>: ^/api/.*$
+    <span class="token-variable">service</span>: https://localhost:8765
+    <span class="token-variable">originRequest</span>:
+      <span class="token-variable">noTLSVerify</span>: <span class="token-keyword">true</span>
+
+  <span class="token-comment"># WebSocket 端点</span>
+  - <span class="token-variable">hostname</span>: privatechannel1.vibemobile.net
+    <span class="token-variable">path</span>: ^/ws$
+    <span class="token-variable">service</span>: https://localhost:8765
+    <span class="token-variable">originRequest</span>:
+      <span class="token-variable">noTLSVerify</span>: <span class="token-keyword">true</span>
+
+  <span class="token-comment"># 健康检查</span>
+  - <span class="token-variable">hostname</span>: privatechannel1.vibemobile.net
+    <span class="token-variable">path</span>: ^/health$
+    <span class="token-variable">service</span>: https://localhost:8765
+    <span class="token-variable">originRequest</span>:
+      <span class="token-variable">noTLSVerify</span>: <span class="token-keyword">true</span>
+
+  <span class="token-comment"># Web UI - 默认路由</span>
+  - <span class="token-variable">hostname</span>: privatechannel1.vibemobile.net
+    <span class="token-variable">service</span>: https://localhost:5173
+    <span class="token-variable">originRequest</span>:
+      <span class="token-variable">noTLSVerify</span>: <span class="token-keyword">true</span>
+
+  <span class="token-comment"># 兜底规则</span>
+  - <span class="token-variable">service</span>: http_status:404</code></pre>
+                    </div>
+                </div>
+                <div class="step">
+                    <div class="step-number">5</div>
+                    <div class="step-content">
+                        <div class="step-title">测试 Tunnel</div>
+                        <pre data-lang="bash"><code>cloudflared tunnel run VibeMobile
+
+<span class="token-comment"># 看到以下输出表示成功：</span>
+<span class="token-comment"># INF Connection registered connIndex=0 ...</span></code></pre>
+                    </div>
+                </div>
+            </div>
+
+            <h3>6.4 关键配置说明</h3>
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>配置项</th>
+                            <th>说明</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code>tunnel</code></td>
+                            <td>Tunnel 名称，与创建时一致</td>
+                        </tr>
+                        <tr>
+                            <td><code>credentials-file</code></td>
+                            <td>凭证文件路径（创建 tunnel 时自动生成）</td>
+                        </tr>
+                        <tr>
+                            <td><code>path: ^/api/.*$</code></td>
+                            <td><strong>正则表达式</strong>，只匹配以 <code>/api/</code> 开头的路径</td>
+                        </tr>
+                        <tr>
+                            <td><code>noTLSVerify: true</code></td>
+                            <td>允许本地服务使用自签名证书</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="notice info">
+                <div class="notice-icon">💡</div>
+                <div class="notice-content">
+                    <div class="notice-title">路由优先级</div>
+                    <ol>
+                        <li><code>/api/*</code> → API Server (8765)</li>
+                        <li><code>/ws</code> → WebSocket (8765)</li>
+                        <li><code>/health</code> → Health Check (8765)</li>
+                        <li><code>/*</code> → Web UI (5173)</li>
+                    </ol>
+                </div>
+            </div>
+
+            <h3>6.5 常见配置问题</h3>
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-icon">❌</div>
+                    <div class="card-title">问题：路径匹配错误</div>
+                </div>
+                <p><strong>症状：</strong>访问 <code>/src/services/api.ts</code> 返回 API 服务器的 404</p>
+                <p><strong>原因：</strong>路径模式 <code>/api/*</code> 使用子字符串匹配，包含 "api" 的路径都会匹配</p>
+                <p><strong>解决：</strong>使用正则表达式 <code>^/api/.*$</code> 确保只匹配以 <code>/api/</code> 开头的路径</p>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-icon">❌</div>
+                    <div class="card-title">问题：无法连接到 origin service</div>
+                </div>
+                <p><strong>症状：</strong>错误信息 "Unable to reach origin service http://localhost:5173"</p>
+                <p><strong>原因：</strong>Web UI 使用 HTTPS，不是 HTTP</p>
+                <p><strong>解决：</strong>将 service 改为 <code>https://localhost:5173</code> 并添加 <code>noTLSVerify: true</code></p>
+            </div>
+
+            <h3>6.6 Tunnel 命令参考</h3>
+            <pre data-lang="bash"><code><span class="token-comment"># 查看所有 tunnel</span>
+cloudflared tunnel list
+
+<span class="token-comment"># 查看 tunnel 详情</span>
+cloudflared tunnel info VibeMobile
+
+<span class="token-comment"># 删除 tunnel</span>
+cloudflared tunnel delete VibeMobile
+
+<span class="token-comment"># 手动运行 tunnel</span>
+cloudflared tunnel run VibeMobile
+
+<span class="token-comment"># 测试配置文件</span>
+cloudflared tunnel ingress validate</code></pre>
+        </section>
+
+        <!-- Section 7: Advanced -->
+        <section id="advanced" class="section">
+            <div class="section-header">
+                <div class="section-number">7</div>
+                <h2 class="section-title">高级配置</h2>
+            </div>
+
+            <h3>7.1 环境变量</h3>
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>变量</th>
+                            <th>默认值</th>
+                            <th>说明</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code>VIBE_HOST</code></td>
+                            <td>0.0.0.0</td>
+                            <td>服务器绑定地址</td>
+                        </tr>
+                        <tr>
+                            <td><code>VIBE_PORT</code></td>
+                            <td>8765</td>
+                            <td>服务器端口</td>
+                        </tr>
+                        <tr>
+                            <td><code>VIBE_SSL_CERTFILE</code></td>
+                            <td>certs/localhost.pem</td>
+                            <td>SSL 证书路径</td>
+                        </tr>
+                        <tr>
+                            <td><code>VIBE_SSL_KEYFILE</code></td>
+                            <td>certs/localhost-key.pem</td>
+                            <td>SSL 私钥路径</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <h3>7.2 Desktop App 设置文件</h3>
+            <p>设置存储在 <code>~/.vibemobile/settings.json</code>：</p>
+            <pre data-lang="json"><code>{
+  <span class="token-string">"api_port"</span>: <span class="token-number">8765</span>,
+  <span class="token-string">"web_port"</span>: <span class="token-number">5173</span>,
+  <span class="token-string">"session_prefix"</span>: <span class="token-string">"vibe"</span>,
+  <span class="token-string">"auto_start_server"</span>: <span class="token-keyword">false</span>,
+  <span class="token-string">"launch_at_login"</span>: <span class="token-keyword">false</span>,
+  <span class="token-string">"terminal_app"</span>: <span class="token-string">"terminal"</span>,
+  <span class="token-string">"enable_tunnel"</span>: <span class="token-keyword">false</span>,
+  <span class="token-string">"tunnel_name"</span>: <span class="token-string">"VibeMobile"</span>,
+  <span class="token-string">"tunnel_hostname"</span>: <span class="token-string">"https://privatechannel1.vibemobile.net"</span>,
+  <span class="token-string">"proxy_url"</span>: <span class="token-string">"http://127.0.0.1:7890"</span>
+}</code></pre>
+
+            <h3>7.3 API 端点参考</h3>
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>端点</th>
+                            <th>方法</th>
+                            <th>说明</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr><td><code>/health</code></td><td>GET</td><td>健康检查</td></tr>
+                        <tr><td><code>/api/sessions</code></td><td>GET</td><td>列出所有会话</td></tr>
+                        <tr><td><code>/api/sessions</code></td><td>POST</td><td>创建新会话</td></tr>
+                        <tr><td><code>/api/sessions/{id}</code></td><td>GET</td><td>获取会话详情</td></tr>
+                        <tr><td><code>/api/sessions/{id}</code></td><td>DELETE</td><td>终止会话</td></tr>
+                        <tr><td><code>/api/sessions/{id}/send</code></td><td>POST</td><td>发送命令到会话</td></tr>
+                        <tr><td><code>/api/sessions/{id}/key</code></td><td>POST</td><td>发送特殊键</td></tr>
+                        <tr><td><code>/api/sessions/{id}/upload</code></td><td>POST</td><td>上传文件</td></tr>
+                        <tr><td><code>/api/auth/pair/initiate</code></td><td>POST</td><td>生成配对码</td></tr>
+                        <tr><td><code>/api/auth/pair/complete</code></td><td>POST</td><td>完成配对</td></tr>
+                        <tr><td><code>/ws</code></td><td>WebSocket</td><td>实时更新通道</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Section 8: Troubleshooting -->
+        <section id="troubleshooting" class="section">
+            <div class="section-header">
+                <div class="section-number">8</div>
+                <h2 class="section-title">故障排除</h2>
+            </div>
+
+            <h3>8.1 证书问题</h3>
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-icon">🔒</div>
+                    <div class="card-title">浏览器显示 "您的连接不是私密连接"</div>
+                </div>
+                <ol>
+                    <li>确保已安装 mkcert 根证书：<code>mkcert -install</code></li>
+                    <li>在浏览器中手动信任证书：Chrome 点击 "高级" → "继续访问"</li>
+                    <li>重新生成证书：
+                        <pre data-lang="bash"><code>cd certs && rm *.pem
+mkcert -key-file localhost-key.pem -cert-file localhost.pem localhost 127.0.0.1</code></pre>
+                    </li>
+                </ol>
+            </div>
+
+            <h3>8.2 服务无法启动</h3>
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-icon">⚡</div>
+                    <div class="card-title">API Server 启动失败</div>
+                </div>
+                <pre data-lang="bash"><code><span class="token-comment"># 1. 检查端口是否被占用</span>
+lsof -i :8765
+
+<span class="token-comment"># 2. 检查证书文件是否存在</span>
+ls -la certs/
+
+<span class="token-comment"># 3. 检查 Python 依赖</span>
+uv sync
+
+<span class="token-comment"># 4. 查看详细错误</span>
+uv run python -m server.main 2>&1</code></pre>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-icon">🌐</div>
+                    <div class="card-title">Web UI 启动失败</div>
+                </div>
+                <pre data-lang="bash"><code><span class="token-comment"># 1. 检查 Node.js 版本</span>
+node --version  <span class="token-comment"># 需要 18+</span>
+
+<span class="token-comment"># 2. 重新安装依赖</span>
+cd web && rm -rf node_modules && npm install
+
+<span class="token-comment"># 3. 检查端口</span>
+lsof -i :5173</code></pre>
+            </div>
+
+            <h3>8.3 Tunnel 问题</h3>
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-icon">🔌</div>
+                    <div class="card-title">Tunnel 启动超时</div>
+                </div>
+                <pre data-lang="bash"><code><span class="token-comment"># 检查 cloudflared 是否正常</span>
+cloudflared --version
+
+<span class="token-comment"># 检查网络连接</span>
+curl -I https://cloudflare.com
+
+<span class="token-comment"># 如果使用代理，确保代理配置正确</span>
+export HTTPS_PROXY=http://127.0.0.1:7890
+cloudflared tunnel run VibeMobile</code></pre>
+            </div>
+
+            <h3>8.4 日志位置</h3>
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>组件</th>
+                            <th>日志位置</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr><td>API Server</td><td>终端标准输出</td></tr>
+                        <tr><td>Desktop App</td><td><code>~/Library/Logs/VibeMobile/</code></td></tr>
+                        <tr><td>cloudflared</td><td>终端标准输出</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <h3>8.5 重置所有设置</h3>
+            <div class="notice error">
+                <div class="notice-icon">⚠️</div>
+                <div class="notice-content">
+                    <div class="notice-title">如果遇到无法解决的问题，可以重置：</div>
+                    <pre data-lang="bash"><code><span class="token-comment"># 1. 停止所有服务</span>
+pkill -f "python -m server.main"
+pkill -f "npm run dev"
+pkill cloudflared
+
+<span class="token-comment"># 2. 删除设置</span>
+rm -rf ~/.vibemobile/
+
+<span class="token-comment"># 3. 重新生成证书</span>
+cd certs && rm *.pem
+mkcert -key-file localhost-key.pem -cert-file localhost.pem localhost 127.0.0.1</code></pre>
+                </div>
+            </div>
+        </section>
+
+        <!-- Appendix -->
+        <section class="section">
+            <div class="section-header">
+                <div class="section-number">📎</div>
+                <h2 class="section-title">附录</h2>
+            </div>
+
+            <h3>A. 快速命令参考</h3>
+            <pre data-lang="bash"><code><span class="token-comment"># 启动 API Server</span>
+uv run python -m server.main
+
+<span class="token-comment"># 启动 Web UI</span>
+cd web && npm run dev
+
+<span class="token-comment"># 启动 Tunnel（快速）</span>
+cloudflared tunnel --url https://localhost:5173
+
+<span class="token-comment"># 启动 Tunnel（命名）</span>
+cloudflared tunnel run VibeMobile
+
+<span class="token-comment"># 列出 tmux 会话</span>
+tmux ls
+
+<span class="token-comment"># 附加到会话</span>
+tmux attach -t vibe-xxx</code></pre>
+
+            <h3>B. 端口速查表</h3>
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>服务</th>
+                            <th>端口</th>
+                            <th>协议</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr><td>API Server</td><td>8765</td><td>HTTPS</td></tr>
+                        <tr><td>Web UI</td><td>5173</td><td>HTTPS</td></tr>
+                        <tr><td>WebSocket</td><td>8765</td><td>WSS</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <h3>C. 相关链接</h3>
+            <ul>
+                <li><a href="https://developers.cloudflare.com/cloudflare-one/connections/connect-apps/" target="_blank">Cloudflare Tunnel 文档</a></li>
+                <li><a href="https://github.com/FiloSottile/mkcert" target="_blank">mkcert 项目</a></li>
+                <li><a href="https://man7.org/linux/man-pages/man1/tmux.1.html" target="_blank">tmux 手册</a></li>
+            </ul>
+        </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-content">
+            <div class="footer-links">
+                <a href="#overview">系统概述</a>
+                <a href="#installation">安装配置</a>
+                <a href="#tunnel">Tunnel 配置</a>
+                <a href="#troubleshooting">故障排除</a>
+            </div>
+            <div class="footer-meta">
+                <p><strong>VibeMobile</strong> - 远程监控和控制 Claude Code 会话</p>
+                <p>文档版本 1.0 | 最后更新 2024-12-27</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Back to Top Button -->
+    <button class="back-to-top" id="backToTop" aria-label="返回顶部">↑</button>
+
+    <script>
+        // Back to top button
+        const backToTop = document.getElementById('backToTop');
+
+        window.addEventListener('scroll', () => {
+            if (window.scrollY > 300) {
+                backToTop.classList.add('visible');
+            } else {
+                backToTop.classList.remove('visible');
+            }
+        });
+
+        backToTop.addEventListener('click', () => {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        });
+
+        // Active nav link highlighting
+        const sections = document.querySelectorAll('section[id]');
+        const navLinks = document.querySelectorAll('.nav a');
+
+        window.addEventListener('scroll', () => {
+            let current = '';
+            sections.forEach(section => {
+                const sectionTop = section.offsetTop;
+                if (scrollY >= sectionTop - 100) {
+                    current = section.getAttribute('id');
+                }
+            });
+
+            navLinks.forEach(link => {
+                link.classList.remove('active');
+                if (link.getAttribute('href') === '#' + current) {
+                    link.classList.add('active');
+                }
+            });
+        });
+    </script>
+</body>
+</html>
