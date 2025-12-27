@@ -1,8 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/config/app_config.dart';
-import '../../domain/services/web_service.dart';
 import 'settings_provider.dart';
+import 'server_provider.dart';
 
 /// Web service state.
 enum WebStatus {
@@ -44,90 +44,71 @@ class WebState {
   bool get isInstallingDeps => status == WebStatus.installingDeps;
 }
 
-/// Provider for WebService instance.
-final webServiceProvider = Provider<WebService>((ref) {
-  final projectPath = AppConfig.getProjectPath();
-  return WebService(projectPath: projectPath);
-});
-
 /// Provider for web state management.
+///
+/// With the unified Node.js backend, Web UI is served by the same server.
+/// This provider mirrors the server state for UI compatibility.
 class WebNotifier extends StateNotifier<WebState> {
-  final WebService _service;
   final Ref _ref;
 
-  WebNotifier(this._service, this._ref) : super(const WebState.initial());
+  WebNotifier(this._ref) : super(const WebState.initial()) {
+    // Listen to server state changes
+    _ref.listen<ServerState>(serverProvider, (prev, next) {
+      if (!mounted) return;
 
-  int get _webPort => _ref.read(settingsProvider).webPort;
+      // Mirror server state
+      switch (next.status) {
+        case ServerStatus.stopped:
+          state = state.copyWith(status: WebStatus.stopped, clearError: true);
+          break;
+        case ServerStatus.starting:
+          state = state.copyWith(status: WebStatus.starting, clearError: true);
+          break;
+        case ServerStatus.running:
+          state = state.copyWith(status: WebStatus.running, clearError: true);
+          break;
+        case ServerStatus.stopping:
+          state = state.copyWith(status: WebStatus.stopping, clearError: true);
+          break;
+        case ServerStatus.error:
+          state = state.copyWith(
+            status: WebStatus.error,
+            errorMessage: next.errorMessage,
+          );
+          break;
+      }
+    });
+  }
 
-  /// Check if web server is already running (call on app startup).
+  int get _apiPort => _ref.read(settingsProvider).apiPort;
+
+  /// Check if web UI is accessible (same as server health check).
   Future<void> checkExistingStatus() async {
-    final isRunning = await _service.healthCheck(_webPort);
-    if (isRunning && mounted) {
+    // Mirror server state - the unified server serves both API and Web UI
+    final serverState = _ref.read(serverProvider);
+    if (serverState.isRunning) {
       state = state.copyWith(status: WebStatus.running);
     }
   }
 
   Future<void> start() async {
-    if (state.isRunning || state.isStarting) return;
-
-    // Check if node_modules exists
-    if (!_service.hasNodeModules()) {
-      state = state.copyWith(status: WebStatus.installingDeps, clearError: true);
-      final installed = await _service.installDependencies();
-      if (!installed) {
-        state = state.copyWith(
-          status: WebStatus.error,
-          errorMessage: 'Failed to install npm dependencies',
-        );
-        return;
-      }
-    }
-
-    state = state.copyWith(status: WebStatus.starting, clearError: true);
-
-    // Start with callback - returns immediately, callback updates state
-    await _service.start(
-      _webPort,
-      onStatusChange: (isRunning, error) {
-        if (!mounted) return;
-        if (isRunning) {
-          state = state.copyWith(status: WebStatus.running);
-        } else if (error != null) {
-          state = state.copyWith(
-            status: WebStatus.error,
-            errorMessage: error,
-          );
-        } else {
-          state = state.copyWith(status: WebStatus.stopped);
-        }
-      },
-    );
+    // Web UI is served by the unified server - just start the server
+    await _ref.read(serverProvider.notifier).start();
   }
 
   Future<void> stop() async {
-    if (state.isStopped || state.isStopping) return;
-
-    state = state.copyWith(status: WebStatus.stopping, clearError: true);
-
-    try {
-      await _service.stop();
-      state = state.copyWith(status: WebStatus.stopped);
-    } catch (e) {
-      state = state.copyWith(
-        status: WebStatus.error,
-        errorMessage: e.toString(),
-      );
-    }
+    // Web UI is served by the unified server - stopping web doesn't stop server
+    // In the unified architecture, this is a no-op since we don't want to
+    // stop the API server just to stop the web UI
+    // If you want to stop both, use server stop
   }
 
   Future<void> restart() async {
-    await stop();
-    await Future.delayed(const Duration(milliseconds: 500));
-    await start();
+    await _ref.read(serverProvider.notifier).restart();
   }
 
   Future<bool> healthCheck() async {
-    return await _service.healthCheck(_webPort);
+    return await _ref.read(serverProvider.notifier).healthCheck();
   }
 
   void clearError() {
@@ -140,6 +121,5 @@ class WebNotifier extends StateNotifier<WebState> {
 
 /// Provider for WebNotifier.
 final webProvider = StateNotifierProvider<WebNotifier, WebState>((ref) {
-  final service = ref.watch(webServiceProvider);
-  return WebNotifier(service, ref);
+  return WebNotifier(ref);
 });

@@ -7,7 +7,7 @@ import '../../core/config/app_config.dart';
 /// Callback for server service status updates.
 typedef ServerServiceStatusCallback = void Function(bool isRunning, String? error);
 
-/// Service for managing the backend API server.
+/// Service for managing the backend API server (Node.js).
 class ServerService {
   Process? _serverProcess;
   bool _isRunning = false;
@@ -31,7 +31,7 @@ class ServerService {
       return;
     }
 
-    AppLogger.info('ServerService: Starting server on port $port');
+    AppLogger.info('ServerService: Starting Node.js server on port $port');
 
     // First, kill any existing process on the port to avoid "address already in use"
     await forceKillPort(port);
@@ -41,41 +41,56 @@ class ServerService {
     _processExited = false; // Reset exit flag
 
     try {
-      // Build uvicorn command with optional SSL (using centralized config)
-      String uvicornCmd = 'exec python -m uvicorn server.main:app --host 0.0.0.0 --port $port';
+      final webDir = '$_projectPath/web';
+
+      // Build command based on environment
+      String serverCmd;
+      final builtServerPath = '$webDir/dist/server.cjs';
+
+      if (await File(builtServerPath).exists()) {
+        // Production: run built server
+        serverCmd = 'node dist/server.cjs';
+        AppLogger.info('ServerService: Running production build');
+      } else {
+        // Development: run with tsx
+        serverCmd = 'npx tsx server/index.ts';
+        AppLogger.info('ServerService: Running development mode');
+      }
+
+      // Set environment variables
+      final environment = <String, String>{
+        'PORT': port.toString(),
+        'HOST': '0.0.0.0',
+      };
 
       if (AppConfig.hasSslCerts) {
-        uvicornCmd += ' --ssl-certfile ${AppConfig.sslCertFile} --ssl-keyfile ${AppConfig.sslKeyFile}';
+        environment['SSL_CERT'] = AppConfig.sslCertFile;
+        environment['SSL_KEY'] = AppConfig.sslKeyFile;
         AppLogger.info('ServerService: Using HTTPS with SSL certificates');
       } else {
         AppLogger.warning('ServerService: SSL certificates not found, starting HTTP server');
         AppLogger.warning('ServerService: Expected certs at: ${AppConfig.sslCertFile}');
       }
 
-      // Use 'exec' to replace bash with uvicorn process
       _serverProcess = await Process.start(
         '/bin/bash',
-        [
-          '-c',
-          'source .venv/bin/activate && $uvicornCmd',
-        ],
-        workingDirectory: _projectPath,
+        ['-c', 'exec $serverCmd'],
+        workingDirectory: webDir,
+        environment: environment,
       );
 
       // Consume stdout/stderr to prevent blocking
-      // 只记录关键状态，不逐段全量 debug（避免日志风暴）
       _serverProcess!.stdout.listen(
         (data) {
           final output = String.fromCharCodes(data).trim();
           if (output.isEmpty) return;
-          // 只记录关键状态
-          if (output.contains('Application startup complete') ||
-              output.contains('Uvicorn running')) {
+          // Log key status messages
+          if (output.contains('VibeMobile server running') ||
+              output.contains('Started monitoring')) {
             AppLogger.info('Server: Started successfully');
           } else if (output.toLowerCase().contains('error')) {
             AppLogger.warning('Server stdout: $output');
           }
-          // 其他输出静默消费，不打印
         },
         onError: (error) => AppLogger.warning('Server stdout error: $error'),
       );
@@ -84,13 +99,12 @@ class ServerService {
         (data) {
           final output = String.fromCharCodes(data).trim();
           if (output.isEmpty) return;
-          // stderr 只记录真正的错误
+          // Only log real errors
           if (output.toLowerCase().contains('error') ||
               output.toLowerCase().contains('exception') ||
               output.toLowerCase().contains('failed')) {
             AppLogger.warning('Server stderr: $output');
           }
-          // 其他 stderr 输出静默消费
         },
         onError: (error) => AppLogger.warning('Server stderr error: $error'),
       );
@@ -189,10 +203,6 @@ class ServerService {
         // Ignore errors - process might already be dead
       }
     }
-
-    // 注意：移除了 forceKillPort 调用
-    // 我们已经显式 kill 了子进程，不需要再按端口杀进程
-    // forceKillPort 可能会意外杀死其他监听同端口的进程（包括 VibeMobile 自身）
 
     _isRunning = false;
     _startedPid = null;

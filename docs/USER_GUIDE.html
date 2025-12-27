@@ -1,0 +1,912 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VibeMobile 使用指南</title>
+    <style>
+        :root {
+            --primary: #6366f1;
+            --primary-dark: #4f46e5;
+            --secondary: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --bg: #f8fafc;
+            --card-bg: #ffffff;
+            --text: #1e293b;
+            --text-secondary: #64748b;
+            --border: #e2e8f0;
+            --code-bg: #1e293b;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* Header */
+        header {
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: white;
+            padding: 60px 20px;
+            text-align: center;
+        }
+
+        header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+
+        header p {
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+
+        /* Navigation */
+        nav {
+            background: var(--card-bg);
+            padding: 15px 20px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        nav ul {
+            list-style: none;
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        nav a {
+            color: var(--text);
+            text-decoration: none;
+            padding: 8px 16px;
+            border-radius: 20px;
+            transition: all 0.3s;
+        }
+
+        nav a:hover {
+            background: var(--primary);
+            color: white;
+        }
+
+        /* Sections */
+        section {
+            background: var(--card-bg);
+            margin: 20px 0;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+
+        section h2 {
+            color: var(--primary);
+            font-size: 1.8rem;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid var(--border);
+        }
+
+        section h3 {
+            color: var(--text);
+            font-size: 1.3rem;
+            margin: 25px 0 15px;
+        }
+
+        section h4 {
+            color: var(--text-secondary);
+            font-size: 1.1rem;
+            margin: 20px 0 10px;
+        }
+
+        p {
+            margin-bottom: 15px;
+        }
+
+        /* Lists */
+        ul, ol {
+            margin-left: 25px;
+            margin-bottom: 15px;
+        }
+
+        li {
+            margin-bottom: 8px;
+        }
+
+        /* Code blocks */
+        pre {
+            background: var(--code-bg);
+            color: #e2e8f0;
+            padding: 20px;
+            border-radius: 8px;
+            overflow-x: auto;
+            margin: 15px 0;
+            font-family: 'SF Mono', Monaco, 'Courier New', monospace;
+            font-size: 0.9rem;
+        }
+
+        code {
+            background: #f1f5f9;
+            color: var(--primary-dark);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'SF Mono', Monaco, 'Courier New', monospace;
+            font-size: 0.9em;
+        }
+
+        pre code {
+            background: none;
+            color: inherit;
+            padding: 0;
+        }
+
+        /* Tables */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 15px 0;
+        }
+
+        th, td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+
+        th {
+            background: var(--bg);
+            font-weight: 600;
+            color: var(--text-secondary);
+        }
+
+        tr:hover {
+            background: var(--bg);
+        }
+
+        /* Alerts */
+        .alert {
+            padding: 15px 20px;
+            border-radius: 8px;
+            margin: 15px 0;
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+        }
+
+        .alert-info {
+            background: #eff6ff;
+            border-left: 4px solid var(--primary);
+        }
+
+        .alert-success {
+            background: #f0fdf4;
+            border-left: 4px solid var(--secondary);
+        }
+
+        .alert-warning {
+            background: #fffbeb;
+            border-left: 4px solid var(--warning);
+        }
+
+        .alert-danger {
+            background: #fef2f2;
+            border-left: 4px solid var(--danger);
+        }
+
+        .alert-icon {
+            font-size: 1.3rem;
+            flex-shrink: 0;
+        }
+
+        /* Steps */
+        .steps {
+            counter-reset: step;
+        }
+
+        .step {
+            position: relative;
+            padding-left: 50px;
+            margin-bottom: 25px;
+        }
+
+        .step::before {
+            counter-increment: step;
+            content: counter(step);
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 35px;
+            height: 35px;
+            background: var(--primary);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+        }
+
+        .step h4 {
+            margin-top: 0;
+            color: var(--text);
+        }
+
+        /* Cards */
+        .card-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+
+        .card {
+            background: var(--bg);
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+        }
+
+        .card h4 {
+            margin-top: 0;
+            color: var(--primary);
+        }
+
+        /* Badge */
+        .badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+
+        .badge-primary {
+            background: #e0e7ff;
+            color: var(--primary-dark);
+        }
+
+        .badge-success {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .badge-warning {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        /* Screenshots placeholder */
+        .screenshot {
+            background: linear-gradient(135deg, #f0f0f0, #e0e0e0);
+            border-radius: 8px;
+            padding: 40px;
+            text-align: center;
+            color: var(--text-secondary);
+            margin: 15px 0;
+        }
+
+        /* Footer */
+        footer {
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--text-secondary);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            header h1 {
+                font-size: 1.8rem;
+            }
+
+            nav ul {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            section {
+                padding: 20px;
+            }
+
+            .step {
+                padding-left: 40px;
+            }
+
+            .step::before {
+                width: 28px;
+                height: 28px;
+                font-size: 0.9rem;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>📱 VibeMobile</h1>
+    <p>远程监控和控制 Claude Code 会话的完整指南</p>
+</header>
+
+<nav>
+    <ul>
+        <li><a href="#overview">概述</a></li>
+        <li><a href="#install">安装</a></li>
+        <li><a href="#quickstart">快速开始</a></li>
+        <li><a href="#desktop">桌面应用</a></li>
+        <li><a href="#webui">Web 界面</a></li>
+        <li><a href="#remote">远程访问</a></li>
+        <li><a href="#security">安全</a></li>
+        <li><a href="#faq">常见问题</a></li>
+    </ul>
+</nav>
+
+<div class="container">
+
+<!-- Overview -->
+<section id="overview">
+    <h2>📋 概述</h2>
+
+    <p>VibeMobile 让你可以在手机或平板上远程监控和控制 Claude Code 终端会话。无论你是在会议中、通勤途中还是躺在沙发上，都可以随时查看 AI 编程助手的工作进度。</p>
+
+    <h3>核心功能</h3>
+    <div class="card-grid">
+        <div class="card">
+            <h4>🔴 实时输出</h4>
+            <p>通过 WebSocket 实时推送终端输出，延迟低于 200ms</p>
+        </div>
+        <div class="card">
+            <h4>⌨️ 远程输入</h4>
+            <p>发送消息和命令到 Claude Code 会话</p>
+        </div>
+        <div class="card">
+            <h4>🎛️ 特殊按键</h4>
+            <p>支持 Ctrl+C、Escape、Enter 等特殊键</p>
+        </div>
+        <div class="card">
+            <h4>📷 图片上传</h4>
+            <p>直接从手机上传截图或图片到会话</p>
+        </div>
+        <div class="card">
+            <h4>🔐 安全配对</h4>
+            <p>6位配对码 + 桌面确认的双重验证</p>
+        </div>
+        <div class="card">
+            <h4>🌐 远程访问</h4>
+            <p>通过 Cloudflare Tunnel 安全访问</p>
+        </div>
+    </div>
+
+    <h3>系统组成</h3>
+    <table>
+        <tr>
+            <th>组件</th>
+            <th>说明</th>
+            <th>端口</th>
+        </tr>
+        <tr>
+            <td><strong>Node.js 服务器</strong></td>
+            <td>提供 REST API 和 WebSocket 服务</td>
+            <td>8765</td>
+        </tr>
+        <tr>
+            <td><strong>Web UI</strong></td>
+            <td>移动友好的 React 应用</td>
+            <td>(同上)</td>
+        </tr>
+        <tr>
+            <td><strong>桌面应用</strong></td>
+            <td>Flutter 开发的本地管理工具</td>
+            <td>-</td>
+        </tr>
+    </table>
+</section>
+
+<!-- Install -->
+<section id="install">
+    <h2>🔧 安装指南</h2>
+
+    <h3>系统要求</h3>
+    <ul>
+        <li>macOS 12.0 或更高版本</li>
+        <li>Node.js 18+ (推荐使用 nvm 管理)</li>
+        <li>tmux (通过 Homebrew 安装)</li>
+        <li>mkcert (用于生成本地 HTTPS 证书)</li>
+    </ul>
+
+    <h3>安装步骤</h3>
+    <div class="steps">
+        <div class="step">
+            <h4>安装依赖工具</h4>
+            <pre><code># 安装 Homebrew (如果没有)
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+
+# 安装必需工具
+brew install tmux mkcert node
+
+# 安装证书根 CA
+mkcert -install</code></pre>
+        </div>
+
+        <div class="step">
+            <h4>克隆项目</h4>
+            <pre><code>git clone https://github.com/your-repo/VibeMobile.git
+cd VibeMobile</code></pre>
+        </div>
+
+        <div class="step">
+            <h4>生成 SSL 证书</h4>
+            <pre><code># 创建证书目录
+mkdir -p ~/.vibemobile/certs
+
+# 生成本地证书
+mkcert -key-file ~/.vibemobile/certs/localhost-key.pem \
+       -cert-file ~/.vibemobile/certs/localhost.pem \
+       localhost 127.0.0.1</code></pre>
+        </div>
+
+        <div class="step">
+            <h4>安装 Web 依赖并构建</h4>
+            <pre><code>cd web
+npm install
+npm run build</code></pre>
+        </div>
+
+        <div class="step">
+            <h4>构建桌面应用 (可选)</h4>
+            <pre><code>cd desktop
+flutter pub get
+flutter build macos --release
+
+# 应用位于: build/macos/Build/Products/Release/VibeMobile.app</code></pre>
+        </div>
+    </div>
+
+    <div class="alert alert-info">
+        <span class="alert-icon">💡</span>
+        <div>
+            <strong>提示</strong>：如果只需要 Web 功能，可以跳过桌面应用的构建步骤，直接运行 <code>npm start</code> 启动服务器。
+        </div>
+    </div>
+</section>
+
+<!-- Quick Start -->
+<section id="quickstart">
+    <h2>🚀 快速开始</h2>
+
+    <h3>方式一：使用桌面应用 (推荐)</h3>
+    <div class="steps">
+        <div class="step">
+            <h4>打开 VibeMobile.app</h4>
+            <p>双击运行桌面应用，应用会自动检测项目路径。</p>
+        </div>
+
+        <div class="step">
+            <h4>启动服务</h4>
+            <p>点击 <strong>Start Server</strong> 按钮启动后端服务。</p>
+            <p>状态变为 <span class="badge badge-success">Running</span> 表示启动成功。</p>
+        </div>
+
+        <div class="step">
+            <h4>创建 Claude Code 会话</h4>
+            <p>点击 <strong>+</strong> 按钮创建新的 tmux 会话，自动启动 Claude Code。</p>
+        </div>
+
+        <div class="step">
+            <h4>在手机上访问</h4>
+            <p>打开手机浏览器，访问 <code>https://你的电脑IP:8765</code></p>
+            <p>首次访问需要配对（见下方说明）。</p>
+        </div>
+    </div>
+
+    <h3>方式二：命令行启动</h3>
+    <pre><code># 启动服务器
+cd VibeMobile/web
+npm start
+
+# 创建 Claude Code 会话 (新终端窗口)
+tmux new-session -d -s vibe-1 'claude'
+
+# 查看已有会话
+tmux list-sessions</code></pre>
+
+    <h3>设备配对流程</h3>
+    <div class="steps">
+        <div class="step">
+            <h4>手机打开 Web UI</h4>
+            <p>在浏览器中打开服务地址，会显示配对界面。</p>
+        </div>
+
+        <div class="step">
+            <h4>桌面端生成配对码</h4>
+            <p>在桌面应用中，点击 <strong>Devices</strong> → <strong>Generate Pairing Code</strong>。</p>
+            <p>会显示一个 6 位数字配对码，有效期 5 分钟。</p>
+        </div>
+
+        <div class="step">
+            <h4>输入配对码</h4>
+            <p>在手机上输入配对码并提交。</p>
+        </div>
+
+        <div class="step">
+            <h4>桌面端确认</h4>
+            <p>桌面应用会弹出确认对话框，显示设备信息。点击 <strong>Approve</strong> 完成配对。</p>
+        </div>
+    </div>
+
+    <div class="alert alert-success">
+        <span class="alert-icon">✅</span>
+        <div>
+            <strong>配对成功</strong>：手机会自动跳转到会话列表，现在可以开始使用了！
+        </div>
+    </div>
+</section>
+
+<!-- Desktop App -->
+<section id="desktop">
+    <h2>🖥️ 桌面应用指南</h2>
+
+    <h3>主界面</h3>
+    <p>桌面应用是 VibeMobile 的控制中心，提供以下功能：</p>
+
+    <h4>状态卡片</h4>
+    <table>
+        <tr>
+            <th>卡片</th>
+            <th>说明</th>
+            <th>操作</th>
+        </tr>
+        <tr>
+            <td><strong>Server</strong></td>
+            <td>Node.js 后端服务状态</td>
+            <td>Start / Stop / Restart</td>
+        </tr>
+        <tr>
+            <td><strong>Web UI</strong></td>
+            <td>Web 界面状态 (与 Server 统一)</td>
+            <td>Open in Browser</td>
+        </tr>
+        <tr>
+            <td><strong>Tunnel</strong></td>
+            <td>Cloudflare 隧道状态</td>
+            <td>Start / Stop / Copy URL</td>
+        </tr>
+    </table>
+
+    <h4>会话列表</h4>
+    <p>显示所有 <code>vibe-</code> 前缀的 tmux 会话：</p>
+    <ul>
+        <li><span class="badge badge-success">Active</span> - Claude 进程正在运行</li>
+        <li><span class="badge badge-warning">Ended</span> - 会话存在但 Claude 已退出</li>
+    </ul>
+
+    <h3>设备管理</h3>
+    <p>点击顶部 <strong>Devices</strong> 图标进入设备管理页面：</p>
+    <ul>
+        <li>查看所有已配对设备</li>
+        <li>生成新的配对码</li>
+        <li>修改设备信任等级</li>
+        <li>删除不再使用的设备</li>
+    </ul>
+
+    <h4>信任等级</h4>
+    <table>
+        <tr>
+            <th>等级</th>
+            <th>权限</th>
+            <th>适用场景</th>
+        </tr>
+        <tr>
+            <td><span class="badge badge-primary">Full</span></td>
+            <td>所有操作</td>
+            <td>自己的手机</td>
+        </tr>
+        <tr>
+            <td><span class="badge badge-success">Partial</span></td>
+            <td>发送消息、上传文件</td>
+            <td>临时使用的设备</td>
+        </tr>
+        <tr>
+            <td><span class="badge badge-warning">View Only</span></td>
+            <td>仅查看输出</td>
+            <td>演示给他人看</td>
+        </tr>
+    </table>
+
+    <h3>设置</h3>
+    <p>点击顶部 <strong>Settings</strong> 图标进入设置页面：</p>
+    <ul>
+        <li><strong>API Port</strong>: 服务器端口 (默认 8765)</li>
+        <li><strong>Session Prefix</strong>: tmux 会话前缀 (默认 vibe)</li>
+        <li><strong>Tunnel Proxy</strong>: 代理设置 (用于网络受限环境)</li>
+    </ul>
+
+    <h3>日志查看</h3>
+    <p>点击顶部 <strong>Logs</strong> 图标查看详细日志，有助于排查问题。</p>
+</section>
+
+<!-- Web UI -->
+<section id="webui">
+    <h2>📱 Web 界面指南</h2>
+
+    <h3>会话列表页</h3>
+    <p>这是登录后的首页，显示所有 Claude Code 会话：</p>
+    <ul>
+        <li>每个卡片显示会话 ID、项目路径、状态和最近输出预览</li>
+        <li>点击卡片进入会话详情</li>
+        <li>下拉刷新更新列表</li>
+    </ul>
+
+    <h3>会话详情页</h3>
+    <p>这是与 Claude Code 交互的主要界面：</p>
+
+    <h4>顶部导航栏</h4>
+    <ul>
+        <li>返回按钮 - 回到会话列表</li>
+        <li>会话名称和状态</li>
+        <li>项目路径 (可点击复制)</li>
+    </ul>
+
+    <h4>终端输出区</h4>
+    <ul>
+        <li>实时显示 Claude Code 的输出</li>
+        <li>支持 ANSI 颜色渲染</li>
+        <li>自动滚动到底部 (可关闭)</li>
+        <li>点击任意位置可以暂停自动滚动</li>
+    </ul>
+
+    <h4>输入区域</h4>
+    <ul>
+        <li>文本输入框 - 输入消息或命令</li>
+        <li>发送按钮 - 发送消息 (自动按 Enter)</li>
+        <li>特殊键工具栏：
+            <ul>
+                <li><code>Ctrl+C</code> - 中断当前操作</li>
+                <li><code>Escape</code> - 取消/退出</li>
+                <li><code>Enter</code> - 确认</li>
+                <li><code>Tab</code> - 自动补全</li>
+            </ul>
+        </li>
+    </ul>
+
+    <h4>图片上传</h4>
+    <p>点击工具栏的相机图标上传图片：</p>
+    <ol>
+        <li>选择图片文件 (支持 PNG, JPG, GIF, WebP)</li>
+        <li>图片会上传到服务器并自动发送路径到 Claude</li>
+        <li>最大支持 10MB 文件</li>
+    </ol>
+
+    <div class="alert alert-warning">
+        <span class="alert-icon">⚠️</span>
+        <div>
+            <strong>注意</strong>：图片上传后不会立即发送，需要手动点击发送或按 Enter。这让你有机会添加说明文字。
+        </div>
+    </div>
+</section>
+
+<!-- Remote Access -->
+<section id="remote">
+    <h2>🌐 远程访问设置</h2>
+
+    <h3>局域网访问</h3>
+    <p>如果手机和电脑在同一网络：</p>
+    <div class="steps">
+        <div class="step">
+            <h4>获取电脑 IP</h4>
+            <pre><code># macOS
+ipconfig getifaddr en0   # Wi-Fi
+ipconfig getifaddr en1   # 有线</code></pre>
+        </div>
+
+        <div class="step">
+            <h4>手机访问</h4>
+            <p>在浏览器中打开 <code>https://192.168.x.x:8765</code></p>
+        </div>
+
+        <div class="step">
+            <h4>信任证书</h4>
+            <p>首次访问会提示证书不安全，点击「高级」→「继续访问」。</p>
+        </div>
+    </div>
+
+    <h3>公网访问 (Cloudflare Tunnel)</h3>
+    <p>如果需要从任意网络访问，可以使用 Cloudflare Tunnel：</p>
+
+    <h4>安装 cloudflared</h4>
+    <pre><code>brew install cloudflared</code></pre>
+
+    <h4>启动隧道</h4>
+    <ol>
+        <li>在桌面应用中，点击 Tunnel 卡片的 <strong>Start</strong></li>
+        <li>等待隧道建立 (约 5-10 秒)</li>
+        <li>复制生成的公网 URL (格式: <code>https://xxx.trycloudflare.com</code>)</li>
+        <li>在任意设备上访问该 URL</li>
+    </ol>
+
+    <div class="alert alert-info">
+        <span class="alert-icon">ℹ️</span>
+        <div>
+            <strong>说明</strong>：Cloudflare Tunnel 使用的是临时 URL，每次启动都会变化。如需固定域名，可以配置 Cloudflare Zero Trust。
+        </div>
+    </div>
+
+    <h4>代理设置</h4>
+    <p>如果网络环境需要代理：</p>
+    <ol>
+        <li>打开桌面应用的 <strong>Settings</strong></li>
+        <li>在 <strong>Tunnel Proxy</strong> 中填入代理地址，如 <code>http://127.0.0.1:7890</code></li>
+        <li>保存后重启隧道</li>
+    </ol>
+</section>
+
+<!-- Security -->
+<section id="security">
+    <h2>🔐 安全说明</h2>
+
+    <h3>认证机制</h3>
+    <ul>
+        <li><strong>配对码验证</strong>：6位数字，5分钟有效，一次性使用</li>
+        <li><strong>桌面确认</strong>：配对请求需要在桌面端手动批准</li>
+        <li><strong>JWT Token</strong>：
+            <ul>
+                <li>Access Token: 15分钟有效</li>
+                <li>Refresh Token: 30天有效，存储在 HttpOnly Cookie</li>
+            </ul>
+        </li>
+    </ul>
+
+    <h3>权限控制</h3>
+    <table>
+        <tr>
+            <th>操作</th>
+            <th>风险等级</th>
+            <th>所需权限</th>
+        </tr>
+        <tr>
+            <td>查看输出</td>
+            <td><span class="badge badge-success">低</span></td>
+            <td>view_only 以上</td>
+        </tr>
+        <tr>
+            <td>发送消息</td>
+            <td><span class="badge badge-warning">中</span></td>
+            <td>partial 以上</td>
+        </tr>
+        <tr>
+            <td>上传文件</td>
+            <td><span class="badge badge-warning">中</span></td>
+            <td>partial 以上</td>
+        </tr>
+        <tr>
+            <td>发送 Ctrl+C</td>
+            <td><span class="badge badge-warning">高</span></td>
+            <td>full</td>
+        </tr>
+        <tr>
+            <td>创建/删除会话</td>
+            <td><span class="badge badge-warning">高</span></td>
+            <td>full</td>
+        </tr>
+    </table>
+
+    <h3>本地访问特权</h3>
+    <p>从 localhost (127.0.0.1) 发起的请求自动获得 full 权限，无需认证。这确保了：</p>
+    <ul>
+        <li>桌面应用可以完全控制服务</li>
+        <li>本地调试和测试不受限制</li>
+    </ul>
+
+    <h3>审计日志</h3>
+    <p>所有操作都会记录日志，包括：</p>
+    <ul>
+        <li>设备 ID 和名称</li>
+        <li>操作类型和目标</li>
+        <li>来源 IP 地址</li>
+        <li>操作结果 (success/blocked)</li>
+        <li>时间戳</li>
+    </ul>
+
+    <div class="alert alert-danger">
+        <span class="alert-icon">🚨</span>
+        <div>
+            <strong>安全提醒</strong>：
+            <ul style="margin-bottom: 0;">
+                <li>不要在公共场合展示配对码</li>
+                <li>定期清理不使用的设备</li>
+                <li>使用 Tunnel 时注意 URL 保密</li>
+            </ul>
+        </div>
+    </div>
+</section>
+
+<!-- FAQ -->
+<section id="faq">
+    <h2>❓ 常见问题</h2>
+
+    <h3>连接问题</h3>
+
+    <h4>Q: 手机无法访问服务器</h4>
+    <p>A: 请检查：</p>
+    <ol>
+        <li>手机和电脑是否在同一 Wi-Fi 网络</li>
+        <li>电脑防火墙是否允许 8765 端口</li>
+        <li>是否使用了正确的 IP 地址</li>
+    </ol>
+
+    <h4>Q: 证书错误/不安全警告</h4>
+    <p>A: 这是因为使用了自签名证书，属于正常现象：</p>
+    <ol>
+        <li>在浏览器中点击「高级」或「显示详情」</li>
+        <li>点击「继续访问」或「访问此网站」</li>
+        <li>iOS Safari 可能需要在「设置」→「通用」→「关于本机」→「证书信任设置」中手动信任</li>
+    </ol>
+
+    <h4>Q: WebSocket 连接失败</h4>
+    <p>A: 尝试以下步骤：</p>
+    <ol>
+        <li>刷新页面</li>
+        <li>检查服务器是否正在运行</li>
+        <li>确认证书已被浏览器信任</li>
+        <li>查看浏览器控制台的具体错误信息</li>
+    </ol>
+
+    <h3>会话问题</h3>
+
+    <h4>Q: 会话列表为空</h4>
+    <p>A: 确保：</p>
+    <ol>
+        <li>已创建 tmux 会话</li>
+        <li>会话名称以 <code>vibe-</code> 开头</li>
+        <li>运行 <code>tmux list-sessions</code> 检查</li>
+    </ol>
+
+    <h4>Q: 会话显示 "Ended" 但 Claude 还在运行</h4>
+    <p>A: 这可能是进程检测问题。服务器通过 <code>ps</code> 命令检查 Claude 进程，某些情况下可能检测不到。重启服务器通常可以解决。</p>
+
+    <h3>配对问题</h3>
+
+    <h4>Q: 配对码无效</h4>
+    <p>A: 配对码有 5 分钟有效期，且只能使用一次。请重新生成配对码。</p>
+
+    <h4>Q: 配对请求没有弹窗</h4>
+    <p>A: 确保桌面应用在前台运行，并检查系统是否允许应用显示通知。</p>
+
+    <h3>性能问题</h3>
+
+    <h4>Q: 输出更新延迟高</h4>
+    <p>A: 正常延迟应在 200ms 左右。如果延迟过高：</p>
+    <ul>
+        <li>检查网络连接质量</li>
+        <li>使用局域网而非 Tunnel</li>
+        <li>关闭其他占用带宽的应用</li>
+    </ul>
+
+    <h4>Q: 页面卡顿</h4>
+    <p>A: 如果输出内容过多，可能导致渲染卡顿。尝试切换到其他会话再切回来，会重新加载最近的输出。</p>
+</section>
+
+</div>
+
+<footer>
+    <p>VibeMobile &copy; 2025 | 版本 1.0.0</p>
+    <p>Made with ❤️ for Claude Code users</p>
+</footer>
+
+</body>
+</html>
