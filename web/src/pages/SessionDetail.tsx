@@ -1,17 +1,22 @@
 // Session detail page
 
+import { useState } from 'react';
 import { useAppStore } from '../stores/appStore';
 import { useSession, useSessionOutput, useSendCommand } from '../hooks';
 import { api } from '../services/api';
 import { Header } from '../components/Header';
 import { Terminal } from '../components/Terminal';
 import { CommandInput } from '../components/CommandInput';
+import FileBrowser from '../components/FileBrowser';
 import styles from './SessionDetail.module.css';
+
+type TabType = 'terminal' | 'files';
 
 export function SessionDetail() {
   const currentSessionId = useAppStore((s) => s.currentSessionId);
   const setCurrentSessionId = useAppStore((s) => s.setCurrentSessionId);
   const sessionOutputs = useAppStore((s) => s.sessionOutputs);
+  const [activeTab, setActiveTab] = useState<TabType>('terminal');
 
   const { data: session } = useSession(currentSessionId);
   const { isLoading } = useSessionOutput(currentSessionId);
@@ -58,33 +63,60 @@ export function SessionDetail() {
         showBack
         onBack={handleBack}
         rightElement={
-          <span
-            className={`${styles.status} ${
-              session?.status === 'ended' ? styles.ended : styles.active
-            }`}
-          >
-            {session?.status === 'ended' ? '已结束' : '运行中'}
-          </span>
+          <div className={styles.headerRight}>
+            <div className={styles.tabs}>
+              <button
+                className={`${styles.tab} ${activeTab === 'terminal' ? styles.activeTab : ''}`}
+                onClick={() => setActiveTab('terminal')}
+              >
+                Terminal
+              </button>
+              <button
+                className={`${styles.tab} ${activeTab === 'files' ? styles.activeTab : ''}`}
+                onClick={() => setActiveTab('files')}
+              >
+                Files
+              </button>
+            </div>
+            <span
+              className={`${styles.status} ${
+                session?.status === 'ended' ? styles.ended : styles.active
+              }`}
+            >
+              {session?.status === 'ended' ? '已结束' : '运行中'}
+            </span>
+          </div>
         }
       />
 
-      <div className={styles.terminalWrapper}>
-        {isLoading ? (
-          <div className={styles.loading}>
-            <div className={styles.spinner} />
+      {activeTab === 'terminal' ? (
+        <>
+          <div className={styles.terminalWrapper}>
+            {isLoading ? (
+              <div className={styles.loading}>
+                <div className={styles.spinner} />
+              </div>
+            ) : (
+              <Terminal output={output} />
+            )}
           </div>
-        ) : (
-          <Terminal output={output} />
-        )}
-      </div>
 
-      <CommandInput
-        onSend={handleSend}
-        onSpecialKey={handleSpecialKey}
-        onUpload={handleUpload}
-        disabled={sendCommand.isPending}
-        placeholder={sendCommand.isPending ? '发送中...' : '输入指令...'}
-      />
+          <CommandInput
+            onSend={handleSend}
+            onSpecialKey={handleSpecialKey}
+            onUpload={handleUpload}
+            disabled={sendCommand.isPending}
+            placeholder={sendCommand.isPending ? '发送中...' : '输入指令...'}
+          />
+        </>
+      ) : (
+        <div className={styles.filesWrapper}>
+          <FileBrowser
+            sessionId={currentSessionId}
+            projectPath={session?.project_path}
+          />
+        </div>
+      )}
     </div>
   );
 }

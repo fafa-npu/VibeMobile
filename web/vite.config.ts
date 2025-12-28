@@ -17,14 +17,12 @@ export default defineConfig({
     hmr: false,
     proxy: {
       '/api': {
-        target: 'https://localhost:8765',
+        target: 'http://localhost:8765',
         changeOrigin: true,
-        secure: false, // Accept self-signed certificates
       },
       '/ws': {
-        target: 'wss://localhost:8765',
+        target: 'ws://localhost:8765',
         ws: true,
-        secure: false, // Accept self-signed certificates
       },
     },
   },

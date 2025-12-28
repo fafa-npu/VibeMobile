@@ -1,6 +1,6 @@
 // API client for VibeMobile backend
 
-import type { Session, Command, SessionOutput } from '../types';
+import type { Session, Command, SessionOutput, FileSystemResponse, FileTreeResponse } from '../types';
 import { useAuthStore } from '../stores/authStore';
 
 const API_BASE = import.meta.env.VITE_API_URL || '';
@@ -122,5 +122,16 @@ export const api = {
     }
 
     return response.json();
+  },
+
+  // File browser
+  async getFiles(sessionId: string, path = '.'): Promise<FileSystemResponse> {
+    const params = new URLSearchParams({ path });
+    return fetchJSON(`/api/sessions/${sessionId}/files?${params}`);
+  },
+
+  async getFileTree(sessionId: string, depth = 3): Promise<FileTreeResponse> {
+    const params = new URLSearchParams({ depth: String(depth) });
+    return fetchJSON(`/api/sessions/${sessionId}/files/tree?${params}`);
   },
 };

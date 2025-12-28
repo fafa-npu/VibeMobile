@@ -4,11 +4,52 @@
   height: 100%;
 }
 
+.headerRight {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.tabs {
+  display: flex;
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 6px;
+  padding: 2px;
+}
+
+.tab {
+  padding: 6px 12px;
+  border: none;
+  background: transparent;
+  color: #64748b;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: all 0.15s;
+}
+
+.tab:hover {
+  color: #334155;
+}
+
+.activeTab {
+  background: white;
+  color: #0f172a;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
 .terminalWrapper {
   flex: 1;
   overflow: hidden;
   display: flex;
   flex-direction: column;
+}
+
+.filesWrapper {
+  flex: 1;
+  overflow: hidden;
+  padding: 16px;
 }
 
 .status {

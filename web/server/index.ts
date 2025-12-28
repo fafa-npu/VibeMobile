@@ -21,6 +21,7 @@ import { authService } from './services/auth.js';
 import sessionsRouter from './routes/sessions.js';
 import authRouter from './routes/auth.js';
 import notificationsRouter from './routes/notifications.js';
+import filesRouter from './routes/files.js';
 
 // Get current directory - works in both ESM and CJS
 const getCurrentDir = (): string => {
@@ -71,6 +72,7 @@ app.get('/health', (req, res) => {
 
 // API routes
 app.use('/api/sessions', sessionsRouter);
+app.use('/api/sessions', filesRouter);  // File browser routes
 app.use('/api/auth', authRouter);
 app.use('/api/notifications', notificationsRouter);
 

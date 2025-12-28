@@ -25,6 +25,44 @@ export interface SessionOutput {
   timestamp: string;
 }
 
+// File browser types
+export interface FileItem {
+  name: string;
+  path: string;
+  isDirectory: boolean;
+}
+
+export interface DirectoryResponse {
+  type: 'directory';
+  path: string;
+  items: FileItem[];
+}
+
+export interface FileResponse {
+  type: 'file';
+  path: string;
+  name: string;
+  size: number;
+  isBinary: boolean;
+  content: string | null;
+  message?: string;
+}
+
+export interface FileTreeNode {
+  name: string;
+  path: string;
+  isDirectory: boolean;
+  children?: FileTreeNode[];
+}
+
+export interface FileTreeResponse {
+  type: 'tree';
+  root: string;
+  children: FileTreeNode[];
+}
+
+export type FileSystemResponse = DirectoryResponse | FileResponse;
+
 // WebSocket message types
 export interface WSMessage {
   type: string;

@@ -41,7 +41,9 @@ function AppContent() {
   }
 
   // Show pairing screen if not authenticated
-  if (!isAuthenticated) {
+  // DEV: Skip auth check for testing by adding ?dev=1 to URL
+  const isDev = new URLSearchParams(window.location.search).get('dev') === '1';
+  if (!isAuthenticated && !isDev) {
     return <PairingScreen />;
   }
 
