@@ -1,69 +1,68 @@
-// Loading screen component
+// Loading screen component - Scheme B style
 
 export function LoadingScreen() {
   return (
     <div className="loading-screen">
-      <div className="loading-container">
-        <div className="loading-spinner">
-          <svg viewBox="0 0 50 50">
-            <circle cx="25" cy="25" r="20" fill="none" strokeWidth="4" />
-          </svg>
-        </div>
-        <p>正在初始化...</p>
+      <div className="loading-brand">
+        <div className="loading-logo">📱</div>
+        <h1>VibeMobile</h1>
+        <p>远程控制 Claude Code</p>
       </div>
+      <div className="loading-spinner"></div>
 
       <style>{`
         .loading-screen {
           min-height: 100vh;
           display: flex;
+          flex-direction: column;
           align-items: center;
           justify-content: center;
-          background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+          gap: 40px;
+          background: var(--accent);
         }
 
-        .loading-container {
+        .loading-brand {
           text-align: center;
         }
 
-        .loading-spinner {
-          width: 60px;
-          height: 60px;
-          margin: 0 auto 20px;
+        .loading-logo {
+          width: 120px;
+          height: 120px;
+          background: var(--bg);
+          border-radius: 32px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 56px;
+          margin: 0 auto 24px;
+          box-shadow: 0 20px 60px rgba(0,0,0,0.5);
         }
 
-        .loading-spinner svg {
-          animation: rotate 2s linear infinite;
-        }
-
-        .loading-spinner circle {
-          stroke: #667eea;
-          stroke-linecap: round;
-          animation: dash 1.5s ease-in-out infinite;
-        }
-
-        @keyframes rotate {
-          100% { transform: rotate(360deg); }
-        }
-
-        @keyframes dash {
-          0% {
-            stroke-dasharray: 1, 150;
-            stroke-dashoffset: 0;
-          }
-          50% {
-            stroke-dasharray: 90, 150;
-            stroke-dashoffset: -35;
-          }
-          100% {
-            stroke-dasharray: 90, 150;
-            stroke-dashoffset: -124;
-          }
-        }
-
-        .loading-container p {
-          color: rgba(255, 255, 255, 0.6);
-          font-size: 14px;
+        .loading-brand h1 {
+          font-size: 36px;
+          font-weight: 700;
+          color: var(--bg);
+          letter-spacing: -1px;
           margin: 0;
+        }
+
+        .loading-brand p {
+          color: var(--text-muted);
+          font-size: 16px;
+          margin-top: 8px;
+        }
+
+        .loading-spinner {
+          width: 40px;
+          height: 40px;
+          border: 3px solid rgba(255,255,255,0.2);
+          border-top-color: white;
+          border-radius: 50%;
+          animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+          to { transform: rotate(360deg); }
         }
       `}</style>
     </div>

@@ -1,10 +1,9 @@
-// Session detail page
+// Session detail page - Scheme B style
 
 import { useState } from 'react';
 import { useAppStore } from '../stores/appStore';
 import { useSession, useSessionOutput, useSendCommand } from '../hooks';
 import { api } from '../services/api';
-import { Header } from '../components/Header';
 import { Terminal } from '../components/Terminal';
 import { CommandInput } from '../components/CommandInput';
 import FileBrowser from '../components/FileBrowser';
@@ -23,6 +22,7 @@ export function SessionDetail() {
   const sendCommand = useSendCommand();
 
   const output = currentSessionId ? sessionOutputs[currentSessionId] || '' : '';
+  const isEnded = session?.status === 'ended';
 
   const handleBack = () => {
     setCurrentSessionId(null);
@@ -57,37 +57,33 @@ export function SessionDetail() {
 
   return (
     <div className={styles.container}>
-      <Header
-        title={session?.session_id || currentSessionId}
-        subtitle={session?.project_path || ''}
-        showBack
-        onBack={handleBack}
-        rightElement={
-          <div className={styles.headerRight}>
-            <div className={styles.tabs}>
-              <button
-                className={`${styles.tab} ${activeTab === 'terminal' ? styles.activeTab : ''}`}
-                onClick={() => setActiveTab('terminal')}
-              >
-                Terminal
-              </button>
-              <button
-                className={`${styles.tab} ${activeTab === 'files' ? styles.activeTab : ''}`}
-                onClick={() => setActiveTab('files')}
-              >
-                Files
-              </button>
-            </div>
-            <span
-              className={`${styles.status} ${
-                session?.status === 'ended' ? styles.ended : styles.active
-              }`}
-            >
-              {session?.status === 'ended' ? '已结束' : '运行中'}
-            </span>
+      {/* Header */}
+      <div className={styles.detailHeader}>
+        <div className={styles.detailTop}>
+          <button className={styles.backBtn} onClick={handleBack}>←</button>
+          <div className={styles.detailInfo}>
+            <h1>{session?.session_id || currentSessionId}</h1>
+            <p>{session?.project_path || ''}</p>
           </div>
-        }
-      />
+          <span className={`${styles.detailBadge} ${isEnded ? styles.ended : styles.active}`}>
+            {isEnded ? '已结束' : '运行中'}
+          </span>
+        </div>
+        <div className={styles.tabBar}>
+          <button
+            className={`${styles.tabBtn} ${activeTab === 'terminal' ? styles.active : ''}`}
+            onClick={() => setActiveTab('terminal')}
+          >
+            💬 终端
+          </button>
+          <button
+            className={`${styles.tabBtn} ${activeTab === 'files' ? styles.active : ''}`}
+            onClick={() => setActiveTab('files')}
+          >
+            📁 文件
+          </button>
+        </div>
+      </div>
 
       {activeTab === 'terminal' ? (
         <>

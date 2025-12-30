@@ -1,9 +1,8 @@
-// Session list page
+// Session list page - Scheme B style
 
 import { useSessions, useWebSocket } from '../hooks';
 import { useAppStore } from '../stores/appStore';
 import { useAuthStore } from '../stores/authStore';
-import { Header } from '../components/Header';
 import { SessionCard } from '../components/SessionCard';
 import styles from './SessionList.module.css';
 
@@ -15,6 +14,7 @@ export function SessionList() {
 
   // All non-ended sessions are "running"
   const runningSessions = sessions?.filter((s) => s.status !== 'ended') || [];
+  const endedSessions = sessions?.filter((s) => s.status === 'ended') || [];
 
   const handleLogout = async () => {
     if (confirm('确定要退出登录吗？')) {
@@ -22,26 +22,26 @@ export function SessionList() {
     }
   };
 
+  const getStatusText = () => {
+    switch (status) {
+      case 'connected': return '已连接';
+      case 'connecting': return '连接中...';
+      default: return '已断开';
+    }
+  };
+
   return (
     <div className={styles.container}>
-      <Header
-        title="VibeMobile"
-        subtitle={deviceName || undefined}
-        status={status}
-        rightElement={
-          <button
-            className={styles.logoutBtn}
-            onClick={handleLogout}
-            title="退出登录"
-          >
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
-              <polyline points="16 17 21 12 16 7" />
-              <line x1="21" y1="12" x2="9" y2="12" />
-            </svg>
-          </button>
-        }
-      />
+      <div className={styles.sessionsHeader}>
+        <div className={styles.headerRow}>
+          <h1>会话</h1>
+          <div className={styles.statusChip}>
+            <div className={`${styles.statusDot} ${status === 'connecting' ? styles.connecting : status === 'disconnected' ? styles.disconnected : ''}`} />
+            <span>{getStatusText()}</span>
+          </div>
+        </div>
+        {deviceName && <p className={styles.deviceName}>{deviceName}</p>}
+      </div>
 
       <div className={styles.content}>
         {isLoading && (
@@ -70,7 +70,7 @@ export function SessionList() {
 
         {runningSessions.length > 0 && (
           <section>
-            <h2 className={styles.sectionTitle}>运行中的会话</h2>
+            <p className={styles.sectionTitle}>运行中</p>
             {runningSessions.map((session) => (
               <SessionCard
                 key={session.session_id}
@@ -80,7 +80,24 @@ export function SessionList() {
             ))}
           </section>
         )}
+
+        {endedSessions.length > 0 && (
+          <section>
+            <p className={styles.sectionTitle}>已结束</p>
+            {endedSessions.map((session) => (
+              <SessionCard
+                key={session.session_id}
+                session={session}
+                onClick={() => setCurrentSessionId(session.session_id)}
+              />
+            ))}
+          </section>
+        )}
       </div>
+
+      <button className={styles.logoutFab} onClick={handleLogout}>
+        退出登录
+      </button>
     </div>
   );
 }

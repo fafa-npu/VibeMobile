@@ -2,53 +2,54 @@
   flex: 1;
   background: var(--terminal-bg);
   color: var(--terminal-text);
-  font-family: 'SF Mono', Monaco, Consolas, 'Liberation Mono', monospace;
+  font-family: 'IBM Plex Mono', monospace;
   font-size: 13px;
   line-height: 1.6;
-  padding: 16px;
+  padding: 12px;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
 }
 
 .line {
-  margin-bottom: 2px;
+  margin-bottom: 4px;
   word-break: break-word;
   white-space: pre-wrap;
 }
 
 .placeholder {
-  color: #64748b;
+  color: var(--text-muted);
   font-style: italic;
 }
 
 .input {
-  color: #22c55e;
+  color: var(--term-input);
 }
 
 .response {
-  color: #93c5fd;
+  color: var(--term-response);
 }
 
 .success {
-  color: #22c55e;
+  color: var(--term-success);
 }
 
 .error {
-  color: #ef4444;
+  color: var(--term-error);
 }
 
 .thinking {
-  color: #a78bfa;
+  color: var(--term-thinking);
   font-style: italic;
 }
 
 .tool {
-  color: #f59e0b;
+  color: var(--term-tool);
 }
 
 .divider {
   height: 1px;
-  background: #334155;
+  background: #3f3f46;
   margin: 12px 0;
   opacity: 0.5;
 }
