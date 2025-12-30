@@ -269,8 +269,6 @@ cloudflared tunnel run VibeMobile
 |----------|---------|-------------|
 | `HOST` | `0.0.0.0` | Server bind address |
 | `PORT` | `8765` | Server port |
-| `SSL_CERT` | - | SSL certificate path |
-| `SSL_KEY` | - | SSL key path |
 | `TMUX_PREFIX` | `vibe` | Tmux session prefix |
 | `TMUX_HISTORY` | `500` | Output lines to capture |
 

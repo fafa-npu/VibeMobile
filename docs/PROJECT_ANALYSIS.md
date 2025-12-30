@@ -37,7 +37,7 @@ VibeMobile 是一个用于远程监控和控制 Claude Code 终端会话的工�
 │         │                   │                   │                       │
 │         └───────────────────┼───────────────────┘                       │
 │                             │                                           │
-│                    HTTPS / WSS (公网或局域网)                            │
+│                    HTTP/WS (局域网) 或 HTTPS/WSS (Cloudflare)               │
 │                             │                                           │
 └─────────────────────────────┼───────────────────────────────────────────┘
                               │
@@ -177,7 +177,6 @@ VibeMobile/
 │   └── pubspec.yaml              # 依赖配置
 │
 ├── docs/                         # 文档目录
-├── certs/                        # SSL 证书 (本地生成)
 └── README.md                     # 项目说明
 ```
 
@@ -395,9 +394,9 @@ DELETE /api/auth/devices/:id      # 删除设备
 
 ### 6.3 传输安全
 
-- **本地开发**: mkcert 生成的自签名证书
-- **远程访问**: Cloudflare Tunnel 提供的 HTTPS
-- **WebSocket**: 始终使用 WSS (WebSocket Secure)
+- **本地访问**: HTTP (localhost) - 无需证书
+- **远程访问**: Cloudflare Tunnel 提供 HTTPS 终结
+- **WebSocket**: 根据访问方式自动选择 WS/WSS
 
 ---
 

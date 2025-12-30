@@ -1,7 +1,6 @@
 // VibeMobile Node.js Server
 // Unified backend for session management and real-time updates
 import express from 'express';
-import https from 'https';
 import http from 'http';
 import fs from 'fs';
 import path from 'path';
@@ -86,28 +85,8 @@ if (fs.existsSync(distPath)) {
   });
 }
 
-// Create server (HTTP by default, HTTPS only if explicitly configured)
-let server: https.Server | http.Server;
-
-// Only use HTTPS if SSL environment variables are explicitly set
-if (config.sslCertFile && config.sslKeyFile) {
-  try {
-    const sslOptions = {
-      key: fs.readFileSync(config.sslKeyFile),
-      cert: fs.readFileSync(config.sslCertFile),
-    };
-    server = https.createServer(sslOptions, app);
-    console.log('HTTPS server created');
-  } catch (e) {
-    console.error('Failed to load SSL certificates, falling back to HTTP:', e);
-    server = http.createServer(app);
-  }
-} else {
-  // Default to HTTP - no SSL certificate lookup
-  // Cloudflare Tunnel handles HTTPS termination
-  console.log('Using HTTP server (Cloudflare Tunnel handles HTTPS)');
-  server = http.createServer(app);
-}
+// Create HTTP server (Cloudflare Tunnel handles HTTPS termination)
+const server = http.createServer(app);
 
 // WebSocket server
 const wss = new WebSocketServer({ server, path: '/ws' });
@@ -177,8 +156,7 @@ process.on('SIGTERM', cleanup);
 
 // Start server
 server.listen(config.port, config.host, () => {
-  const protocol = server instanceof https.Server ? 'https' : 'http';
-  console.log(`VibeMobile server running on ${protocol}://${config.host}:${config.port}`);
+  console.log(`VibeMobile server running on http://${config.host}:${config.port}`);
   startMonitoring();
 });
 

@@ -99,8 +99,6 @@ export interface WSNotificationMessage {
 export interface ServerConfig {
   host: string;
   port: number;
-  sslCertFile?: string;
-  sslKeyFile?: string;
   tmuxSessionPrefix: string;
   tmuxCaptureHistory: number;
   monitorInterval: number;

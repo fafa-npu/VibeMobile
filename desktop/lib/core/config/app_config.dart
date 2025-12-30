@@ -115,41 +115,19 @@ class AppConfig {
     return '${getProjectPath()}/server';
   }
 
-  // ========== SSL Configuration (Optional - Cloudflare Tunnel handles HTTPS) ==========
+  /// Build API base URL for a given port (HTTP - Cloudflare handles HTTPS).
+  static String apiBaseUrl(int port) => 'http://localhost:$port';
 
-  /// Get the SSL certificate file path (optional).
-  static String get sslCertFile => '${getProjectPath()}/certs/localhost.pem';
-
-  /// Get the SSL key file path (optional).
-  static String get sslKeyFile => '${getProjectPath()}/certs/localhost-key.pem';
-
-  /// Check if SSL certificates exist (optional feature).
-  static bool get hasSslCerts =>
-      File(sslCertFile).existsSync() && File(sslKeyFile).existsSync();
-
-  /// Get the protocol scheme - always use http for local server.
-  /// Cloudflare Tunnel handles HTTPS termination for remote access.
-  static String get httpScheme => 'http';
-
-  /// Get the WebSocket scheme - always use ws for local server.
-  /// Cloudflare Tunnel handles WSS termination for remote access.
-  static String get wsScheme => 'ws';
-
-  /// Build API base URL for a given port.
-  static String apiBaseUrl(int port) => '$httpScheme://localhost:$port';
-
-  /// Build WebSocket URL for a given port and path.
+  /// Build WebSocket URL for a given port and path (WS - Cloudflare handles WSS).
   static String wsUrl(int port, [String path = '']) =>
-      '$wsScheme://localhost:$port$path';
+      'ws://localhost:$port$path';
 
-  /// Create an HTTP client (no SSL handling needed for local connections).
+  /// Create an HTTP client.
   static HttpClient createHttpClient() {
     final client = HttpClient();
     client.connectionTimeout = const Duration(seconds: 5);
     return client;
   }
-
-  // ========== End SSL Configuration ==========
 
   /// Check if the project directory exists.
   static bool projectExists() {

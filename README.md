@@ -45,10 +45,7 @@ Click **"New Session"** → Select folder → Claude Code starts automatically.
 
 **Same network:** `http://YOUR_MAC_IP:8765`
 
-**Remote:**
-```bash
-cloudflared tunnel --url http://localhost:8765
-```
+**Remote:** Click **"Start Tunnel"** in the app → Copy the generated URL
 
 ### 5. Pair Device
 
