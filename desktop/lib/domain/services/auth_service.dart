@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'package:web_socket_channel/web_socket_channel.dart';
-import 'package:web_socket_channel/io.dart';
 
 import '../../core/logging/app_logger.dart';
 import '../../core/config/app_config.dart';
@@ -38,23 +37,13 @@ class AuthService {
     AppLogger.info('AuthService: Connecting to WebSocket at $wsUrl');
 
     try {
-      if (AppConfig.hasSslCerts) {
-        // Use IOWebSocketChannel for secure connections with custom SSL handling
-        final uri = Uri.parse('$wsUrl/ws?client_type=desktop');
-        final socket = await WebSocket.connect(
-          uri.toString(),
-          customClient: AppConfig.createHttpClient(),
-        ).timeout(_requestTimeout);
-        _wsChannel = IOWebSocketChannel(socket);
-      } else {
-        _wsChannel = WebSocketChannel.connect(Uri.parse('$wsUrl/ws?client_type=desktop'));
-        await _wsChannel!.ready.timeout(
-          const Duration(seconds: 5),
-          onTimeout: () {
-            throw TimeoutException('WebSocket connection timeout');
-          },
-        );
-      }
+      _wsChannel = WebSocketChannel.connect(Uri.parse('$wsUrl/ws?client_type=desktop'));
+      await _wsChannel!.ready.timeout(
+        const Duration(seconds: 5),
+        onTimeout: () {
+          throw TimeoutException('WebSocket connection timeout');
+        },
+      );
 
       _isConnected = true;
       _reconnectAttempts = 0;

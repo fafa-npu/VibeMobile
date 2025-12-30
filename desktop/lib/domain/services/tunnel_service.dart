@@ -106,12 +106,7 @@ class TunnelService {
       }
 
       // Build cloudflared arguments
-      // For HTTPS origin with self-signed cert, we need --no-tls-verify
       final args = ['tunnel', '--url', originUrl];
-      if (AppConfig.hasSslCerts) {
-        args.add('--no-tls-verify');
-        AppLogger.info('TunnelService: Using HTTPS origin with --no-tls-verify for self-signed cert');
-      }
 
       _tunnelProcess = await Process.start(
         'cloudflared',
