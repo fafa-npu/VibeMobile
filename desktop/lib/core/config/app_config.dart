@@ -3,6 +3,7 @@ import 'dart:io';
 /// Application configuration.
 class AppConfig {
   static String? _cachedProjectPath;
+  static String? _cachedBundlePath;
 
   /// Default API port.
   static const int defaultApiPort = 8765;
@@ -16,7 +17,22 @@ class AppConfig {
   /// Initialize the application configuration.
   /// Should be called before using any config methods.
   static Future<void> initialize() async {
+    _cachedBundlePath = _findBundlePath();
     _cachedProjectPath = _findProjectPath();
+  }
+
+  /// Find the app bundle path (for bundled server files).
+  static String? _findBundlePath() {
+    final executable = Platform.resolvedExecutable;
+
+    // Check if running from a .app bundle
+    // Path looks like: /path/to/VibeMobile.app/Contents/MacOS/VibeMobile
+    if (executable.contains('.app/Contents/MacOS/')) {
+      final appPath = executable.substring(0, executable.indexOf('.app/') + 4);
+      return appPath;
+    }
+
+    return null;
   }
 
   static String _findProjectPath() {
@@ -45,14 +61,53 @@ class AppConfig {
     }
   }
 
+  /// Check if running from an app bundle.
+  static bool get isRunningFromBundle => _cachedBundlePath != null;
+
+  /// Get the app bundle path (null if not running from bundle).
+  static String? get bundlePath => _cachedBundlePath ?? _findBundlePath();
+
+  /// Get the bundled server directory path.
+  /// Returns path to server files inside the app bundle, or null if not bundled.
+  static String? getBundledServerPath() {
+    final bundle = bundlePath;
+    if (bundle == null) return null;
+
+    final serverPath = '$bundle/Contents/Resources/server';
+    if (Directory(serverPath).existsSync()) {
+      return serverPath;
+    }
+    return null;
+  }
+
   /// Get the project root path.
   static String getProjectPath() {
     return _cachedProjectPath ?? _findProjectPath();
   }
 
-  /// Get the web directory path.
+  /// Get the web directory path (for development or external server).
   static String getWebPath() {
     return '${getProjectPath()}/web';
+  }
+
+  /// Get the effective server path - bundled server takes priority.
+  static String getEffectiveServerPath() {
+    // First check for bundled server in app bundle
+    final bundledPath = getBundledServerPath();
+    if (bundledPath != null) {
+      return bundledPath;
+    }
+
+    // Fall back to external web/dist directory
+    return '${getProjectPath()}/web';
+  }
+
+  /// Check if bundled server exists.
+  static bool hasBundledServer() {
+    final bundledPath = getBundledServerPath();
+    if (bundledPath == null) return false;
+
+    return File('$bundledPath/server.cjs').existsSync();
   }
 
   /// Get the server directory path.

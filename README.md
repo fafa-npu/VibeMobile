@@ -2,138 +2,103 @@
 
 Remote control for Claude Code sessions from your phone.
 
-## Quick Start (3 Steps)
+## Installation
+
+### Download (Recommended)
+
+1. Download `VibeMobile.dmg` from [Releases](https://github.com/yourusername/VibeMobile/releases)
+2. Open DMG and drag VibeMobile to Applications
+3. Run VibeMobile
+
+**That's it!** The server is bundled inside the app.
+
+### Build from Source
 
 ```bash
-# 1. Clone and install
 git clone https://github.com/yourusername/VibeMobile.git
-cd VibeMobile/web && npm install
+cd VibeMobile
 
-# 2. Start the server
-npm start
+# Build server
+cd web && npm install && npm run build && cd ..
 
-# 3. Open in browser
-# Local: http://localhost:8765
-# Remote: Use Cloudflare Tunnel (see below)
+# Build app
+cd desktop && flutter pub get && flutter build macos --release
 ```
-
-That's it! Your Claude Code sessions (running in tmux with `vibe-` prefix) will appear automatically.
 
 ---
 
-## What is VibeMobile?
+## Usage
 
-VibeMobile lets you monitor and interact with Claude Code terminal sessions from your mobile device:
+### 1. Start App
 
-- **Real-time output** - See Claude's responses as they happen
-- **Send messages** - Type and send to Claude from your phone
-- **Special keys** - Send Ctrl+C, Escape, Enter
-- **File browser** - Browse files in your session directory
-- **Image upload** - Share screenshots with Claude
-- **Secure pairing** - 6-digit code + Desktop approval
+Run **VibeMobile.app** - this is your control center.
+
+### 2. Start Server
+
+Click **"Start Server"**. Server runs at `http://localhost:8765`
+
+### 3. Create Session
+
+Click **"New Session"** → Select folder → Claude Code starts automatically.
+
+### 4. Connect from Phone
+
+**Same network:** `http://YOUR_MAC_IP:8765`
+
+**Remote:**
+```bash
+cloudflared tunnel --url http://localhost:8765
+```
+
+### 5. Pair Device
+
+1. **App**: Devices → "Generate Pairing Code"
+2. **Phone**: Enter 6-digit code
+3. **App**: Approve request
+4. Done!
+
+---
+
+## Features
+
+- Real-time output streaming
+- Send messages to Claude
+- Special keys (Ctrl+C, Escape)
+- File browser
+- Image upload
+- Secure device pairing
 
 ## Requirements
 
-- **Node.js 18+** - `brew install node`
-- **tmux** - `brew install tmux`
-- **cloudflared** (optional) - `brew install cloudflare/cloudflare/cloudflared`
+| Software | Install |
+|----------|---------|
+| Node.js 18+ | `brew install node` |
+| tmux | `brew install tmux` |
+| cloudflared | `brew install cloudflare/cloudflare/cloudflared` |
 
-## Usage
+## Trust Levels
 
-### Start a Claude Code Session
+| Level | Permissions |
+|-------|-------------|
+| Full | All operations |
+| Partial | Send messages, upload |
+| View Only | Read-only |
 
-```bash
-# Create a tmux session with vibe- prefix
-tmux new-session -s vibe-myproject -c ~/myproject
+## Troubleshooting
 
-# Start Claude Code inside
-claude
-```
+**Server won't start?** → Ensure Node.js is installed: `node --version`
 
-### Access from Mobile
+**No sessions?** → Check tmux: `tmux ls`
 
-**Same Network:**
-Open `http://YOUR_MAC_IP:8765` on your phone.
-
-**Remote Access (Cloudflare Tunnel):**
-```bash
-cloudflared tunnel --url http://localhost:8765
-# Opens a public URL like https://abc123.trycloudflare.com
-```
-
-### Desktop App (Optional)
-
-The Flutter desktop app provides a GUI for managing services:
-
-```bash
-cd desktop
-flutter pub get
-flutter run -d macos
-```
-
-## Device Pairing
-
-Remote devices must be paired for security:
-
-1. Open Web UI on your phone
-2. Generate pairing code in Desktop app (or via API)
-3. Enter 6-digit code on phone
-4. Approve on Desktop
-
-Trust levels: **Full** (all operations) | **Partial** (send messages) | **View Only** (read-only)
-
-## API Reference
-
-| Endpoint | Method | Description |
-|----------|--------|-------------|
-| `/api/sessions` | GET | List sessions |
-| `/api/sessions/{id}/output` | GET | Get output |
-| `/api/sessions/{id}/send` | POST | Send message |
-| `/api/sessions/{id}/key` | POST | Send special key |
-| `/api/sessions/{id}/upload` | POST | Upload file |
-| `/ws` | WebSocket | Real-time updates |
-
-## Configuration
-
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `PORT` | `8765` | Server port |
-| `HOST` | `0.0.0.0` | Bind address |
-| `TMUX_PREFIX` | `vibe` | Session prefix |
-
-Data stored in `~/.vibemobile/` (devices, JWT key, audit log).
+**Pairing failed?** → Code expires in 5 minutes, approve in app
 
 ## Development
 
 ```bash
-cd web
-npm run dev     # Start with hot-reload
-npm run lint    # Check code style
-npm run build   # Production build
+cd web && npm run dev   # Dev server with hot-reload
+cd web && npm run build # Production build
 ```
-
-## Project Structure
-
-```
-VibeMobile/
-├── web/                # Server + Web UI
-│   ├── server/         # Node.js Express backend
-│   └── src/            # React frontend
-├── desktop/            # Flutter macOS app
-├── docs/               # Additional documentation
-└── scripts/            # Install scripts
-```
-
-## Troubleshooting
-
-**Sessions not appearing?**
-- Ensure tmux sessions start with `vibe-` prefix
-- Check: `tmux ls`
-
-**Can't connect?**
-- Verify server is running: `curl http://localhost:8765/health`
-- Check port isn't blocked: `lsof -i :8765`
 
 ## License
 
-MIT License - see [LICENSE](LICENSE)
+MIT - see [LICENSE](LICENSE)

@@ -41,20 +41,33 @@ class ServerService {
     _processExited = false; // Reset exit flag
 
     try {
-      final webDir = '$_projectPath/web';
-
-      // Build command based on environment
+      // Determine server path and command
+      String serverDir;
       String serverCmd;
-      final builtServerPath = '$webDir/dist/server.cjs';
 
-      if (await File(builtServerPath).exists()) {
-        // Production: run built server
-        serverCmd = 'node dist/server.cjs';
-        AppLogger.info('ServerService: Running production build');
-      } else {
-        // Development: run with tsx
-        serverCmd = 'npx tsx server/index.ts';
-        AppLogger.info('ServerService: Running development mode');
+      // Priority 1: Bundled server in app bundle
+      final bundledServerPath = AppConfig.getBundledServerPath();
+      if (bundledServerPath != null && await File('$bundledServerPath/server.cjs').exists()) {
+        serverDir = bundledServerPath;
+        serverCmd = 'node server.cjs';
+        AppLogger.info('ServerService: Running bundled server from app bundle');
+      }
+      // Priority 2: Built server in web/dist
+      else {
+        final webDir = '$_projectPath/web';
+        final builtServerPath = '$webDir/dist/server.cjs';
+
+        if (await File(builtServerPath).exists()) {
+          // Production: run built server
+          serverDir = webDir;
+          serverCmd = 'node dist/server.cjs';
+          AppLogger.info('ServerService: Running production build from web/dist');
+        } else {
+          // Development: run with tsx
+          serverDir = webDir;
+          serverCmd = 'npx tsx server/index.ts';
+          AppLogger.info('ServerService: Running development mode');
+        }
       }
 
       // Set environment variables (HTTP by default, Cloudflare handles HTTPS)
@@ -63,12 +76,13 @@ class ServerService {
         'HOST': '0.0.0.0',
       };
 
-      AppLogger.info('ServerService: Starting HTTP server (Cloudflare Tunnel handles HTTPS)');
+      AppLogger.info('ServerService: Server directory: $serverDir');
+      AppLogger.info('ServerService: Server command: $serverCmd');
 
       _serverProcess = await Process.start(
         '/bin/bash',
         ['-c', 'exec $serverCmd'],
-        workingDirectory: webDir,
+        workingDirectory: serverDir,
         environment: environment,
       );
 
