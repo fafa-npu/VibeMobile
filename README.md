@@ -9,18 +9,18 @@ VibeMobile allows you to monitor and interact with your Claude Code terminal ses
 - **Real-time Session Monitoring**: View Claude Code output in real-time via WebSocket streaming
 - **Remote Input**: Send messages and commands to Claude Code sessions from your mobile device
 - **Special Key Support**: Send Ctrl+C, Ctrl+D, Escape, and other special keys
+- **File Browser**: Browse and preview files in your session directories
 - **Image Upload**: Upload images directly to Claude Code sessions
 - **Secure Device Pairing**: Pair mobile devices using a 6-digit code with Desktop approval
 - **Trust Levels**: Control device permissions (Full, Partial, View-Only)
 - **Cloudflare Tunnel**: Expose your local server securely for remote access
-- **HTTPS by Default**: Local development uses mkcert-generated certificates
 
 ## Architecture
 
 ```
 ┌─────────────────┐     ┌──────────────────┐     ┌─────────────────┐
-│  Desktop App    │     │   API Server     │     │    Web UI       │
-│   (Flutter)     │────▶│    (FastAPI)     │◀────│    (React)      │
+│  Desktop App    │     │   Node.js Server │     │    Web UI       │
+│   (Flutter)     │────▶│   (Express/WS)   │◀────│    (React)      │
 │                 │     │                  │     │                 │
 │ - Start/Stop    │     │ - REST API       │     │ - Session List  │
 │ - Device Mgmt   │     │ - WebSocket      │     │ - Real-time     │
@@ -40,65 +40,49 @@ VibeMobile allows you to monitor and interact with your Claude Code terminal ses
 
 | Component | Technology | Port | Description |
 |-----------|------------|------|-------------|
-| Server | Python FastAPI | 8765 | REST API + WebSocket backend |
-| Web UI | React + Vite | 5173 | Mobile-friendly web interface |
+| Server | Node.js Express | 8765 | REST API + WebSocket backend |
+| Web UI | React + Vite | 5173 (dev) | Mobile-friendly web interface |
 | Desktop | Flutter (macOS) | - | Local management application |
 
 ## Quick Start
 
 ### Prerequisites
 
-- **Python 3.11+** with uv (recommended) or pip
 - **Node.js 18+** with npm
 - **Flutter 3.5+** (for Desktop app)
 - **tmux** (for session management)
-- **mkcert** (for local HTTPS certificates)
 - **cloudflared** (optional, for remote access)
 
 ### 1. Clone and Setup
 
 ```bash
-git clone https://github.com/your-repo/VibeMobile.git
+git clone https://github.com/yourusername/VibeMobile.git
 cd VibeMobile
 ```
 
-### 2. Generate SSL Certificates
-
-```bash
-# Install mkcert (macOS)
-brew install mkcert
-mkcert -install
-
-# Generate certificates
-mkdir -p certs
-mkcert -key-file certs/localhost-key.pem -cert-file certs/localhost.pem localhost 127.0.0.1
-```
-
-### 3. Start the API Server
-
-```bash
-# Using uv (recommended)
-uv sync
-uv run python -m server.main
-
-# Or using pip
-pip install -e .
-vibe-server
-```
-
-The API server runs at `https://localhost:8765`
-
-### 4. Start the Web UI
+### 2. Start the Server
 
 ```bash
 cd web
 npm install
+npm run build
+npm start
+```
+
+The server runs at `http://localhost:8765` and serves both API and static web files.
+
+### 3. Development Mode
+
+For development with hot-reload:
+
+```bash
+cd web
 npm run dev
 ```
 
-The Web UI runs at `https://localhost:5173`
+This starts both the API server and Vite dev server.
 
-### 5. Build and Run Desktop App
+### 4. Build and Run Desktop App (Optional)
 
 ```bash
 cd desktop
@@ -106,36 +90,32 @@ flutter pub get
 flutter run -d macos
 ```
 
+The Desktop app provides a GUI for managing services and devices.
+
 ## Usage Guide
 
 ### Desktop Application
 
 The Desktop app is your control center for VibeMobile:
 
-1. **Start All Services**: Click "Start All" to launch both API Server and Web UI
+1. **Start Server**: Launch the Node.js backend server
 2. **View Sessions**: See all active Claude Code sessions
-3. **Create Sessions**: Click + to start a new Claude Code session
+3. **Create Sessions**: Start a new Claude Code session in tmux
 4. **Device Management**: Pair and manage mobile devices
 5. **Cloudflare Tunnel**: Enable remote access via tunnel
-
-#### Starting Services
-
-- **Start API**: Launches the FastAPI backend server
-- **Start Web**: Starts the Vite development server for Web UI
-- **Start Tunnel**: Creates a Cloudflare tunnel for remote access
-- **Start All**: Launches API and Web together
 
 ### Mobile Web Interface
 
 Access the Web UI from your mobile device:
 
 #### Local Access
-Open `https://localhost:5173` (same network required)
+Open `http://localhost:8765` (same network required)
 
 #### Remote Access (via Cloudflare Tunnel)
-1. Click "Start Tunnel" in Desktop app
-2. Copy the generated public URL
-3. Open the URL on your mobile device
+1. Install cloudflared: `brew install cloudflare/cloudflare/cloudflared`
+2. Start tunnel: `cloudflared tunnel --url http://localhost:8765`
+3. Copy the generated public URL
+4. Open the URL on your mobile device
 
 #### First-Time Setup (Pairing)
 
@@ -149,6 +129,7 @@ Open `https://localhost:5173` (same network required)
 - **View Output**: See Claude Code terminal output in real-time
 - **Send Messages**: Type and send messages to Claude
 - **Special Keys**: Use the toolbar for Ctrl+C, Escape, etc.
+- **Browse Files**: View files in the session working directory
 - **Upload Images**: Send screenshots or images to Claude
 
 ### Trust Levels
@@ -171,6 +152,8 @@ Open `https://localhost:5173` (same network required)
 | `/api/sessions/{id}/upload` | POST | Upload file |
 | `/api/sessions` | POST | Create new session |
 | `/api/sessions/{id}` | DELETE | Kill session |
+| `/api/sessions/{id}/files` | GET | List files in session |
+| `/api/sessions/{id}/files/{path}` | GET | Get file content |
 | `/api/auth/pair/initiate` | POST | Generate pairing code |
 | `/api/auth/pair/complete` | POST | Complete pairing |
 | `/api/auth/refresh` | POST | Refresh access token |
@@ -182,7 +165,7 @@ Open `https://localhost:5173` (same network required)
 Connect to `/ws` for real-time updates:
 
 ```javascript
-const ws = new WebSocket('wss://localhost:8765/ws?token=YOUR_ACCESS_TOKEN');
+const ws = new WebSocket('ws://localhost:8765/ws');
 
 ws.onmessage = (event) => {
   const data = JSON.parse(event.data);
@@ -202,42 +185,31 @@ ws.send(JSON.stringify({
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `VIBE_HOST` | `0.0.0.0` | Server bind address |
-| `VIBE_PORT` | `8765` | Server port |
-| `VIBE_SSL_CERTFILE` | `certs/localhost.pem` | SSL certificate path |
-| `VIBE_SSL_KEYFILE` | `certs/localhost-key.pem` | SSL key path |
+| `HOST` | `0.0.0.0` | Server bind address |
+| `PORT` | `8765` | Server port |
+| `SSL_CERT` | - | SSL certificate path (optional) |
+| `SSL_KEY` | - | SSL key path (optional) |
+| `TMUX_PREFIX` | `vibe` | Tmux session name prefix |
+| `TMUX_HISTORY` | `500` | Lines of output to capture |
 
-### Desktop Settings
+### Data Storage
 
-Settings are stored in `~/.vibemobile/settings.json`:
-
-```json
-{
-  "apiPort": 8765,
-  "webPort": 5173,
-  "sessionPrefix": "vibe",
-  "autoStartServer": false,
-  "tunnelProxy": "http://127.0.0.1:7890"
-}
-```
+Runtime data is stored in `~/.vibemobile/`:
+- `devices.json` - Paired device information
+- `.secret_key` - JWT signing key (auto-generated)
+- `audit.log` - Action audit log
 
 ## Project Structure
 
 ```
 VibeMobile/
-├── server/                 # Python FastAPI backend
-│   ├── api/               # API routes
-│   │   ├── sessions.py    # Session management
-│   │   ├── auth.py        # Device authentication
-│   │   └── websocket.py   # WebSocket handler
-│   ├── services/          # Business logic
-│   │   ├── tmux_manager.py
-│   │   ├── auth_service.py
-│   │   └── ws_manager.py
-│   ├── models/            # Data models
-│   └── main.py            # Entry point
-├── web/                    # React frontend
-│   ├── src/
+├── web/                    # Node.js server + React frontend
+│   ├── server/            # Express backend
+│   │   ├── routes/        # API routes
+│   │   ├── services/      # Business logic
+│   │   ├── middleware/    # Auth middleware
+│   │   └── index.ts       # Entry point
+│   ├── src/               # React frontend
 │   │   ├── components/    # UI components
 │   │   ├── pages/         # Page components
 │   │   ├── services/      # API clients
@@ -247,73 +219,66 @@ VibeMobile/
 ├── desktop/                # Flutter desktop app
 │   └── lib/
 │       ├── core/          # Core utilities
-│       ├── data/          # Data layer
+│       ├── data/          # Data models
 │       ├── domain/        # Domain services
 │       └── presentation/  # UI layer
-├── certs/                  # SSL certificates
-└── pyproject.toml         # Python project config
+├── scripts/               # Installation scripts
+└── docs/                  # Documentation
 ```
 
 ## Security Considerations
 
-1. **HTTPS Required**: All connections use HTTPS/WSS with self-signed certificates
-2. **Device Pairing**: Mobile devices must be paired via 6-digit code + Desktop approval
-3. **Token-based Auth**: Short-lived access tokens with secure refresh tokens
-4. **Trust Levels**: Granular permission control per device
-5. **Local-only Management**: Device management only accessible from localhost
+1. **Local-First**: Server runs locally, no cloud dependency
+2. **Cloudflare Tunnel**: Secure remote access without exposing ports
+3. **Device Pairing**: Mobile devices must be paired via 6-digit code + Desktop approval
+4. **Token-based Auth**: Short-lived access tokens with secure refresh tokens
+5. **Trust Levels**: Granular permission control per device
 6. **Audit Logging**: All actions are logged with device and IP information
 
 ## Troubleshooting
 
-### Certificate Errors
+### Server Won't Start
 
-If you see SSL/certificate errors:
-
-```bash
-# Regenerate certificates
-cd certs
-mkcert -key-file localhost-key.pem -cert-file localhost.pem localhost 127.0.0.1
-
-# Trust the root CA
-mkcert -install
-```
-
-### Cloudflare Tunnel Not Working
-
-1. Check if cloudflared is installed: `cloudflared --version`
-2. Ensure proxy settings if behind a firewall
-3. Verify the tunnel is forwarding to Web UI port (5173), not API port
-
-### WebSocket Connection Failed
-
-1. Check that API server is running
-2. Verify HTTPS certificates are valid
-3. Ensure the browser trusts the self-signed certificate
+1. Check if port 8765 is in use: `lsof -i :8765`
+2. Ensure Node.js 18+ is installed: `node --version`
+3. Run `npm install` in the web directory
 
 ### Sessions Not Appearing
 
 1. Verify tmux is installed: `tmux -V`
 2. Check session prefix matches (default: `vibe`)
-3. Ensure API server can access tmux sessions
+3. List tmux sessions: `tmux ls`
+
+### WebSocket Connection Failed
+
+1. Check that server is running
+2. Verify connecting to correct port
+3. Check browser console for errors
+
+### Cloudflare Tunnel Issues
+
+1. Install cloudflared: `brew install cloudflare/cloudflare/cloudflared`
+2. Ensure no proxy interfering with connection
+3. Check cloudflared logs for errors
 
 ## Development
 
 ### Run Tests
 
 ```bash
-# Python tests
-cd server
-pytest
-
 # TypeScript checks
 cd web
 npm run lint
+
+# Flutter tests
+cd desktop
+flutter test
 ```
 
 ### Build for Production
 
 ```bash
-# Build web UI
+# Build web server + frontend
 cd web
 npm run build
 
@@ -324,8 +289,16 @@ flutter build macos --release
 
 ## License
 
-MIT License
+MIT License - see [LICENSE](LICENSE) for details.
 
 ## Contributing
 
-Contributions are welcome! Please read our contributing guidelines before submitting PRs.
+Contributions are welcome! Please:
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Run tests and linting
+5. Submit a pull request
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for detailed guidelines.

@@ -2,8 +2,6 @@
 import type { WebSocket } from 'ws';
 import type { SessionOutput, WSMessage, WSOutputMessage, WSStatusMessage, WSNotificationMessage } from '../types.js';
 
-type MessageHandler = (connectionId: string, data: unknown) => void;
-
 class ConnectionManager {
   private activeConnections: Map<string, WebSocket> = new Map();
   private subscriptions: Map<string, Set<string>> = new Map(); // sessionId -> connectionIds

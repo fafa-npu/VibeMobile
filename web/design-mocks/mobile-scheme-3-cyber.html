@@ -1,0 +1,898 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>VibeMobile - 方案三：赛博仪表盘</title>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      /* Cyberpunk Palette */
+      --void: #0a0a0f;
+      --dark: #12121a;
+      --surface: #1a1a24;
+      --elevated: #22222e;
+      --border: #2a2a38;
+      --text: #e4e4eb;
+      --text-dim: #8888a0;
+      --text-muted: #555566;
+
+      /* Neon Colors */
+      --neon-cyan: #00f5ff;
+      --neon-magenta: #ff00ff;
+      --neon-green: #00ff88;
+      --neon-yellow: #ffff00;
+      --neon-orange: #ff6600;
+      --neon-red: #ff0055;
+
+      /* Glow Effects */
+      --glow-cyan: 0 0 20px rgba(0, 245, 255, 0.5);
+      --glow-magenta: 0 0 20px rgba(255, 0, 255, 0.5);
+      --glow-green: 0 0 20px rgba(0, 255, 136, 0.5);
+
+      /* Typography */
+      --font-display: 'Orbitron', sans-serif;
+      --font-mono: 'Share Tech Mono', monospace;
+
+      /* Spacing */
+      --space-1: 4px;
+      --space-2: 8px;
+      --space-3: 12px;
+      --space-4: 16px;
+      --space-5: 20px;
+      --space-6: 24px;
+
+      /* Safe areas */
+      --safe-top: env(safe-area-inset-top, 0px);
+      --safe-bottom: env(safe-area-inset-bottom, 0px);
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    html, body {
+      height: 100%;
+      overflow: hidden;
+    }
+
+    body {
+      font-family: var(--font-mono);
+      background: var(--void);
+      color: var(--text);
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    /* Scanline Effect */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background: repeating-linear-gradient(
+        0deg,
+        transparent,
+        transparent 2px,
+        rgba(0, 0, 0, 0.1) 2px,
+        rgba(0, 0, 0, 0.1) 4px
+      );
+      pointer-events: none;
+      z-index: 9999;
+    }
+
+    /* ========== App Shell ========== */
+    .app {
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      max-width: 100%;
+      margin: 0 auto;
+      background: linear-gradient(180deg, var(--void) 0%, var(--dark) 100%);
+      position: relative;
+    }
+
+    /* Corner Decorations */
+    .app::before,
+    .app::after {
+      content: '';
+      position: absolute;
+      width: 60px;
+      height: 60px;
+      border: 1px solid var(--neon-cyan);
+      opacity: 0.3;
+      pointer-events: none;
+      z-index: 10;
+    }
+
+    .app::before {
+      top: calc(var(--safe-top) + 8px);
+      left: 8px;
+      border-right: none;
+      border-bottom: none;
+    }
+
+    .app::after {
+      top: calc(var(--safe-top) + 8px);
+      right: 8px;
+      border-left: none;
+      border-bottom: none;
+    }
+
+    /* ========== Status Bar ========== */
+    .status-bar {
+      padding: calc(var(--safe-top) + var(--space-2)) var(--space-4) var(--space-2);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-family: var(--font-display);
+      font-size: 10px;
+      color: var(--neon-cyan);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .status-bar .time {
+      animation: flicker 4s infinite;
+    }
+
+    @keyframes flicker {
+      0%, 100% { opacity: 1; }
+      92% { opacity: 1; }
+      93% { opacity: 0.8; }
+      94% { opacity: 1; }
+      95% { opacity: 0.9; }
+      96% { opacity: 1; }
+    }
+
+    /* ========== Header ========== */
+    .header {
+      padding: var(--space-3) var(--space-4);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: var(--space-3);
+      position: relative;
+    }
+
+    .header::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, var(--neon-cyan), transparent);
+      opacity: 0.5;
+    }
+
+    .back-btn {
+      width: 40px;
+      height: 40px;
+      background: transparent;
+      border: 1px solid var(--neon-cyan);
+      color: var(--neon-cyan);
+      font-family: var(--font-mono);
+      font-size: 18px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      clip-path: polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 8px 100%, 0 calc(100% - 8px));
+      transition: all 0.2s ease;
+    }
+
+    .back-btn:active {
+      background: var(--neon-cyan);
+      color: var(--void);
+      box-shadow: var(--glow-cyan);
+    }
+
+    .session-info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .session-title {
+      font-family: var(--font-display);
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--text);
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+    }
+
+    .session-title::before {
+      content: '//';
+      color: var(--neon-magenta);
+    }
+
+    .session-path {
+      font-size: 11px;
+      color: var(--text-dim);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .status-indicator {
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+      padding: var(--space-2) var(--space-3);
+      background: rgba(0, 255, 136, 0.1);
+      border: 1px solid var(--neon-green);
+      font-family: var(--font-display);
+      font-size: 10px;
+      color: var(--neon-green);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      clip-path: polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px);
+    }
+
+    .status-pulse {
+      width: 8px;
+      height: 8px;
+      background: var(--neon-green);
+      border-radius: 50%;
+      animation: pulse 1.5s ease-in-out infinite;
+      box-shadow: var(--glow-green);
+    }
+
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); opacity: 1; }
+      50% { transform: scale(0.8); opacity: 0.6; }
+    }
+
+    /* ========== Main Content ========== */
+    .main-content {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    /* ========== Terminal Panel ========== */
+    .terminal-panel {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      margin: var(--space-3);
+      background: var(--surface);
+      border: 1px solid var(--border);
+      overflow: hidden;
+      position: relative;
+    }
+
+    .terminal-panel::before {
+      content: 'TERMINAL://OUTPUT';
+      position: absolute;
+      top: -1px;
+      left: var(--space-4);
+      padding: 0 var(--space-2);
+      background: var(--surface);
+      font-family: var(--font-display);
+      font-size: 9px;
+      color: var(--neon-cyan);
+      letter-spacing: 1px;
+    }
+
+    .terminal-output {
+      flex: 1;
+      padding: var(--space-4);
+      overflow-y: auto;
+      font-size: 13px;
+      line-height: 1.7;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .terminal-output::-webkit-scrollbar {
+      width: 4px;
+    }
+
+    .terminal-output::-webkit-scrollbar-thumb {
+      background: var(--neon-cyan);
+    }
+
+    .output-line {
+      margin-bottom: var(--space-2);
+      padding-left: var(--space-4);
+      position: relative;
+    }
+
+    .output-line::before {
+      content: '>';
+      position: absolute;
+      left: 0;
+      color: var(--neon-cyan);
+    }
+
+    .output-line.user {
+      color: var(--neon-yellow);
+    }
+
+    .output-line.user::before {
+      content: '❯';
+      color: var(--neon-yellow);
+    }
+
+    .output-line.response {
+      color: var(--text);
+    }
+
+    .output-line.response::before {
+      content: '◆';
+      color: var(--neon-magenta);
+    }
+
+    .output-line.success {
+      color: var(--neon-green);
+    }
+
+    .output-line.success::before {
+      content: '✓';
+      color: var(--neon-green);
+    }
+
+    /* Tool Execution */
+    .tool-exec {
+      margin: var(--space-3) 0;
+      padding: var(--space-3);
+      background: rgba(0, 245, 255, 0.05);
+      border-left: 2px solid var(--neon-cyan);
+    }
+
+    .tool-exec-header {
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+      margin-bottom: var(--space-2);
+      font-family: var(--font-display);
+      font-size: 10px;
+      color: var(--neon-cyan);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .tool-exec-cmd {
+      color: var(--text-dim);
+      font-size: 12px;
+    }
+
+    .tool-exec-status {
+      color: var(--neon-green);
+      margin-left: auto;
+    }
+
+    /* Code Block */
+    .code-output {
+      background: var(--void);
+      border: 1px solid var(--border);
+      padding: var(--space-3);
+      margin: var(--space-3) 0;
+      font-size: 12px;
+      overflow-x: auto;
+      position: relative;
+    }
+
+    .code-output::before {
+      content: '< CODE >';
+      position: absolute;
+      top: var(--space-1);
+      right: var(--space-2);
+      font-family: var(--font-display);
+      font-size: 8px;
+      color: var(--text-muted);
+      letter-spacing: 1px;
+    }
+
+    .code-output .keyword { color: var(--neon-magenta); }
+    .code-output .string { color: var(--neon-green); }
+    .code-output .comment { color: var(--text-muted); }
+
+    /* ========== Quick Actions Panel ========== */
+    .quick-panel {
+      padding: var(--space-3) var(--space-4);
+      background: var(--dark);
+      border-top: 1px solid var(--border);
+    }
+
+    .quick-panel-title {
+      font-family: var(--font-display);
+      font-size: 9px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: var(--space-2);
+    }
+
+    .quick-btns {
+      display: flex;
+      gap: var(--space-2);
+      overflow-x: auto;
+      padding-bottom: var(--space-2);
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .quick-btns::-webkit-scrollbar {
+      display: none;
+    }
+
+    .quick-btn {
+      flex-shrink: 0;
+      padding: var(--space-2) var(--space-3);
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--text-dim);
+      font-family: var(--font-mono);
+      font-size: 11px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      white-space: nowrap;
+      clip-path: polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px);
+    }
+
+    .quick-btn:active {
+      background: var(--neon-cyan);
+      color: var(--void);
+      border-color: var(--neon-cyan);
+      box-shadow: var(--glow-cyan);
+    }
+
+    .quick-btn.danger {
+      border-color: var(--neon-red);
+      color: var(--neon-red);
+    }
+
+    .quick-btn.danger:active {
+      background: var(--neon-red);
+      color: var(--void);
+    }
+
+    /* ========== Control Grid ========== */
+    .control-grid {
+      padding: var(--space-3) var(--space-4);
+      background: var(--surface);
+      border-top: 1px solid var(--border);
+      display: flex;
+      gap: var(--space-4);
+      align-items: center;
+    }
+
+    .dpad-container {
+      position: relative;
+    }
+
+    .dpad-container::before {
+      content: 'NAV';
+      position: absolute;
+      top: -14px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-family: var(--font-display);
+      font-size: 8px;
+      color: var(--text-muted);
+      letter-spacing: 1px;
+    }
+
+    .dpad {
+      display: grid;
+      grid-template-areas:
+        ". up ."
+        "left ok right"
+        ". down .";
+      grid-template-columns: repeat(3, 34px);
+      grid-template-rows: repeat(3, 34px);
+      gap: 2px;
+    }
+
+    .dpad-btn {
+      background: var(--dark);
+      border: 1px solid var(--border);
+      color: var(--text-dim);
+      font-size: 14px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.1s ease;
+    }
+
+    .dpad-btn:active {
+      background: var(--neon-cyan);
+      color: var(--void);
+      border-color: var(--neon-cyan);
+      box-shadow: var(--glow-cyan);
+    }
+
+    .dpad-btn.up { grid-area: up; clip-path: polygon(50% 0, 100% 100%, 0 100%); }
+    .dpad-btn.down { grid-area: down; clip-path: polygon(0 0, 100% 0, 50% 100%); }
+    .dpad-btn.left { grid-area: left; clip-path: polygon(0 50%, 100% 0, 100% 100%); }
+    .dpad-btn.right { grid-area: right; clip-path: polygon(0 0, 100% 50%, 0 100%); }
+    .dpad-btn.ok {
+      grid-area: ok;
+      background: var(--neon-magenta);
+      border-color: var(--neon-magenta);
+      color: var(--void);
+      font-family: var(--font-display);
+      font-size: 8px;
+      font-weight: 700;
+    }
+
+    .func-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: var(--space-2);
+      flex: 1;
+    }
+
+    .func-btn {
+      padding: var(--space-2) var(--space-3);
+      background: var(--dark);
+      border: 1px solid var(--border);
+      color: var(--text-dim);
+      font-family: var(--font-mono);
+      font-size: 11px;
+      cursor: pointer;
+      transition: all 0.1s ease;
+      clip-path: polygon(4px 0, 100% 0, 100% calc(100% - 4px), calc(100% - 4px) 100%, 0 100%, 0 4px);
+    }
+
+    .func-btn:active {
+      background: var(--neon-magenta);
+      color: var(--void);
+      border-color: var(--neon-magenta);
+    }
+
+    /* ========== Input Area ========== */
+    .input-area {
+      padding: var(--space-3) var(--space-4) calc(var(--safe-bottom) + var(--space-3));
+      background: var(--void);
+      border-top: 1px solid var(--neon-cyan);
+      position: relative;
+    }
+
+    .input-area::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 1px;
+      background: var(--neon-cyan);
+      box-shadow: var(--glow-cyan);
+    }
+
+    .input-row {
+      display: flex;
+      gap: var(--space-2);
+      align-items: center;
+    }
+
+    .input-wrapper {
+      flex: 1;
+      position: relative;
+    }
+
+    .input-wrapper::before {
+      content: '>';
+      position: absolute;
+      left: var(--space-3);
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--neon-cyan);
+      font-size: 16px;
+    }
+
+    .text-input {
+      width: 100%;
+      padding: var(--space-3) var(--space-4) var(--space-3) calc(var(--space-4) + 16px);
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--text);
+      font-family: var(--font-mono);
+      font-size: 14px;
+      outline: none;
+      transition: all 0.2s ease;
+    }
+
+    .text-input:focus {
+      border-color: var(--neon-cyan);
+      box-shadow: inset 0 0 0 1px var(--neon-cyan), var(--glow-cyan);
+    }
+
+    .text-input::placeholder {
+      color: var(--text-muted);
+    }
+
+    .input-btn {
+      width: 44px;
+      height: 44px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--text-dim);
+      font-size: 18px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.15s ease;
+      clip-path: polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 8px 100%, 0 calc(100% - 8px));
+    }
+
+    .input-btn:active {
+      background: var(--neon-cyan);
+      color: var(--void);
+      border-color: var(--neon-cyan);
+      box-shadow: var(--glow-cyan);
+    }
+
+    .input-btn.send {
+      background: var(--neon-magenta);
+      border-color: var(--neon-magenta);
+      color: var(--void);
+      box-shadow: var(--glow-magenta);
+    }
+
+    .input-btn.send:active {
+      background: var(--neon-cyan);
+      border-color: var(--neon-cyan);
+      box-shadow: var(--glow-cyan);
+    }
+
+    /* ========== Bottom Tab Bar ========== */
+    .tab-bar {
+      display: flex;
+      background: var(--dark);
+      border-top: 1px solid var(--border);
+    }
+
+    .tab-item {
+      flex: 1;
+      padding: var(--space-3) var(--space-2);
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      font-family: var(--font-display);
+      font-size: 9px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: var(--space-1);
+      transition: all 0.15s ease;
+      position: relative;
+    }
+
+    .tab-item::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 0;
+      height: 2px;
+      background: var(--neon-cyan);
+      transition: width 0.2s ease;
+    }
+
+    .tab-item.active::before {
+      width: 60%;
+      box-shadow: var(--glow-cyan);
+    }
+
+    .tab-item.active {
+      color: var(--neon-cyan);
+    }
+
+    .tab-icon {
+      font-size: 18px;
+    }
+
+    /* ========== Responsive ========== */
+    @media (min-width: 768px) {
+      .app {
+        max-width: 600px;
+        border-left: 1px solid var(--border);
+        border-right: 1px solid var(--border);
+      }
+
+      .dpad {
+        grid-template-columns: repeat(3, 42px);
+        grid-template-rows: repeat(3, 42px);
+      }
+    }
+
+    /* ========== Design Notes ========== */
+    .design-notes {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: var(--surface);
+      border: 1px solid var(--neon-cyan);
+      padding: var(--space-4) var(--space-5);
+      max-width: 320px;
+      font-size: 12px;
+      z-index: 1000;
+      display: none;
+      clip-path: polygon(0 0, calc(100% - 16px) 0, 100% 16px, 100% 100%, 16px 100%, 0 calc(100% - 16px));
+    }
+
+    @media (min-width: 1024px) {
+      .design-notes {
+        display: block;
+      }
+    }
+
+    .design-notes h4 {
+      font-family: var(--font-display);
+      font-size: 12px;
+      margin-bottom: var(--space-3);
+      color: var(--neon-cyan);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .design-notes ul {
+      padding-left: var(--space-4);
+      color: var(--text-dim);
+      line-height: 1.8;
+    }
+
+    .design-notes strong {
+      color: var(--text);
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <!-- Status Bar -->
+    <div class="status-bar">
+      <span class="time">20:41</span>
+      <span>SYSTEM://ACTIVE</span>
+      <span>◉ 98%</span>
+    </div>
+
+    <!-- Header -->
+    <header class="header">
+      <button class="back-btn">◄</button>
+      <div class="session-info">
+        <div class="session-title">VIBE-1</div>
+        <div class="session-path">~/Documents/VibeMobile</div>
+      </div>
+      <div class="status-indicator">
+        <span class="status-pulse"></span>
+        <span>ONLINE</span>
+      </div>
+    </header>
+
+    <!-- Main Content -->
+    <div class="main-content">
+      <!-- Terminal Panel -->
+      <div class="terminal-panel">
+        <div class="terminal-output">
+          <div class="output-line user">查看当前的 git 变更，生成一个 commit message</div>
+
+          <div class="output-line response">正在分析 git 仓库状态...</div>
+
+          <div class="tool-exec">
+            <div class="tool-exec-header">
+              <span>◈ BASH EXEC</span>
+              <span class="tool-exec-status">✓ SUCCESS</span>
+            </div>
+            <div class="tool-exec-cmd">$ git status</div>
+          </div>
+
+          <div class="output-line response">检测到 12 个文件变更。建议的 commit message：</div>
+
+          <div class="code-output">
+<span class="keyword">feat:</span> <span class="string">Add file browser with markdown, audio and video preview</span>
+
+<span class="comment">// Changes:</span>
+<span class="comment">- Add FileBrowser component with directory navigation</span>
+<span class="comment">- Support Markdown rendering with GFM</span>
+<span class="comment">- Support audio/video playback</span>
+<span class="comment">- Add backend file API with protection</span>
+          </div>
+
+          <div class="output-line response">确认执行 commit 操作？</div>
+
+          <div class="output-line user">commit it</div>
+
+          <div class="tool-exec">
+            <div class="tool-exec-header">
+              <span>◈ BASH EXEC</span>
+              <span class="tool-exec-status">✓ SUCCESS</span>
+            </div>
+            <div class="tool-exec-cmd">$ git commit -m "feat: Add file browser..."</div>
+          </div>
+
+          <div class="output-line success">✓ COMMIT COMPLETE // hash: a704d79</div>
+        </div>
+      </div>
+
+      <!-- Quick Actions -->
+      <div class="quick-panel">
+        <div class="quick-panel-title">QUICK ACTIONS</div>
+        <div class="quick-btns">
+          <button class="quick-btn danger">CTRL+C</button>
+          <button class="quick-btn">CLEAR</button>
+          <button class="quick-btn">UNDO</button>
+          <button class="quick-btn">GIT LOG</button>
+          <button class="quick-btn">FILES</button>
+        </div>
+      </div>
+
+      <!-- Control Grid -->
+      <div class="control-grid">
+        <div class="dpad-container">
+          <div class="dpad">
+            <button class="dpad-btn up">▲</button>
+            <button class="dpad-btn left">◄</button>
+            <button class="dpad-btn ok">OK</button>
+            <button class="dpad-btn right">►</button>
+            <button class="dpad-btn down">▼</button>
+          </div>
+        </div>
+
+        <div class="func-grid">
+          <button class="func-btn">ESC</button>
+          <button class="func-btn">TAB</button>
+          <button class="func-btn">ENTER</button>
+          <button class="func-btn">⇧TAB</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Input Area -->
+    <div class="input-area">
+      <div class="input-row">
+        <div class="input-wrapper">
+          <input type="text" class="text-input" placeholder="ENTER COMMAND...">
+        </div>
+        <button class="input-btn">📎</button>
+        <button class="input-btn send">↑</button>
+      </div>
+    </div>
+
+    <!-- Tab Bar -->
+    <nav class="tab-bar">
+      <button class="tab-item active">
+        <span class="tab-icon">💬</span>
+        <span>对话</span>
+      </button>
+      <button class="tab-item">
+        <span class="tab-icon">📁</span>
+        <span>文件</span>
+      </button>
+      <button class="tab-item">
+        <span class="tab-icon">📊</span>
+        <span>日志</span>
+      </button>
+      <button class="tab-item">
+        <span class="tab-icon">⚙️</span>
+        <span>设置</span>
+      </button>
+    </nav>
+  </div>
+
+  <!-- Design Notes -->
+  <div class="design-notes">
+    <h4>⚡ 方案三：赛博仪表盘</h4>
+    <ul>
+      <li><strong>美学</strong>：Cyberpunk 赛博朋克</li>
+      <li><strong>字体</strong>：Orbitron + Share Tech Mono</li>
+      <li><strong>配色</strong>：深空黑 + 霓虹氖光</li>
+      <li><strong>交互</strong>：分区仪表盘 + 底部 Tab</li>
+      <li><strong>特点</strong>：科技感、未来感、沉浸式</li>
+    </ul>
+  </div>
+</body>
+</html>

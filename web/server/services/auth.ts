@@ -1,6 +1,5 @@
 // Authentication service for device management and token handling
 import jwt from 'jsonwebtoken';
-import bcrypt from 'bcrypt';
 import { v4 as uuidv4 } from 'uuid';
 import crypto from 'crypto';
 import fs from 'fs';

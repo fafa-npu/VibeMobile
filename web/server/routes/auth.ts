@@ -7,7 +7,6 @@ import {
   authContextMiddleware,
   requireLocal,
   getClientIp,
-  isLocalRequest,
   parseUserAgent,
 } from '../middleware/auth.js';
 

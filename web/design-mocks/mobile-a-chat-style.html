@@ -1,0 +1,752 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>VibeMobile - 方案A：简约对话式</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    :root {
+      --primary: #6366f1;
+      --primary-light: #818cf8;
+      --success: #10b981;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+      --bg: #ffffff;
+      --bg-secondary: #f8fafc;
+      --text: #0f172a;
+      --text-secondary: #64748b;
+      --text-tertiary: #94a3b8;
+      --border: #e2e8f0;
+      --card-shadow: 0 1px 3px rgba(0,0,0,0.08);
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
+
+    /* iPhone Frame */
+    .phone-frame {
+      width: 375px;
+      height: 812px;
+      background: #000;
+      border-radius: 54px;
+      padding: 14px;
+      box-shadow: 0 50px 100px rgba(0,0,0,0.3);
+    }
+
+    .phone-screen {
+      width: 100%;
+      height: 100%;
+      background: var(--bg);
+      border-radius: 42px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .notch {
+      position: absolute;
+      top: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 150px;
+      height: 34px;
+      background: #000;
+      border-radius: 0 0 24px 24px;
+      z-index: 100;
+    }
+
+    .home-indicator {
+      position: absolute;
+      bottom: 8px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 134px;
+      height: 5px;
+      background: #000;
+      border-radius: 3px;
+      z-index: 100;
+    }
+
+    /* App Container */
+    .app {
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      padding-top: 54px;
+      padding-bottom: 34px;
+    }
+
+    /* ========== 导航头部 ========== */
+    .header {
+      padding: 0 20px 16px;
+      background: var(--bg);
+    }
+
+    .header-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 16px;
+    }
+
+    .back-btn {
+      width: 40px;
+      height: 40px;
+      border: none;
+      background: var(--bg-secondary);
+      border-radius: 12px;
+      font-size: 18px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--text);
+    }
+
+    .session-info {
+      text-align: center;
+      flex: 1;
+    }
+
+    .session-name {
+      font-size: 17px;
+      font-weight: 600;
+      margin-bottom: 2px;
+    }
+
+    .session-path {
+      font-size: 12px;
+      color: var(--text-secondary);
+    }
+
+    .status-badge {
+      padding: 6px 12px;
+      background: #dcfce7;
+      color: #166534;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 600;
+    }
+
+    /* 极简标签 */
+    .tabs {
+      display: flex;
+      gap: 8px;
+    }
+
+    .tab {
+      flex: 1;
+      padding: 12px;
+      border: none;
+      background: var(--bg-secondary);
+      border-radius: 12px;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text-secondary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      transition: all 0.2s;
+    }
+
+    .tab.active {
+      background: var(--primary);
+      color: white;
+    }
+
+    /* ========== 对话区域 ========== */
+    .chat-container {
+      flex: 1;
+      overflow-y: auto;
+      padding: 16px 20px;
+      background: var(--bg-secondary);
+    }
+
+    .message {
+      margin-bottom: 16px;
+      animation: slideUp 0.3s ease;
+    }
+
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .message.user {
+      display: flex;
+      justify-content: flex-end;
+    }
+
+    .message-bubble {
+      max-width: 85%;
+      padding: 12px 16px;
+      border-radius: 20px;
+      font-size: 15px;
+      line-height: 1.5;
+    }
+
+    .message.user .message-bubble {
+      background: var(--primary);
+      color: white;
+      border-bottom-right-radius: 6px;
+    }
+
+    .message.assistant .message-bubble {
+      background: white;
+      color: var(--text);
+      border-bottom-left-radius: 6px;
+      box-shadow: var(--card-shadow);
+    }
+
+    .message-time {
+      font-size: 11px;
+      color: var(--text-tertiary);
+      margin-top: 4px;
+      padding: 0 4px;
+    }
+
+    .message.user .message-time {
+      text-align: right;
+    }
+
+    /* 工具卡片 */
+    .tool-card {
+      background: var(--bg-secondary);
+      border-radius: 12px;
+      padding: 12px;
+      margin: 8px 0;
+      border: 1px solid var(--border);
+    }
+
+    .tool-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 6px;
+    }
+
+    .tool-icon {
+      width: 24px;
+      height: 24px;
+      background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+    }
+
+    .tool-name {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    .tool-status {
+      margin-left: auto;
+      font-size: 11px;
+      color: var(--success);
+      font-weight: 500;
+    }
+
+    .tool-content {
+      font-family: 'SF Mono', Monaco, monospace;
+      font-size: 12px;
+      color: var(--text-secondary);
+      background: white;
+      padding: 8px 10px;
+      border-radius: 8px;
+    }
+
+    /* 代码高亮 */
+    .code-block {
+      background: #1e293b;
+      border-radius: 12px;
+      padding: 12px;
+      margin: 8px 0;
+      font-family: 'SF Mono', Monaco, monospace;
+      font-size: 12px;
+      color: #e2e8f0;
+      overflow-x: auto;
+    }
+
+    .code-block .keyword { color: #c678dd; }
+    .code-block .string { color: #98c379; }
+    .code-block .comment { color: #5c6370; }
+
+    /* ========== 输入区域 ========== */
+    .input-area {
+      background: var(--bg);
+      padding: 12px 16px 8px;
+      border-top: 1px solid var(--border);
+    }
+
+    /* 快捷控制 - 极简设计 */
+    .quick-controls {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 12px;
+      overflow-x: auto;
+      padding-bottom: 4px;
+    }
+
+    .quick-btn {
+      padding: 8px 14px;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--text-secondary);
+      white-space: nowrap;
+      transition: all 0.2s;
+    }
+
+    .quick-btn:active {
+      background: var(--border);
+    }
+
+    .quick-btn.danger {
+      color: var(--danger);
+      border-color: #fecaca;
+      background: #fef2f2;
+    }
+
+    /* D-Pad 紧凑设计 */
+    .dpad-compact {
+      display: flex;
+      align-items: center;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 4px;
+    }
+
+    .dpad-btn {
+      width: 32px;
+      height: 32px;
+      border: none;
+      background: transparent;
+      border-radius: 50%;
+      font-size: 14px;
+      color: var(--text-secondary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .dpad-btn:active {
+      background: white;
+      color: var(--text);
+    }
+
+    /* 输入框 */
+    .input-row {
+      display: flex;
+      gap: 10px;
+      align-items: flex-end;
+    }
+
+    .input-wrapper {
+      flex: 1;
+      position: relative;
+    }
+
+    .text-input {
+      width: 100%;
+      padding: 14px 16px;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      font-size: 15px;
+      outline: none;
+      transition: all 0.2s;
+    }
+
+    .text-input:focus {
+      border-color: var(--primary);
+      background: white;
+    }
+
+    .text-input::placeholder {
+      color: var(--text-tertiary);
+    }
+
+    .send-btn {
+      width: 48px;
+      height: 48px;
+      background: var(--primary);
+      border: none;
+      border-radius: 50%;
+      color: white;
+      font-size: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);
+      transition: all 0.2s;
+    }
+
+    .send-btn:active {
+      transform: scale(0.95);
+    }
+
+    /* ========== 文件面板 ========== */
+    .files-panel {
+      display: none;
+      flex: 1;
+      flex-direction: column;
+      background: var(--bg);
+    }
+
+    .files-panel.active {
+      display: flex;
+    }
+
+    .files-header {
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .breadcrumb {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 13px;
+      color: var(--text-secondary);
+      margin-bottom: 12px;
+    }
+
+    .breadcrumb span {
+      padding: 4px 8px;
+      background: var(--bg-secondary);
+      border-radius: 6px;
+    }
+
+    .breadcrumb span.current {
+      background: var(--primary);
+      color: white;
+    }
+
+    .search-input {
+      width: 100%;
+      padding: 12px 16px;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      font-size: 14px;
+    }
+
+    .files-list {
+      flex: 1;
+      overflow-y: auto;
+      padding: 8px 12px;
+    }
+
+    .file-item {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 14px 12px;
+      border-radius: 14px;
+      transition: all 0.15s;
+    }
+
+    .file-item:active {
+      background: var(--bg-secondary);
+    }
+
+    .file-icon {
+      width: 44px;
+      height: 44px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+    }
+
+    .file-icon.folder { background: #fef3c7; }
+    .file-icon.ts { background: #dbeafe; }
+    .file-icon.css { background: #fce7f3; }
+    .file-icon.json { background: #dcfce7; }
+    .file-icon.md { background: #f3e8ff; }
+
+    .file-info {
+      flex: 1;
+    }
+
+    .file-name {
+      font-size: 15px;
+      font-weight: 500;
+      margin-bottom: 2px;
+    }
+
+    .file-meta {
+      font-size: 12px;
+      color: var(--text-secondary);
+    }
+
+    .file-arrow {
+      color: var(--text-tertiary);
+      font-size: 18px;
+    }
+
+    /* ========== 设计说明 ========== */
+    .design-notes {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: white;
+      padding: 24px;
+      border-radius: 20px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.15);
+      max-width: 320px;
+      font-size: 13px;
+      line-height: 1.7;
+    }
+
+    .design-notes h4 {
+      font-size: 18px;
+      margin-bottom: 16px;
+      color: var(--primary);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .design-notes ul {
+      padding-left: 20px;
+      color: var(--text-secondary);
+    }
+
+    .design-notes li {
+      margin-bottom: 8px;
+    }
+
+    .design-notes strong {
+      color: var(--text);
+    }
+
+    .design-notes .tag {
+      display: inline-block;
+      padding: 4px 10px;
+      background: var(--bg-secondary);
+      border-radius: 6px;
+      font-size: 11px;
+      color: var(--primary);
+      font-weight: 600;
+      margin-top: 16px;
+    }
+  </style>
+</head>
+<body>
+  <div class="phone-frame">
+    <div class="phone-screen">
+      <div class="notch"></div>
+
+      <div class="app">
+        <!-- 头部 -->
+        <header class="header">
+          <div class="header-top">
+            <button class="back-btn">←</button>
+            <div class="session-info">
+              <div class="session-name">vibe-1</div>
+              <div class="session-path">~/VibeMobile</div>
+            </div>
+            <span class="status-badge">运行中</span>
+          </div>
+
+          <div class="tabs">
+            <button class="tab active" onclick="showPanel('chat')">
+              💬 对话
+            </button>
+            <button class="tab" onclick="showPanel('files')">
+              📁 文件
+            </button>
+          </div>
+        </header>
+
+        <!-- 对话区域 -->
+        <div class="chat-container" id="chat-panel">
+          <div class="message user">
+            <div>
+              <div class="message-bubble">查看 git 变更并生成 commit message</div>
+              <div class="message-time">2分钟前</div>
+            </div>
+          </div>
+
+          <div class="message assistant">
+            <div>
+              <div class="message-bubble">
+                我来查看当前的 git 变更：
+
+                <div class="tool-card">
+                  <div class="tool-header">
+                    <div class="tool-icon">🔧</div>
+                    <span class="tool-name">Bash</span>
+                    <span class="tool-status">✓ 成功</span>
+                  </div>
+                  <div class="tool-content">git status</div>
+                </div>
+
+                根据变更，建议的 commit message：
+
+                <div class="code-block">
+                  <span class="keyword">feat:</span> <span class="string">Add file browser with preview</span>
+                </div>
+              </div>
+              <div class="message-time">1分钟前</div>
+            </div>
+          </div>
+
+          <div class="message user">
+            <div>
+              <div class="message-bubble">commit it</div>
+              <div class="message-time">刚刚</div>
+            </div>
+          </div>
+
+          <div class="message assistant">
+            <div>
+              <div class="message-bubble">
+                <div class="tool-card">
+                  <div class="tool-header">
+                    <div class="tool-icon">🔧</div>
+                    <span class="tool-name">Bash</span>
+                    <span class="tool-status">✓ a704d79</span>
+                  </div>
+                  <div class="tool-content">git commit -m "feat: Add..."</div>
+                </div>
+                已提交！✅
+              </div>
+              <div class="message-time">刚刚</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 文件面板 -->
+        <div class="files-panel" id="files-panel">
+          <div class="files-header">
+            <div class="breadcrumb">
+              <span>🏠</span>
+              <span>›</span>
+              <span class="current">web</span>
+            </div>
+            <input type="text" class="search-input" placeholder="🔍 搜索文件...">
+          </div>
+          <div class="files-list">
+            <div class="file-item">
+              <div class="file-icon folder">📁</div>
+              <div class="file-info">
+                <div class="file-name">src</div>
+                <div class="file-meta">文件夹 • 12项</div>
+              </div>
+              <span class="file-arrow">›</span>
+            </div>
+            <div class="file-item">
+              <div class="file-icon folder">📁</div>
+              <div class="file-info">
+                <div class="file-name">server</div>
+                <div class="file-meta">文件夹 • 5项</div>
+              </div>
+              <span class="file-arrow">›</span>
+            </div>
+            <div class="file-item">
+              <div class="file-icon ts">📘</div>
+              <div class="file-info">
+                <div class="file-name">vite.config.ts</div>
+                <div class="file-meta">TypeScript • 1.2 KB</div>
+              </div>
+              <span class="file-arrow">›</span>
+            </div>
+            <div class="file-item">
+              <div class="file-icon json">📋</div>
+              <div class="file-info">
+                <div class="file-name">package.json</div>
+                <div class="file-meta">JSON • 2.1 KB</div>
+              </div>
+              <span class="file-arrow">›</span>
+            </div>
+            <div class="file-item">
+              <div class="file-icon md">📝</div>
+              <div class="file-info">
+                <div class="file-name">README.md</div>
+                <div class="file-meta">Markdown • 3.4 KB</div>
+              </div>
+              <span class="file-arrow">›</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 输入区域 -->
+        <div class="input-area">
+          <div class="quick-controls">
+            <button class="quick-btn danger">Ctrl+C</button>
+            <div class="dpad-compact">
+              <button class="dpad-btn">←</button>
+              <button class="dpad-btn">↑</button>
+              <button class="dpad-btn">↓</button>
+              <button class="dpad-btn">→</button>
+            </div>
+            <button class="quick-btn">Esc</button>
+            <button class="quick-btn">Tab</button>
+            <button class="quick-btn">⏎</button>
+          </div>
+
+          <div class="input-row">
+            <div class="input-wrapper">
+              <input type="text" class="text-input" placeholder="输入指令...">
+            </div>
+            <button class="send-btn">↑</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="home-indicator"></div>
+    </div>
+  </div>
+
+  <div class="design-notes">
+    <h4>💬 方案A：简约对话式</h4>
+    <ul>
+      <li><strong>聊天气泡</strong>：微信/iMessage 风格，用户熟悉</li>
+      <li><strong>白色基调</strong>：清爽简洁，阅读舒适</li>
+      <li><strong>极简标签</strong>：对话/文件 两个核心功能</li>
+      <li><strong>紧凑控制栏</strong>：方向键整合为胶囊设计</li>
+      <li><strong>大圆形发送键</strong>：易于触控</li>
+      <li><strong>卡片式工具</strong>：清晰展示执行状态</li>
+    </ul>
+    <span class="tag">适合：轻度使用、快速查看</span>
+  </div>
+
+  <script>
+    function showPanel(panel) {
+      document.getElementById('chat-panel').style.display = panel === 'chat' ? 'block' : 'none';
+      document.getElementById('files-panel').style.display = panel === 'files' ? 'flex' : 'none';
+      document.getElementById('chat-panel').classList.toggle('active', panel === 'chat');
+      document.getElementById('files-panel').classList.toggle('active', panel === 'files');
+      document.querySelectorAll('.tab').forEach((t, i) => {
+        t.classList.toggle('active', (i === 0 && panel === 'chat') || (i === 1 && panel === 'files'));
+      });
+    }
+  </script>
+</body>
+</html>

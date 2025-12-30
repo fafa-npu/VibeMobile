@@ -3,13 +3,11 @@ import type { Request, Response, NextFunction } from 'express';
 import { authService } from '../services/auth.js';
 import type { Device, TrustLevel } from '../types.js';
 
-// Extend Express Request type
-declare global {
-  namespace Express {
-    interface Request {
-      device?: Device;
-      authContext?: AuthContext;
-    }
+// Extend Express Request type using module augmentation
+declare module 'express-serve-static-core' {
+  interface Request {
+    device?: Device;
+    authContext?: AuthContext;
   }
 }
 

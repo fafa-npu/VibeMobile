@@ -1,0 +1,1620 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>VibeMobile - 方案A：聊天气泡风格</title>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    :root {
+      --bg-primary: #0a0a0f;
+      --bg-secondary: #12121a;
+      --bg-tertiary: #1a1a24;
+      --bg-card: #1e1e2a;
+      --accent-coral: #ff6b6b;
+      --accent-mint: #4ecdc4;
+      --accent-lavender: #a78bfa;
+      --accent-gold: #fbbf24;
+      --accent-blue: #60a5fa;
+      --text-primary: #f8fafc;
+      --text-secondary: #94a3b8;
+      --text-muted: #64748b;
+      --border: rgba(255,255,255,0.08);
+      --glass: rgba(255,255,255,0.03);
+      --success: #34d399;
+      --error: #f87171;
+      --warning: #fbbf24;
+      --safe-bottom: env(safe-area-inset-bottom, 0px);
+    }
+
+    body {
+      font-family: 'Plus Jakarta Sans', -apple-system, sans-serif;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      min-height: 100vh;
+      overflow: hidden;
+    }
+
+    .app {
+      width: 100%;
+      max-width: 430px;
+      height: 100vh;
+      margin: 0 auto;
+      position: relative;
+      overflow: hidden;
+      background: var(--bg-primary);
+    }
+
+    .page {
+      position: absolute;
+      inset: 0;
+      display: none;
+      flex-direction: column;
+      opacity: 0;
+      transform: translateX(20px);
+      transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .page.active {
+      display: flex;
+      opacity: 1;
+      transform: translateX(0);
+    }
+
+    /* ═══════════════════════════════════════
+       LOADING PAGE
+    ═══════════════════════════════════════ */
+    .loading-page {
+      background: linear-gradient(145deg, #0a0a0f 0%, #1a1a2a 50%, #0f0f1a 100%);
+      align-items: center;
+      justify-content: center;
+      gap: 32px;
+    }
+
+    .loading-logo {
+      width: 100px;
+      height: 100px;
+      position: relative;
+    }
+
+    .loading-logo::before {
+      content: '';
+      position: absolute;
+      inset: -20px;
+      background: conic-gradient(from 0deg, var(--accent-coral), var(--accent-lavender), var(--accent-mint), var(--accent-coral));
+      border-radius: 50%;
+      animation: spin 3s linear infinite;
+      opacity: 0.3;
+      filter: blur(20px);
+    }
+
+    .loading-logo-inner {
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(135deg, var(--accent-coral) 0%, var(--accent-lavender) 100%);
+      border-radius: 28px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 48px;
+      position: relative;
+      box-shadow:
+        0 20px 60px rgba(255, 107, 107, 0.3),
+        inset 0 1px 0 rgba(255,255,255,0.2);
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .loading-text {
+      text-align: center;
+    }
+
+    .loading-text h1 {
+      font-size: 28px;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+      margin-bottom: 8px;
+      background: linear-gradient(135deg, var(--text-primary) 0%, var(--text-secondary) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .loading-text p {
+      color: var(--text-muted);
+      font-size: 14px;
+    }
+
+    .loading-dots {
+      display: flex;
+      gap: 8px;
+    }
+
+    .loading-dot {
+      width: 8px;
+      height: 8px;
+      background: var(--accent-lavender);
+      border-radius: 50%;
+      animation: bounce 1.4s ease-in-out infinite;
+    }
+
+    .loading-dot:nth-child(2) { animation-delay: 0.2s; }
+    .loading-dot:nth-child(3) { animation-delay: 0.4s; }
+
+    @keyframes bounce {
+      0%, 80%, 100% { transform: scale(0.6); opacity: 0.4; }
+      40% { transform: scale(1); opacity: 1; }
+    }
+
+    /* ═══════════════════════════════════════
+       PAIRING PAGE
+    ═══════════════════════════════════════ */
+    .pairing-page {
+      background: linear-gradient(180deg, var(--bg-primary) 0%, var(--bg-secondary) 100%);
+      padding: 60px 24px 40px;
+    }
+
+    .pairing-header {
+      text-align: center;
+      margin-bottom: 48px;
+    }
+
+    .pairing-icon {
+      width: 80px;
+      height: 80px;
+      margin: 0 auto 24px;
+      background: linear-gradient(135deg, var(--bg-tertiary) 0%, var(--bg-card) 100%);
+      border-radius: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 36px;
+      border: 1px solid var(--border);
+      box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+    }
+
+    .pairing-header h1 {
+      font-size: 28px;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+
+    .pairing-header p {
+      color: var(--text-secondary);
+      font-size: 15px;
+      line-height: 1.5;
+    }
+
+    .code-input-group {
+      display: flex;
+      gap: 8px;
+      justify-content: center;
+      margin-bottom: 32px;
+    }
+
+    .code-digit {
+      width: 48px;
+      height: 64px;
+      background: var(--bg-tertiary);
+      border: 2px solid var(--border);
+      border-radius: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 24px;
+      font-weight: 600;
+      transition: all 0.2s;
+    }
+
+    .code-digit.filled {
+      border-color: var(--accent-coral);
+      background: rgba(255, 107, 107, 0.1);
+      box-shadow: 0 0 20px rgba(255, 107, 107, 0.2);
+    }
+
+    .code-digit.active {
+      border-color: var(--accent-lavender);
+      animation: pulse-border 1s ease-in-out infinite;
+    }
+
+    @keyframes pulse-border {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(167, 139, 250, 0.4); }
+      50% { box-shadow: 0 0 0 8px rgba(167, 139, 250, 0); }
+    }
+
+    .hidden-input {
+      position: absolute;
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .pairing-btn {
+      width: 100%;
+      padding: 18px;
+      background: linear-gradient(135deg, var(--accent-coral) 0%, #ff8a80 100%);
+      border: none;
+      border-radius: 16px;
+      color: white;
+      font-family: inherit;
+      font-size: 17px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s;
+      box-shadow: 0 8px 32px rgba(255, 107, 107, 0.3);
+    }
+
+    .pairing-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .pairing-btn:not(:disabled):active {
+      transform: scale(0.98);
+    }
+
+    .pairing-instructions {
+      margin-top: 48px;
+      padding: 20px;
+      background: var(--glass);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+    }
+
+    .pairing-instructions h3 {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-secondary);
+      margin-bottom: 16px;
+    }
+
+    .pairing-instructions ol {
+      list-style: none;
+      counter-reset: steps;
+    }
+
+    .pairing-instructions li {
+      counter-increment: steps;
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      font-size: 13px;
+      color: var(--text-muted);
+      margin-bottom: 12px;
+      line-height: 1.5;
+    }
+
+    .pairing-instructions li::before {
+      content: counter(steps);
+      width: 24px;
+      height: 24px;
+      background: var(--bg-tertiary);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--accent-lavender);
+      flex-shrink: 0;
+    }
+
+    /* ═══════════════════════════════════════
+       SESSION LIST PAGE
+    ═══════════════════════════════════════ */
+    .sessions-page {
+      background: var(--bg-primary);
+    }
+
+    .sessions-header {
+      padding: 60px 20px 20px;
+      background: linear-gradient(180deg, var(--bg-secondary) 0%, var(--bg-primary) 100%);
+    }
+
+    .sessions-header-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 8px;
+    }
+
+    .sessions-header h1 {
+      font-size: 32px;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+    }
+
+    .connection-badge {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 14px;
+      background: var(--glass);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      font-size: 13px;
+      color: var(--text-secondary);
+    }
+
+    .connection-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--success);
+      box-shadow: 0 0 8px var(--success);
+    }
+
+    .connection-dot.connecting {
+      background: var(--warning);
+      box-shadow: 0 0 8px var(--warning);
+      animation: pulse 1s ease-in-out infinite;
+    }
+
+    .connection-dot.disconnected {
+      background: var(--text-muted);
+      box-shadow: none;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+
+    .sessions-subtitle {
+      color: var(--text-muted);
+      font-size: 14px;
+    }
+
+    .sessions-content {
+      flex: 1;
+      overflow-y: auto;
+      padding: 0 20px 100px;
+    }
+
+    .section-title {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin: 24px 0 12px;
+    }
+
+    .session-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 16px;
+      margin-bottom: 12px;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+
+    .session-card:active {
+      transform: scale(0.98);
+      background: var(--bg-tertiary);
+    }
+
+    .session-card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+    }
+
+    .session-card-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .session-icon {
+      width: 44px;
+      height: 44px;
+      background: linear-gradient(135deg, var(--accent-mint) 0%, var(--accent-blue) 100%);
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+    }
+
+    .session-info h3 {
+      font-size: 16px;
+      font-weight: 600;
+      margin-bottom: 2px;
+    }
+
+    .session-path {
+      font-size: 12px;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .session-status {
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 500;
+    }
+
+    .session-status.active {
+      background: rgba(52, 211, 153, 0.15);
+      color: var(--success);
+    }
+
+    .session-status.ended {
+      background: var(--glass);
+      color: var(--text-muted);
+    }
+
+    .session-preview {
+      background: var(--bg-tertiary);
+      border-radius: 12px;
+      padding: 12px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      line-height: 1.6;
+      margin-bottom: 12px;
+    }
+
+    .preview-line {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      color: var(--text-secondary);
+    }
+
+    .preview-line.user { color: var(--success); }
+    .preview-line.response { color: var(--accent-blue); }
+
+    .session-meta {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    .logout-btn {
+      position: fixed;
+      bottom: calc(20px + var(--safe-bottom));
+      left: 50%;
+      transform: translateX(-50%);
+      padding: 12px 24px;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      color: var(--text-secondary);
+      font-family: inherit;
+      font-size: 14px;
+      cursor: pointer;
+    }
+
+    /* ═══════════════════════════════════════
+       SESSION DETAIL PAGE
+    ═══════════════════════════════════════ */
+    .detail-page {
+      background: var(--bg-primary);
+    }
+
+    .detail-header {
+      padding: 50px 16px 12px;
+      background: var(--bg-secondary);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .detail-header-top {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+
+    .back-btn {
+      width: 40px;
+      height: 40px;
+      background: var(--glass);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      color: var(--text-primary);
+      font-size: 18px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .detail-title {
+      flex: 1;
+    }
+
+    .detail-title h1 {
+      font-size: 18px;
+      font-weight: 600;
+    }
+
+    .detail-title p {
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    .detail-status {
+      padding: 6px 12px;
+      background: rgba(52, 211, 153, 0.15);
+      color: var(--success);
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 500;
+    }
+
+    .detail-tabs {
+      display: flex;
+      background: var(--bg-tertiary);
+      padding: 4px;
+      border-radius: 12px;
+    }
+
+    .detail-tab {
+      flex: 1;
+      padding: 10px;
+      background: transparent;
+      border: none;
+      border-radius: 10px;
+      color: var(--text-muted);
+      font-family: inherit;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    }
+
+    .detail-tab.active {
+      background: var(--bg-card);
+      color: var(--text-primary);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    }
+
+    /* Terminal Panel */
+    .terminal-panel {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .terminal-output {
+      flex: 1;
+      overflow-y: auto;
+      padding: 16px;
+      background: var(--bg-primary);
+    }
+
+    .message-group {
+      margin-bottom: 16px;
+    }
+
+    .message-bubble {
+      max-width: 85%;
+      padding: 12px 16px;
+      border-radius: 20px;
+      font-size: 14px;
+      line-height: 1.5;
+      animation: slideIn 0.3s ease;
+    }
+
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .message-bubble.user {
+      margin-left: auto;
+      background: linear-gradient(135deg, var(--accent-coral) 0%, #ff8a80 100%);
+      color: white;
+      border-bottom-right-radius: 6px;
+    }
+
+    .message-bubble.assistant {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-bottom-left-radius: 6px;
+    }
+
+    .message-time {
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-top: 4px;
+      padding: 0 4px;
+    }
+
+    .message-bubble.user + .message-time {
+      text-align: right;
+    }
+
+    /* Terminal-style content inside bubbles */
+    .terminal-content {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 13px;
+      line-height: 1.6;
+    }
+
+    .terminal-line {
+      margin-bottom: 4px;
+    }
+
+    .terminal-line.input {
+      color: var(--success);
+    }
+
+    .terminal-line.input::before {
+      content: '❯ ';
+    }
+
+    .terminal-line.response {
+      color: var(--accent-blue);
+    }
+
+    .terminal-line.response::before {
+      content: '⏺ ';
+    }
+
+    .terminal-line.success {
+      color: var(--success);
+    }
+
+    .terminal-line.error {
+      color: var(--error);
+    }
+
+    .terminal-line.thinking {
+      color: var(--accent-lavender);
+      font-style: italic;
+    }
+
+    .terminal-line.tool {
+      color: var(--warning);
+    }
+
+    .tool-card {
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 10px 12px;
+      margin: 8px 0;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+    }
+
+    .tool-card-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 4px;
+      color: var(--warning);
+      font-weight: 500;
+    }
+
+    .tool-card-content {
+      color: var(--text-secondary);
+    }
+
+    .tool-card-status {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      margin-top: 6px;
+      font-size: 11px;
+      color: var(--success);
+    }
+
+    /* Input Area */
+    .input-area {
+      background: var(--bg-secondary);
+      border-top: 1px solid var(--border);
+      padding: 12px 16px calc(12px + var(--safe-bottom));
+    }
+
+    .quick-actions {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 12px;
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+
+    .quick-actions::-webkit-scrollbar {
+      display: none;
+    }
+
+    .quick-btn {
+      padding: 8px 14px;
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      color: var(--text-secondary);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      white-space: nowrap;
+      cursor: pointer;
+    }
+
+    .quick-btn:active {
+      background: var(--accent-coral);
+      border-color: var(--accent-coral);
+      color: white;
+    }
+
+    .control-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+
+    .dpad {
+      display: grid;
+      grid-template-columns: repeat(3, 36px);
+      grid-template-rows: repeat(2, 36px);
+      gap: 4px;
+    }
+
+    .dpad-btn {
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      color: var(--text-primary);
+      font-size: 16px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .dpad-btn:active {
+      background: var(--accent-lavender);
+      border-color: var(--accent-lavender);
+    }
+
+    .dpad-up { grid-column: 2; grid-row: 1; }
+    .dpad-left { grid-column: 1; grid-row: 2; }
+    .dpad-down { grid-column: 2; grid-row: 2; }
+    .dpad-right { grid-column: 3; grid-row: 2; }
+
+    .special-keys {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+
+    .special-btn {
+      padding: 8px 12px;
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      color: var(--text-secondary);
+      font-family: inherit;
+      font-size: 12px;
+      font-weight: 500;
+      cursor: pointer;
+    }
+
+    .special-btn:active {
+      background: var(--accent-mint);
+      border-color: var(--accent-mint);
+      color: var(--bg-primary);
+    }
+
+    .input-row {
+      display: flex;
+      gap: 10px;
+      align-items: flex-end;
+    }
+
+    .input-wrapper {
+      flex: 1;
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      padding: 12px 16px;
+      transition: border-color 0.2s;
+    }
+
+    .input-wrapper:focus-within {
+      border-color: var(--accent-coral);
+    }
+
+    .text-input {
+      width: 100%;
+      background: transparent;
+      border: none;
+      color: var(--text-primary);
+      font-family: inherit;
+      font-size: 15px;
+      outline: none;
+      resize: none;
+    }
+
+    .text-input::placeholder {
+      color: var(--text-muted);
+    }
+
+    .input-btns {
+      display: flex;
+      gap: 8px;
+    }
+
+    .input-btn {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      border: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      transition: all 0.2s;
+    }
+
+    .upload-btn {
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border);
+      color: var(--text-secondary);
+    }
+
+    .send-btn {
+      background: linear-gradient(135deg, var(--accent-coral) 0%, #ff8a80 100%);
+      color: white;
+      box-shadow: 0 4px 16px rgba(255, 107, 107, 0.3);
+    }
+
+    .send-btn:active {
+      transform: scale(0.95);
+    }
+
+    /* Files Panel */
+    .files-panel {
+      flex: 1;
+      display: none;
+      flex-direction: column;
+      background: var(--bg-primary);
+    }
+
+    .files-panel.active {
+      display: flex;
+    }
+
+    .terminal-panel.hidden {
+      display: none;
+    }
+
+    .files-toolbar {
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .breadcrumb {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 13px;
+      color: var(--text-muted);
+      margin-bottom: 12px;
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+
+    .breadcrumb::-webkit-scrollbar {
+      display: none;
+    }
+
+    .breadcrumb-item {
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    .breadcrumb-item:hover {
+      color: var(--accent-coral);
+    }
+
+    .breadcrumb-item.current {
+      color: var(--text-primary);
+      font-weight: 500;
+    }
+
+    .breadcrumb-sep {
+      color: var(--text-muted);
+    }
+
+    .search-box {
+      width: 100%;
+      padding: 12px 16px;
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      color: var(--text-primary);
+      font-family: inherit;
+      font-size: 14px;
+      outline: none;
+    }
+
+    .search-box:focus {
+      border-color: var(--accent-coral);
+    }
+
+    .search-box::placeholder {
+      color: var(--text-muted);
+    }
+
+    .files-list {
+      flex: 1;
+      overflow-y: auto;
+      padding: 8px 16px;
+    }
+
+    .file-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .file-item:active {
+      background: var(--bg-tertiary);
+    }
+
+    .file-icon {
+      width: 44px;
+      height: 44px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+    }
+
+    .file-icon.folder { background: rgba(251, 191, 36, 0.15); }
+    .file-icon.ts { background: rgba(96, 165, 250, 0.15); }
+    .file-icon.json { background: rgba(52, 211, 153, 0.15); }
+    .file-icon.md { background: rgba(167, 139, 250, 0.15); }
+    .file-icon.css { background: rgba(255, 107, 107, 0.15); }
+    .file-icon.html { background: rgba(251, 146, 60, 0.15); }
+    .file-icon.audio { background: rgba(236, 72, 153, 0.15); }
+    .file-icon.video { background: rgba(139, 92, 246, 0.15); }
+
+    .file-info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .file-name {
+      font-size: 14px;
+      font-weight: 500;
+      margin-bottom: 2px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .file-meta {
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    .file-arrow {
+      color: var(--text-muted);
+      font-size: 14px;
+    }
+
+    /* File Preview */
+    .file-preview {
+      display: none;
+      flex-direction: column;
+      height: 100%;
+    }
+
+    .file-preview.active {
+      display: flex;
+    }
+
+    .preview-header {
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .preview-back {
+      width: 36px;
+      height: 36px;
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      color: var(--text-primary);
+      font-size: 16px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .preview-info h3 {
+      font-size: 15px;
+      font-weight: 600;
+    }
+
+    .preview-info p {
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    .preview-content {
+      flex: 1;
+      overflow: auto;
+      padding: 16px;
+    }
+
+    .code-preview {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      line-height: 1.6;
+      white-space: pre-wrap;
+      color: var(--text-secondary);
+    }
+
+    .code-preview .keyword { color: var(--accent-lavender); }
+    .code-preview .string { color: var(--success); }
+    .code-preview .comment { color: var(--text-muted); font-style: italic; }
+    .code-preview .function { color: var(--accent-blue); }
+
+    .markdown-preview {
+      color: var(--text-primary);
+      line-height: 1.7;
+    }
+
+    .markdown-preview h1 {
+      font-size: 24px;
+      margin-bottom: 16px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .markdown-preview h2 {
+      font-size: 20px;
+      margin: 24px 0 12px;
+    }
+
+    .markdown-preview p {
+      margin-bottom: 12px;
+    }
+
+    .markdown-preview code {
+      background: var(--bg-tertiary);
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 13px;
+    }
+
+    .audio-preview {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+      gap: 24px;
+      background: linear-gradient(135deg, var(--accent-lavender) 0%, var(--accent-coral) 100%);
+      border-radius: 20px;
+      margin: -16px;
+      padding: 40px;
+    }
+
+    .audio-icon {
+      font-size: 80px;
+    }
+
+    .audio-name {
+      font-size: 18px;
+      font-weight: 600;
+      color: white;
+    }
+
+    .audio-player {
+      width: 100%;
+      max-width: 300px;
+    }
+
+    .video-preview {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+      background: black;
+      border-radius: 20px;
+      margin: -16px;
+    }
+
+    .video-player {
+      width: 100%;
+      max-height: 100%;
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <!-- Loading Page -->
+    <div class="page loading-page active" id="loading-page">
+      <div class="loading-logo">
+        <div class="loading-logo-inner">📱</div>
+      </div>
+      <div class="loading-text">
+        <h1>VibeMobile</h1>
+        <p>正在初始化...</p>
+      </div>
+      <div class="loading-dots">
+        <div class="loading-dot"></div>
+        <div class="loading-dot"></div>
+        <div class="loading-dot"></div>
+      </div>
+    </div>
+
+    <!-- Pairing Page -->
+    <div class="page pairing-page" id="pairing-page">
+      <div class="pairing-header">
+        <div class="pairing-icon">🔗</div>
+        <h1>设备配对</h1>
+        <p>在 Desktop 应用中生成配对码<br>然后在下方输入</p>
+      </div>
+
+      <input type="text" class="hidden-input" id="code-input" maxlength="6" inputmode="numeric" pattern="[0-9]*">
+      <div class="code-input-group" onclick="document.getElementById('code-input').focus()">
+        <div class="code-digit active" data-index="0"></div>
+        <div class="code-digit" data-index="1"></div>
+        <div class="code-digit" data-index="2"></div>
+        <div class="code-digit" data-index="3"></div>
+        <div class="code-digit" data-index="4"></div>
+        <div class="code-digit" data-index="5"></div>
+      </div>
+
+      <button class="pairing-btn" disabled id="pair-btn">连接设备</button>
+
+      <div class="pairing-instructions">
+        <h3>配对步骤</h3>
+        <ol>
+          <li>打开电脑上的 VibeMobile Desktop 应用</li>
+          <li>点击「配对新设备」按钮</li>
+          <li>将显示的 6 位配对码输入上方</li>
+          <li>在 Desktop 应用中确认配对请求</li>
+        </ol>
+      </div>
+    </div>
+
+    <!-- Sessions Page -->
+    <div class="page sessions-page" id="sessions-page">
+      <div class="sessions-header">
+        <div class="sessions-header-top">
+          <h1>会话</h1>
+          <div class="connection-badge">
+            <div class="connection-dot"></div>
+            <span>已连接</span>
+          </div>
+        </div>
+        <p class="sessions-subtitle">iPhone 15 Pro</p>
+      </div>
+
+      <div class="sessions-content">
+        <p class="section-title">运行中</p>
+
+        <div class="session-card" onclick="showPage('detail-page')">
+          <div class="session-card-header">
+            <div class="session-card-left">
+              <div class="session-icon">💻</div>
+              <div class="session-info">
+                <h3>vibe-1</h3>
+                <p class="session-path">📁 ~/Documents/VibeMobile</p>
+              </div>
+            </div>
+            <div class="session-status active">运行中</div>
+          </div>
+          <div class="session-preview">
+            <div class="preview-line user">❯ 查看 git 变更并生成 commit</div>
+            <div class="preview-line response">⏺ 我来查看当前的 git 变更</div>
+            <div class="preview-line">✓ 已提交！commit: a704d79</div>
+          </div>
+          <div class="session-meta">
+            <span>2 分钟前</span>
+            <span>Claude Opus 4.5</span>
+          </div>
+        </div>
+
+        <div class="session-card">
+          <div class="session-card-header">
+            <div class="session-card-left">
+              <div class="session-icon" style="background: linear-gradient(135deg, var(--accent-lavender) 0%, var(--accent-coral) 100%);">🎙️</div>
+              <div class="session-info">
+                <h3>vibe-2</h3>
+                <p class="session-path">📁 ~/Documents/PodcastMover</p>
+              </div>
+            </div>
+            <div class="session-status active">运行中</div>
+          </div>
+          <div class="session-preview">
+            <div class="preview-line response">⏺ Pipeline 完成！</div>
+            <div class="preview-line">✓ TTS 合成：29 个片段</div>
+            <div class="preview-line">总耗时：540 秒</div>
+          </div>
+          <div class="session-meta">
+            <span>15 分钟前</span>
+            <span>Claude Opus 4.5</span>
+          </div>
+        </div>
+
+        <p class="section-title">已结束</p>
+
+        <div class="session-card" style="opacity: 0.6;">
+          <div class="session-card-header">
+            <div class="session-card-left">
+              <div class="session-icon" style="background: var(--bg-tertiary);">🧪</div>
+              <div class="session-info">
+                <h3>vibe-test</h3>
+                <p class="session-path">📁 ~/Documents/VibeMobile/web</p>
+              </div>
+            </div>
+            <div class="session-status ended">已结束</div>
+          </div>
+          <div class="session-meta">
+            <span>2 小时前</span>
+            <span>Claude Opus 4.5</span>
+          </div>
+        </div>
+      </div>
+
+      <button class="logout-btn">退出登录</button>
+    </div>
+
+    <!-- Detail Page -->
+    <div class="page detail-page" id="detail-page">
+      <div class="detail-header">
+        <div class="detail-header-top">
+          <button class="back-btn" onclick="showPage('sessions-page')">←</button>
+          <div class="detail-title">
+            <h1>vibe-1</h1>
+            <p>~/Documents/VibeMobile</p>
+          </div>
+          <div class="detail-status">运行中</div>
+        </div>
+        <div class="detail-tabs">
+          <button class="detail-tab active" onclick="switchTab('terminal')">
+            💬 终端
+          </button>
+          <button class="detail-tab" onclick="switchTab('files')">
+            📁 文件
+          </button>
+        </div>
+      </div>
+
+      <!-- Terminal Panel -->
+      <div class="terminal-panel" id="terminal-panel">
+        <div class="terminal-output">
+          <div class="message-group">
+            <div class="message-bubble user">
+              查看当前的 git change，生成一个 commit message
+            </div>
+            <div class="message-time">2 分钟前</div>
+          </div>
+
+          <div class="message-group">
+            <div class="message-bubble assistant">
+              <div class="terminal-content">
+                <div class="terminal-line response">我来查看当前的 git 变更：</div>
+                <div class="tool-card">
+                  <div class="tool-card-header">🔧 Bash</div>
+                  <div class="tool-card-content">git status</div>
+                  <div class="tool-card-status">✓ 执行成功</div>
+                </div>
+                <div class="tool-card">
+                  <div class="tool-card-header">🔧 Bash</div>
+                  <div class="tool-card-content">git diff --cached --stat</div>
+                  <div class="tool-card-status">✓ 12 files changed</div>
+                </div>
+                <div class="terminal-line response">根据变更内容，建议的 commit message：</div>
+                <div class="terminal-line success" style="margin-top: 8px;">
+                  feat: Add file browser with markdown, audio and video preview
+                </div>
+              </div>
+            </div>
+            <div class="message-time">1 分钟前</div>
+          </div>
+
+          <div class="message-group">
+            <div class="message-bubble user">commit it</div>
+            <div class="message-time">刚刚</div>
+          </div>
+
+          <div class="message-group">
+            <div class="message-bubble assistant">
+              <div class="terminal-content">
+                <div class="tool-card">
+                  <div class="tool-card-header">🔧 Bash</div>
+                  <div class="tool-card-content">git commit -m "feat: Add file browser..."</div>
+                  <div class="tool-card-status">✓ a704d79</div>
+                </div>
+                <div class="terminal-line success">✓ 已提交！commit hash: a704d79</div>
+              </div>
+            </div>
+            <div class="message-time">刚刚</div>
+          </div>
+        </div>
+
+        <div class="input-area">
+          <div class="quick-actions">
+            <button class="quick-btn">Ctrl+C</button>
+          </div>
+          <div class="control-row">
+            <div class="dpad">
+              <button class="dpad-btn dpad-up">↑</button>
+              <button class="dpad-btn dpad-left">←</button>
+              <button class="dpad-btn dpad-down">↓</button>
+              <button class="dpad-btn dpad-right">→</button>
+            </div>
+            <div class="special-keys">
+              <button class="special-btn">Esc</button>
+              <button class="special-btn">Tab</button>
+              <button class="special-btn">Enter</button>
+              <button class="special-btn">模式</button>
+            </div>
+          </div>
+          <div class="input-row">
+            <div class="input-wrapper">
+              <textarea class="text-input" rows="1" placeholder="输入指令..."></textarea>
+            </div>
+            <div class="input-btns">
+              <button class="input-btn upload-btn">📎</button>
+              <button class="input-btn send-btn">↑</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Files Panel -->
+      <div class="files-panel" id="files-panel">
+        <div class="files-toolbar">
+          <div class="breadcrumb">
+            <span class="breadcrumb-item" onclick="navigateToRoot()">根目录</span>
+            <span class="breadcrumb-sep">/</span>
+            <span class="breadcrumb-item">web</span>
+            <span class="breadcrumb-sep">/</span>
+            <span class="breadcrumb-item current">src</span>
+          </div>
+          <input type="text" class="search-box" placeholder="🔍 搜索文件...">
+        </div>
+
+        <div class="files-list" id="files-list">
+          <div class="file-item" onclick="showPreview('folder')">
+            <div class="file-icon folder">📁</div>
+            <div class="file-info">
+              <div class="file-name">components</div>
+              <div class="file-meta">文件夹</div>
+            </div>
+            <span class="file-arrow">›</span>
+          </div>
+
+          <div class="file-item" onclick="showPreview('folder')">
+            <div class="file-icon folder">📁</div>
+            <div class="file-info">
+              <div class="file-name">pages</div>
+              <div class="file-meta">文件夹</div>
+            </div>
+            <span class="file-arrow">›</span>
+          </div>
+
+          <div class="file-item" onclick="showPreview('code')">
+            <div class="file-icon ts">📘</div>
+            <div class="file-info">
+              <div class="file-name">App.tsx</div>
+              <div class="file-meta">TypeScript • 2.1 KB</div>
+            </div>
+            <span class="file-arrow">›</span>
+          </div>
+
+          <div class="file-item" onclick="showPreview('code')">
+            <div class="file-icon css">🎨</div>
+            <div class="file-info">
+              <div class="file-name">index.css</div>
+              <div class="file-meta">CSS • 1.8 KB</div>
+            </div>
+            <span class="file-arrow">›</span>
+          </div>
+
+          <div class="file-item" onclick="showPreview('markdown')">
+            <div class="file-icon md">📝</div>
+            <div class="file-info">
+              <div class="file-name">README.md</div>
+              <div class="file-meta">Markdown • 3.4 KB</div>
+            </div>
+            <span class="file-arrow">›</span>
+          </div>
+
+          <div class="file-item" onclick="showPreview('json')">
+            <div class="file-icon json">📋</div>
+            <div class="file-info">
+              <div class="file-name">package.json</div>
+              <div class="file-meta">JSON • 1.2 KB</div>
+            </div>
+            <span class="file-arrow">›</span>
+          </div>
+
+          <div class="file-item" onclick="showPreview('audio')">
+            <div class="file-icon audio">🎵</div>
+            <div class="file-info">
+              <div class="file-name">test-audio.mp3</div>
+              <div class="file-meta">Audio • 8.6 KB</div>
+            </div>
+            <span class="file-arrow">›</span>
+          </div>
+
+          <div class="file-item" onclick="showPreview('video')">
+            <div class="file-icon video">🎬</div>
+            <div class="file-info">
+              <div class="file-name">test-video.mp4</div>
+              <div class="file-meta">Video • 30.3 KB</div>
+            </div>
+            <span class="file-arrow">›</span>
+          </div>
+        </div>
+
+        <!-- File Preview -->
+        <div class="file-preview" id="file-preview">
+          <div class="preview-header">
+            <button class="preview-back" onclick="hidePreview()">←</button>
+            <div class="preview-info">
+              <h3 id="preview-filename">App.tsx</h3>
+              <p id="preview-filemeta">TypeScript • 2.1 KB</p>
+            </div>
+          </div>
+          <div class="preview-content" id="preview-content">
+            <!-- Dynamic content -->
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Page Navigation
+    function showPage(pageId) {
+      document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+      document.getElementById(pageId).classList.add('active');
+    }
+
+    // Auto-navigate from loading to pairing
+    setTimeout(() => {
+      showPage('pairing-page');
+    }, 2000);
+
+    // Pairing Code Input
+    const codeInput = document.getElementById('code-input');
+    const digits = document.querySelectorAll('.code-digit');
+    const pairBtn = document.getElementById('pair-btn');
+
+    codeInput.addEventListener('input', (e) => {
+      const value = e.target.value.replace(/\D/g, '').slice(0, 6);
+      e.target.value = value;
+
+      digits.forEach((digit, i) => {
+        digit.textContent = value[i] || '';
+        digit.classList.toggle('filled', !!value[i]);
+        digit.classList.toggle('active', i === value.length && value.length < 6);
+      });
+
+      pairBtn.disabled = value.length !== 6;
+    });
+
+    pairBtn.addEventListener('click', () => {
+      pairBtn.textContent = '连接中...';
+      pairBtn.disabled = true;
+      setTimeout(() => {
+        showPage('sessions-page');
+      }, 1500);
+    });
+
+    // Tab Switching
+    function switchTab(tab) {
+      document.querySelectorAll('.detail-tab').forEach(t => t.classList.remove('active'));
+      event.target.classList.add('active');
+
+      if (tab === 'terminal') {
+        document.getElementById('terminal-panel').classList.remove('hidden');
+        document.getElementById('files-panel').classList.remove('active');
+      } else {
+        document.getElementById('terminal-panel').classList.add('hidden');
+        document.getElementById('files-panel').classList.add('active');
+      }
+    }
+
+    // File Preview
+    function showPreview(type) {
+      const preview = document.getElementById('file-preview');
+      const filesList = document.getElementById('files-list');
+      const content = document.getElementById('preview-content');
+
+      filesList.style.display = 'none';
+      preview.classList.add('active');
+
+      if (type === 'code') {
+        content.innerHTML = `<pre class="code-preview"><span class="keyword">import</span> { useState } <span class="keyword">from</span> <span class="string">'react'</span>;
+<span class="keyword">import</span> { useAppStore } <span class="keyword">from</span> <span class="string">'./stores/appStore'</span>;
+
+<span class="comment">// Main App Component</span>
+<span class="keyword">export function</span> <span class="function">App</span>() {
+  <span class="keyword">const</span> [count, setCount] = <span class="function">useState</span>(<span class="string">0</span>);
+
+  <span class="keyword">return</span> (
+    <span class="string">&lt;div className="app"&gt;</span>
+      <span class="string">&lt;h1&gt;</span>VibeMobile<span class="string">&lt;/h1&gt;</span>
+    <span class="string">&lt;/div&gt;</span>
+  );
+}</pre>`;
+      } else if (type === 'markdown') {
+        document.getElementById('preview-filename').textContent = 'README.md';
+        document.getElementById('preview-filemeta').textContent = 'Markdown • 3.4 KB';
+        content.innerHTML = `<div class="markdown-preview">
+          <h1>VibeMobile</h1>
+          <p>远程监控和控制 Claude Code 会话的移动应用。</p>
+          <h2>功能特性</h2>
+          <p>• 实时终端输出显示</p>
+          <p>• 文件浏览器支持预览</p>
+          <p>• 支持 Markdown、音频、视频</p>
+          <p>使用 <code>npm run dev</code> 启动开发服务器。</p>
+        </div>`;
+      } else if (type === 'audio') {
+        document.getElementById('preview-filename').textContent = 'test-audio.mp3';
+        document.getElementById('preview-filemeta').textContent = 'Audio • 8.6 KB';
+        content.innerHTML = `<div class="audio-preview">
+          <div class="audio-icon">🎵</div>
+          <div class="audio-name">test-audio.mp3</div>
+          <audio class="audio-player" controls>
+            <source src="data:audio/mpeg;base64," type="audio/mpeg">
+          </audio>
+        </div>`;
+      } else if (type === 'video') {
+        document.getElementById('preview-filename').textContent = 'test-video.mp4';
+        document.getElementById('preview-filemeta').textContent = 'Video • 30.3 KB';
+        content.innerHTML = `<div class="video-preview">
+          <video class="video-player" controls>
+            <source src="data:video/mp4;base64," type="video/mp4">
+          </video>
+        </div>`;
+      }
+    }
+
+    function hidePreview() {
+      document.getElementById('file-preview').classList.remove('active');
+      document.getElementById('files-list').style.display = 'block';
+    }
+
+    function navigateToRoot() {
+      // Navigate to root directory
+    }
+  </script>
+</body>
+</html>

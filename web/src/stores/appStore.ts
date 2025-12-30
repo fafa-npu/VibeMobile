@@ -57,7 +57,8 @@ export const useAppStore = create<AppState>((set) => ({
     })),
   clearOutput: (sessionId) =>
     set((state) => {
-      const { [sessionId]: _, ...rest } = state.sessionOutputs;
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { [sessionId]: _removed, ...rest } = state.sessionOutputs;
       return { sessionOutputs: rest };
     }),
 

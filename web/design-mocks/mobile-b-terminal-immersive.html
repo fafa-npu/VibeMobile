@@ -1,0 +1,652 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>VibeMobile - 方案B：终端沉浸式</title>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    :root {
+      --bg-dark: #0a0a0a;
+      --bg-card: #141414;
+      --bg-elevated: #1c1c1c;
+      --bg-input: #252525;
+      --primary: #10b981;
+      --primary-light: #34d399;
+      --accent: #6366f1;
+      --accent-light: #818cf8;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+      --text: #ffffff;
+      --text-secondary: #a3a3a3;
+      --text-tertiary: #525252;
+      --border: #2a2a2a;
+    }
+
+    body {
+      font-family: 'JetBrains Mono', 'SF Mono', Monaco, monospace;
+      background: #1a1a2e;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+    }
+
+    /* iPhone Frame */
+    .phone-frame {
+      width: 375px;
+      height: 812px;
+      background: #000;
+      border-radius: 54px;
+      padding: 14px;
+      box-shadow: 0 50px 100px rgba(0,0,0,0.5);
+    }
+
+    .phone-screen {
+      width: 100%;
+      height: 100%;
+      background: var(--bg-dark);
+      border-radius: 42px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .notch {
+      position: absolute;
+      top: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 150px;
+      height: 34px;
+      background: #000;
+      border-radius: 0 0 24px 24px;
+      z-index: 100;
+    }
+
+    .home-indicator {
+      position: absolute;
+      bottom: 8px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 134px;
+      height: 5px;
+      background: #333;
+      border-radius: 3px;
+      z-index: 100;
+    }
+
+    .app {
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      padding-top: 54px;
+      padding-bottom: 34px;
+    }
+
+    /* ========== 顶部栏 ========== */
+    .top-bar {
+      display: flex;
+      align-items: center;
+      padding: 12px 16px;
+      gap: 12px;
+    }
+
+    .back-btn {
+      width: 36px;
+      height: 36px;
+      background: var(--bg-elevated);
+      border: none;
+      border-radius: 10px;
+      color: var(--text);
+      font-size: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .session-pill {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 14px;
+      background: var(--bg-elevated);
+      border-radius: 20px;
+    }
+
+    .session-indicator {
+      width: 8px;
+      height: 8px;
+      background: var(--primary);
+      border-radius: 50%;
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4); }
+      50% { opacity: 0.8; box-shadow: 0 0 0 6px rgba(16, 185, 129, 0); }
+    }
+
+    .session-name {
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text);
+    }
+
+    .session-path {
+      font-size: 11px;
+      color: var(--text-secondary);
+    }
+
+    .menu-btn {
+      width: 36px;
+      height: 36px;
+      background: var(--bg-elevated);
+      border: none;
+      border-radius: 10px;
+      color: var(--text-secondary);
+      font-size: 18px;
+    }
+
+    /* ========== 功能栏 ========== */
+    .function-bar {
+      display: flex;
+      padding: 0 16px 12px;
+      gap: 8px;
+    }
+
+    .func-btn {
+      flex: 1;
+      padding: 10px;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      color: var(--text-secondary);
+      font-size: 11px;
+      font-weight: 500;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      transition: all 0.2s;
+    }
+
+    .func-btn.active {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: white;
+    }
+
+    .func-btn .icon {
+      font-size: 18px;
+    }
+
+    /* ========== 终端区域 ========== */
+    .terminal {
+      flex: 1;
+      overflow-y: auto;
+      padding: 0 16px;
+    }
+
+    .terminal-block {
+      margin-bottom: 16px;
+    }
+
+    .prompt-line {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 4px;
+    }
+
+    .prompt-symbol {
+      color: var(--primary);
+      font-weight: 600;
+    }
+
+    .prompt-path {
+      color: var(--accent-light);
+      font-size: 12px;
+    }
+
+    .prompt-branch {
+      color: var(--warning);
+      font-size: 12px;
+    }
+
+    .user-input {
+      color: var(--text);
+      font-size: 14px;
+      padding-left: 20px;
+      margin-bottom: 8px;
+    }
+
+    .response {
+      padding-left: 0;
+      font-size: 13px;
+      color: var(--text-secondary);
+      line-height: 1.6;
+    }
+
+    .response .highlight {
+      color: var(--primary);
+    }
+
+    /* 执行卡片 */
+    .exec-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      margin: 12px 0;
+      overflow: hidden;
+    }
+
+    .exec-header {
+      display: flex;
+      align-items: center;
+      padding: 10px 12px;
+      background: var(--bg-elevated);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .exec-icon {
+      width: 24px;
+      height: 24px;
+      background: linear-gradient(135deg, var(--accent) 0%, #8b5cf6 100%);
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      margin-right: 10px;
+    }
+
+    .exec-title {
+      flex: 1;
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--text);
+    }
+
+    .exec-status {
+      font-size: 11px;
+      color: var(--primary);
+      font-weight: 500;
+    }
+
+    .exec-status.error {
+      color: var(--danger);
+    }
+
+    .exec-body {
+      padding: 12px;
+      font-size: 12px;
+      color: var(--text-secondary);
+    }
+
+    .exec-body code {
+      display: block;
+      padding: 8px 10px;
+      background: var(--bg-dark);
+      border-radius: 6px;
+      margin-top: 8px;
+      color: var(--text);
+    }
+
+    /* 成功消息 */
+    .success-msg {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 14px;
+      background: rgba(16, 185, 129, 0.1);
+      border: 1px solid rgba(16, 185, 129, 0.3);
+      border-radius: 10px;
+      margin-top: 12px;
+      font-size: 13px;
+      color: var(--primary);
+    }
+
+    /* ========== 控制面板 ========== */
+    .control-panel {
+      background: var(--bg-card);
+      border-top: 1px solid var(--border);
+      padding: 12px 16px;
+    }
+
+    /* 方向键 + 功能键布局 */
+    .controls-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+    }
+
+    .dpad {
+      display: grid;
+      grid-template-areas:
+        ". up ."
+        "left ok right"
+        ". down .";
+      grid-template-columns: repeat(3, 38px);
+      grid-template-rows: repeat(3, 38px);
+      gap: 3px;
+    }
+
+    .dpad-btn {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      color: var(--text);
+      font-size: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.1s;
+    }
+
+    .dpad-btn:active {
+      background: var(--accent);
+      border-color: var(--accent);
+      transform: scale(0.95);
+    }
+
+    .dpad-btn.up { grid-area: up; }
+    .dpad-btn.down { grid-area: down; }
+    .dpad-btn.left { grid-area: left; }
+    .dpad-btn.right { grid-area: right; }
+    .dpad-btn.ok {
+      grid-area: ok;
+      font-size: 11px;
+      color: var(--text-secondary);
+    }
+
+    .func-keys {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 8px;
+    }
+
+    .func-key {
+      padding: 12px 16px;
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      color: var(--text);
+      font-size: 12px;
+      font-weight: 500;
+      text-align: center;
+      transition: all 0.1s;
+    }
+
+    .func-key:active {
+      background: var(--bg-input);
+    }
+
+    .func-key.danger {
+      color: var(--danger);
+      border-color: rgba(239, 68, 68, 0.3);
+    }
+
+    .func-key.danger:active {
+      background: rgba(239, 68, 68, 0.2);
+    }
+
+    /* 输入行 */
+    .input-row {
+      display: flex;
+      gap: 10px;
+    }
+
+    .attach-btn {
+      width: 44px;
+      height: 44px;
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      color: var(--text-secondary);
+      font-size: 18px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .input-field {
+      flex: 1;
+      padding: 12px 16px;
+      background: var(--bg-input);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      color: var(--text);
+      font-size: 14px;
+      font-family: inherit;
+      outline: none;
+    }
+
+    .input-field:focus {
+      border-color: var(--accent);
+    }
+
+    .input-field::placeholder {
+      color: var(--text-tertiary);
+    }
+
+    .send-btn {
+      width: 44px;
+      height: 44px;
+      background: var(--primary);
+      border: none;
+      border-radius: 12px;
+      color: var(--bg-dark);
+      font-size: 18px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .send-btn:active {
+      opacity: 0.8;
+    }
+
+    /* ========== 设计说明 ========== */
+    .design-notes {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: var(--bg-card);
+      padding: 24px;
+      border-radius: 20px;
+      border: 1px solid var(--border);
+      max-width: 320px;
+      font-size: 13px;
+      line-height: 1.7;
+      color: var(--text-secondary);
+    }
+
+    .design-notes h4 {
+      font-size: 18px;
+      margin-bottom: 16px;
+      color: var(--primary);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .design-notes ul {
+      padding-left: 20px;
+    }
+
+    .design-notes li {
+      margin-bottom: 8px;
+    }
+
+    .design-notes strong {
+      color: var(--text);
+    }
+
+    .design-notes .tag {
+      display: inline-block;
+      padding: 4px 10px;
+      background: rgba(16, 185, 129, 0.1);
+      border: 1px solid rgba(16, 185, 129, 0.3);
+      border-radius: 6px;
+      font-size: 11px;
+      color: var(--primary);
+      font-weight: 600;
+      margin-top: 16px;
+    }
+  </style>
+</head>
+<body>
+  <div class="phone-frame">
+    <div class="phone-screen">
+      <div class="notch"></div>
+
+      <div class="app">
+        <!-- 顶部栏 -->
+        <div class="top-bar">
+          <button class="back-btn">←</button>
+          <div class="session-pill">
+            <div class="session-indicator"></div>
+            <div>
+              <div class="session-name">vibe-1</div>
+              <div class="session-path">~/VibeMobile</div>
+            </div>
+          </div>
+          <button class="menu-btn">⋯</button>
+        </div>
+
+        <!-- 功能栏 -->
+        <div class="function-bar">
+          <button class="func-btn active">
+            <span class="icon">💻</span>
+            终端
+          </button>
+          <button class="func-btn">
+            <span class="icon">📁</span>
+            文件
+          </button>
+          <button class="func-btn">
+            <span class="icon">📊</span>
+            日志
+          </button>
+          <button class="func-btn">
+            <span class="icon">⚙️</span>
+            设置
+          </button>
+        </div>
+
+        <!-- 终端区域 -->
+        <div class="terminal">
+          <div class="terminal-block">
+            <div class="prompt-line">
+              <span class="prompt-symbol">❯</span>
+              <span class="prompt-path">~/VibeMobile</span>
+              <span class="prompt-branch">(main)</span>
+            </div>
+            <div class="user-input">查看 git 变更并生成 commit message</div>
+          </div>
+
+          <div class="terminal-block">
+            <div class="response">我来查看当前的 git 变更：</div>
+
+            <div class="exec-card">
+              <div class="exec-header">
+                <div class="exec-icon">🔧</div>
+                <span class="exec-title">Bash: git status</span>
+                <span class="exec-status">✓ 完成</span>
+              </div>
+              <div class="exec-body">
+                12 files changed
+                <code>
+                  modified: FileBrowser/index.tsx<br>
+                  new file: routes/files.ts<br>
+                  ...
+                </code>
+              </div>
+            </div>
+
+            <div class="response">
+              根据变更内容，建议的 commit message：<br><br>
+              <span class="highlight">feat: Add file browser with markdown, audio and video preview</span>
+            </div>
+          </div>
+
+          <div class="terminal-block">
+            <div class="prompt-line">
+              <span class="prompt-symbol">❯</span>
+            </div>
+            <div class="user-input">commit it</div>
+          </div>
+
+          <div class="terminal-block">
+            <div class="exec-card">
+              <div class="exec-header">
+                <div class="exec-icon">🔧</div>
+                <span class="exec-title">Bash: git commit</span>
+                <span class="exec-status">✓ a704d79</span>
+              </div>
+            </div>
+
+            <div class="success-msg">
+              <span>✓</span>
+              已提交！commit hash: a704d79
+            </div>
+          </div>
+        </div>
+
+        <!-- 控制面板 -->
+        <div class="control-panel">
+          <div class="controls-row">
+            <div class="dpad">
+              <button class="dpad-btn up">↑</button>
+              <button class="dpad-btn left">←</button>
+              <button class="dpad-btn ok">OK</button>
+              <button class="dpad-btn right">→</button>
+              <button class="dpad-btn down">↓</button>
+            </div>
+
+            <div class="func-keys">
+              <button class="func-key danger">Ctrl+C</button>
+              <button class="func-key">Esc</button>
+              <button class="func-key">Tab</button>
+              <button class="func-key">Enter</button>
+            </div>
+          </div>
+
+          <div class="input-row">
+            <button class="attach-btn">📎</button>
+            <input type="text" class="input-field" placeholder="$ 输入命令...">
+            <button class="send-btn">↑</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="home-indicator"></div>
+    </div>
+  </div>
+
+  <div class="design-notes">
+    <h4>💻 方案B：终端沉浸式</h4>
+    <ul>
+      <li><strong>全深色主题</strong>：专业终端氛围，护眼</li>
+      <li><strong>等宽字体</strong>：JetBrains Mono 代码阅读</li>
+      <li><strong>Shell 提示符</strong>：真实终端体验</li>
+      <li><strong>实体方向键</strong>：模拟游戏手柄，操控直观</li>
+      <li><strong>绿色主色调</strong>：经典终端配色</li>
+      <li><strong>四栏功能切换</strong>：终端/文件/日志/设置</li>
+    </ul>
+    <span class="tag">适合：重度开发者、长时间使用</span>
+  </div>
+</body>
+</html>

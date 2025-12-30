@@ -1,7 +1,6 @@
 // File browser API routes
 import { Router } from 'express';
 import fs from 'fs/promises';
-import fsSync from 'fs';
 import path from 'path';
 import { tmuxManager } from '../services/tmux.js';
 import { authContextMiddleware, requireAuth } from '../middleware/auth.js';

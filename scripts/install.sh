@@ -14,7 +14,7 @@ NC='\033[0m' # No Color
 # Configuration
 VIBEMOBILE_DIR="$HOME/.vibemobile"
 APP_NAME="VibeMobile"
-GITHUB_REPO="your-org/VibeMobile"  # TODO: Update with actual repo
+GITHUB_REPO="${GITHUB_REPO:-yourusername/VibeMobile}"  # Set via env or update here
 
 echo -e "${BLUE}"
 echo "╔═══════════════════════════════════════╗"

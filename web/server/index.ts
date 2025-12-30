@@ -15,7 +15,8 @@ import { v4 as uuidv4 } from 'uuid';
 import { config } from './config.js';
 import { wsManager } from './services/ws.js';
 import { outputMonitor } from './services/monitor.js';
-import { tmuxManager } from './services/tmux.js';
+// tmuxManager is used by routes, exported here for potential direct access
+import './services/tmux.js';
 import { authService } from './services/auth.js';
 
 import sessionsRouter from './routes/sessions.js';
@@ -111,7 +112,8 @@ if (config.sslCertFile && config.sslKeyFile) {
 // WebSocket server
 const wss = new WebSocketServer({ server, path: '/ws' });
 
-wss.on('connection', (ws: WebSocket, req) => {
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+wss.on('connection', (ws: WebSocket, _req) => {
   const connectionId = uuidv4();
 
   // Register connection

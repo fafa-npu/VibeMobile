@@ -1,0 +1,678 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>VibeMobile - 移动方案二：终端沉浸式</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    :root {
+      --primary: #6366f1;
+      --primary-light: #818cf8;
+      --success: #10b981;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+      --info: #3b82f6;
+      --bg-terminal: #0c0c0c;
+      --bg-card: #1a1a1a;
+      --bg-hover: #252525;
+      --text: #e4e4e7;
+      --text-muted: #71717a;
+      --border: #27272a;
+      --glow-primary: rgba(99, 102, 241, 0.4);
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--bg-terminal);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    /* ========== iPhone Frame ========== */
+    .phone-frame {
+      width: 390px;
+      height: 844px;
+      background: #000;
+      border-radius: 54px;
+      padding: 12px;
+      margin: 20px auto;
+      box-shadow:
+        0 0 0 3px #1a1a1a,
+        0 25px 80px rgba(0,0,0,0.5);
+      position: relative;
+    }
+
+    .phone-screen {
+      width: 100%;
+      height: 100%;
+      background: var(--bg-terminal);
+      border-radius: 44px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .dynamic-island {
+      position: absolute;
+      top: 12px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 126px;
+      height: 37px;
+      background: #000;
+      border-radius: 24px;
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .island-content {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    .island-dot {
+      width: 6px;
+      height: 6px;
+      background: var(--success);
+      border-radius: 50%;
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4); }
+      50% { opacity: 0.8; box-shadow: 0 0 0 4px rgba(16, 185, 129, 0); }
+    }
+
+    .home-indicator {
+      position: absolute;
+      bottom: 8px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 134px;
+      height: 5px;
+      background: #333;
+      border-radius: 3px;
+    }
+
+    /* ========== App Container ========== */
+    .app {
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      padding-top: 59px;
+      padding-bottom: 34px;
+    }
+
+    /* ========== Compact Header ========== */
+    .header {
+      background: var(--bg-card);
+      padding: 8px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .back-btn {
+      width: 32px;
+      height: 32px;
+      background: transparent;
+      border: none;
+      color: var(--primary);
+      font-size: 18px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .session-badge {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 12px;
+      background: var(--bg-hover);
+      border-radius: 8px;
+    }
+
+    .session-icon {
+      font-size: 14px;
+    }
+
+    .session-name {
+      font-size: 14px;
+      font-weight: 600;
+    }
+
+    .header-right {
+      display: flex;
+      gap: 8px;
+    }
+
+    .header-btn {
+      width: 36px;
+      height: 36px;
+      background: var(--bg-hover);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      color: var(--text-muted);
+      font-size: 16px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s;
+    }
+
+    .header-btn.active {
+      background: var(--primary);
+      border-color: var(--primary);
+      color: #fff;
+    }
+
+    /* ========== Terminal ========== */
+    .terminal {
+      flex: 1;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .terminal-output {
+      flex: 1;
+      overflow-y: auto;
+      padding: 12px 16px;
+      font-family: 'JetBrains Mono', 'SF Mono', Monaco, monospace;
+      font-size: 13px;
+      line-height: 1.7;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .output-block {
+      margin-bottom: 16px;
+    }
+
+    .prompt-line {
+      color: var(--text-muted);
+      margin-bottom: 4px;
+    }
+
+    .prompt-line .path {
+      color: var(--info);
+    }
+
+    .prompt-line .branch {
+      color: var(--primary-light);
+    }
+
+    .user-input {
+      color: var(--success);
+      padding-left: 0;
+    }
+
+    .user-input::before {
+      content: '❯ ';
+      color: var(--primary);
+    }
+
+    .response-text {
+      color: var(--text);
+      margin: 8px 0;
+    }
+
+    .tool-execution {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      background: rgba(59, 130, 246, 0.1);
+      border-left: 3px solid var(--info);
+      border-radius: 0 8px 8px 0;
+      margin: 8px 0;
+      font-size: 12px;
+    }
+
+    .tool-execution .icon {
+      color: var(--info);
+    }
+
+    .tool-execution .status {
+      margin-left: auto;
+      color: var(--success);
+    }
+
+    .code-output {
+      background: #111;
+      border-radius: 8px;
+      padding: 10px 12px;
+      margin: 8px 0;
+      border: 1px solid var(--border);
+      overflow-x: auto;
+    }
+
+    .code-output .keyword { color: var(--primary-light); }
+    .code-output .string { color: var(--success); }
+    .code-output .comment { color: var(--text-muted); }
+    .code-output .changed { color: var(--warning); }
+
+    .success-message {
+      color: var(--success);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    /* ========== Quick Actions Bar ========== */
+    .quick-bar {
+      background: var(--bg-card);
+      padding: 8px 12px;
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      border-top: 1px solid var(--border);
+      scrollbar-width: none;
+    }
+
+    .quick-bar::-webkit-scrollbar {
+      display: none;
+    }
+
+    .quick-chip {
+      padding: 8px 14px;
+      background: var(--bg-hover);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      font-size: 13px;
+      color: var(--text);
+      white-space: nowrap;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .quick-chip:active {
+      background: var(--primary);
+      border-color: var(--primary);
+      color: #fff;
+    }
+
+    .quick-chip.danger {
+      color: var(--danger);
+      border-color: rgba(239, 68, 68, 0.3);
+    }
+
+    /* ========== Control Panel ========== */
+    .control-panel {
+      background: var(--bg-card);
+      padding: 12px 16px;
+      border-top: 1px solid var(--border);
+    }
+
+    .control-grid {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 16px;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+
+    /* Joystick Style D-Pad */
+    .joystick {
+      width: 110px;
+      height: 110px;
+      background: radial-gradient(circle at center, #222 0%, #111 100%);
+      border-radius: 50%;
+      position: relative;
+      box-shadow:
+        inset 0 2px 10px rgba(0,0,0,0.5),
+        0 0 0 4px #1a1a1a,
+        0 4px 20px rgba(0,0,0,0.4);
+    }
+
+    .joystick-inner {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 50px;
+      height: 50px;
+      background: linear-gradient(145deg, #333, #222);
+      border-radius: 50%;
+      box-shadow:
+        0 2px 10px rgba(0,0,0,0.3),
+        inset 0 1px 0 rgba(255,255,255,0.1);
+    }
+
+    .joystick-btn {
+      position: absolute;
+      width: 32px;
+      height: 32px;
+      background: var(--bg-hover);
+      border: none;
+      border-radius: 8px;
+      color: var(--text);
+      font-size: 14px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.15s;
+    }
+
+    .joystick-btn:active {
+      background: var(--primary);
+      color: #fff;
+      transform: scale(0.9);
+    }
+
+    .joystick-btn.up {
+      top: 4px;
+      left: 50%;
+      transform: translateX(-50%);
+    }
+
+    .joystick-btn.down {
+      bottom: 4px;
+      left: 50%;
+      transform: translateX(-50%);
+    }
+
+    .joystick-btn.left {
+      left: 4px;
+      top: 50%;
+      transform: translateY(-50%);
+    }
+
+    .joystick-btn.right {
+      right: 4px;
+      top: 50%;
+      transform: translateY(-50%);
+    }
+
+    .joystick-btn.up:active { transform: translateX(-50%) scale(0.9); }
+    .joystick-btn.down:active { transform: translateX(-50%) scale(0.9); }
+    .joystick-btn.left:active { transform: translateY(-50%) scale(0.9); }
+    .joystick-btn.right:active { transform: translateY(-50%) scale(0.9); }
+
+    /* Function Keys Grid */
+    .func-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+    }
+
+    .func-btn {
+      padding: 14px 8px;
+      background: var(--bg-hover);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      color: var(--text);
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.15s;
+      text-align: center;
+    }
+
+    .func-btn:active {
+      background: var(--primary);
+      border-color: var(--primary);
+      color: #fff;
+      transform: scale(0.97);
+    }
+
+    .func-btn.wide {
+      grid-column: span 2;
+    }
+
+    .func-btn.danger {
+      color: var(--danger);
+      border-color: rgba(239, 68, 68, 0.3);
+    }
+
+    .func-btn.danger:active {
+      background: var(--danger);
+      color: #fff;
+    }
+
+    /* Input Row */
+    .input-row {
+      display: flex;
+      gap: 10px;
+      align-items: flex-end;
+    }
+
+    .input-field {
+      flex: 1;
+      background: var(--bg-terminal);
+      border: 2px solid var(--border);
+      border-radius: 16px;
+      padding: 12px 16px;
+      color: var(--text);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 14px;
+      outline: none;
+      transition: all 0.2s;
+    }
+
+    .input-field:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 4px var(--glow-primary);
+    }
+
+    .input-field::placeholder {
+      color: var(--text-muted);
+    }
+
+    .send-btn {
+      width: 50px;
+      height: 50px;
+      background: var(--primary);
+      border: none;
+      border-radius: 16px;
+      color: #fff;
+      font-size: 20px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s;
+      box-shadow: 0 4px 16px var(--glow-primary);
+    }
+
+    .send-btn:active {
+      transform: scale(0.95);
+    }
+
+    /* ========== Design Notes ========== */
+    .design-notes {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: #1a1a1a;
+      border: 1px solid #333;
+      padding: 20px 24px;
+      border-radius: 16px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+      max-width: 320px;
+      font-size: 13px;
+      line-height: 1.6;
+      color: #e4e4e7;
+    }
+
+    .design-notes h4 {
+      font-size: 16px;
+      margin-bottom: 12px;
+      color: var(--primary);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .design-notes ul {
+      padding-left: 18px;
+      color: #a1a1aa;
+    }
+
+    .design-notes li {
+      margin-bottom: 6px;
+    }
+
+    .design-notes strong {
+      color: #e4e4e7;
+    }
+  </style>
+</head>
+<body style="background: #0a0a0a; min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px;">
+
+  <div class="phone-frame">
+    <div class="phone-screen">
+      <div class="dynamic-island">
+        <div class="island-content">
+          <span class="island-dot"></span>
+          <span>vibe-1 运行中</span>
+        </div>
+      </div>
+
+      <div class="app">
+        <!-- Compact Header -->
+        <div class="header">
+          <div class="header-left">
+            <button class="back-btn">←</button>
+            <div class="session-badge">
+              <span class="session-icon">💻</span>
+              <span class="session-name">vibe-1</span>
+            </div>
+          </div>
+          <div class="header-right">
+            <button class="header-btn active">🖥️</button>
+            <button class="header-btn">📁</button>
+            <button class="header-btn">⚙️</button>
+          </div>
+        </div>
+
+        <!-- Terminal -->
+        <div class="terminal">
+          <div class="terminal-output">
+            <div class="output-block">
+              <div class="prompt-line">
+                <span class="path">~/VibeMobile</span>
+                <span class="branch"> (main)</span>
+              </div>
+              <div class="user-input">查看 git 变更并生成 commit message</div>
+            </div>
+
+            <div class="output-block">
+              <div class="response-text">我来查看当前的 git 变更：</div>
+              <div class="tool-execution">
+                <span class="icon">⚡</span>
+                <span>git status</span>
+                <span class="status">✓</span>
+              </div>
+              <div class="code-output">
+                <span class="comment"># On branch main</span><br>
+                <span class="keyword">Changes to be committed:</span><br>
+                <span class="changed">  modified: FileBrowser/index.tsx</span><br>
+                <span class="changed">  new file: routes/files.ts</span><br>
+                <span class="comment">  ... 10 files</span>
+              </div>
+            </div>
+
+            <div class="output-block">
+              <div class="response-text">建议的 commit message：</div>
+              <div class="code-output">
+                <span class="string">feat: Add file browser</span><br>
+                <span class="comment">- markdown/audio/video preview</span>
+              </div>
+            </div>
+
+            <div class="output-block">
+              <div class="user-input">commit it</div>
+            </div>
+
+            <div class="output-block">
+              <div class="tool-execution">
+                <span class="icon">⚡</span>
+                <span>git commit</span>
+                <span class="status">✓ a704d79</span>
+              </div>
+              <div class="success-message">
+                ✅ 已提交成功！
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Quick Actions Bar -->
+        <div class="quick-bar">
+          <span class="quick-chip danger">Ctrl+C</span>
+          <span class="quick-chip">git status</span>
+          <span class="quick-chip">npm run dev</span>
+          <span class="quick-chip">清屏</span>
+        </div>
+
+        <!-- Control Panel -->
+        <div class="control-panel">
+          <div class="control-grid">
+            <!-- Joystick D-Pad -->
+            <div class="joystick">
+              <button class="joystick-btn up">↑</button>
+              <button class="joystick-btn left">←</button>
+              <button class="joystick-btn right">→</button>
+              <button class="joystick-btn down">↓</button>
+              <div class="joystick-inner"></div>
+            </div>
+
+            <!-- Function Keys -->
+            <div class="func-grid">
+              <button class="func-btn">Esc</button>
+              <button class="func-btn">Tab</button>
+              <button class="func-btn">Enter</button>
+              <button class="func-btn wide">Shift+Tab</button>
+              <button class="func-btn">模式</button>
+            </div>
+          </div>
+
+          <div class="input-row">
+            <input type="text" class="input-field" placeholder="$ 输入命令...">
+            <button class="send-btn">↑</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="home-indicator"></div>
+    </div>
+  </div>
+
+  <div class="design-notes">
+    <h4>🖥️ 移动方案二：终端沉浸式</h4>
+    <ul>
+      <li><strong>全暗色主题</strong>：专业开发者风格，护眼</li>
+      <li><strong>紧凑头部</strong>：最大化终端空间</li>
+      <li><strong>游戏手柄风</strong>：摇杆式方向键，触感好</li>
+      <li><strong>快捷命令条</strong>：常用命令一键触发</li>
+      <li><strong>等宽字体</strong>：JetBrains Mono，代码清晰</li>
+      <li><strong>动态岛复用</strong>：显示会话状态</li>
+      <li><strong>适用场景</strong>：重度终端操作、命令输入</li>
+    </ul>
+  </div>
+
+</body>
+</html>

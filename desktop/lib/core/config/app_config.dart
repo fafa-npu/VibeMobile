@@ -29,9 +29,9 @@ class AppConfig {
       // Running as built app - try to find VibeMobile directory
       final home = Platform.environment['HOME'] ?? '/Users';
       final possiblePaths = [
-        '$home/Documents/repos/VibeMobile',
         '$home/VibeMobile',
         '${Directory.current.path}/VibeMobile',
+        '${Directory.current.path}',
       ];
 
       for (final path in possiblePaths) {
