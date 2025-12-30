@@ -6,7 +6,7 @@ Remote control for Claude Code sessions from your phone.
 
 ### Download (Recommended)
 
-1. Download `VibeMobile.dmg` from [Releases](https://github.com/yourusername/VibeMobile/releases)
+1. Download `VibeMobile.dmg` from [Releases](https://github.com/fafa-npu/VibeMobile/releases)
 2. Open DMG and drag VibeMobile to Applications
 3. Run VibeMobile
 
@@ -15,7 +15,7 @@ Remote control for Claude Code sessions from your phone.
 ### Build from Source
 
 ```bash
-git clone https://github.com/yourusername/VibeMobile.git
+git clone https://github.com/fafa-npu/VibeMobile.git
 cd VibeMobile
 
 # Build server

@@ -92,7 +92,7 @@ tmux -V           # Should show tmux 3.x
 ### 3.1 Clone and Setup
 
 ```bash
-git clone https://github.com/yourusername/VibeMobile.git
+git clone https://github.com/fafa-npu/VibeMobile.git
 cd VibeMobile/web
 npm install
 ```
