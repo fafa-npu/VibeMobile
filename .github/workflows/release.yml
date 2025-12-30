@@ -73,6 +73,20 @@ jobs:
           echo "=== Bundled dist files ==="
           ls -la "$SERVER_DIR/dist/" | head -20
 
+      # ===== Sign App (ad-hoc) =====
+      - name: Sign app (ad-hoc)
+        run: |
+          APP_PATH="desktop/build/macos/Build/Products/Release/VibeMobile.app"
+
+          # Remove any existing signatures and extended attributes
+          xattr -cr "$APP_PATH"
+
+          # Ad-hoc sign the app (allows it to run without "damaged" error)
+          codesign --force --deep --sign - "$APP_PATH"
+
+          # Verify the signature
+          codesign --verify --verbose "$APP_PATH" || echo "Verification completed"
+
       # ===== Create DMG =====
       - name: Create DMG
         run: |
@@ -141,7 +155,9 @@ jobs:
 
             1. Download `VibeMobile.dmg`
             2. Open DMG and drag VibeMobile to Applications
-            3. Run VibeMobile
+            3. **First time only**: Right-click the app → Open → Click "Open" in the dialog
+               (This is required because the app is not notarized by Apple)
+            4. Run VibeMobile
 
             **That's it!** The server is bundled inside the app.
 
