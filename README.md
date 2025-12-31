@@ -2,6 +2,10 @@
 
 Remote control for Claude Code sessions from your phone. **macOS only**.
 
+<p align="center">
+  <img src="docs/pictures/desktop-main.png" width="600" alt="Desktop App">
+</p>
+
 ## Install
 
 ```bash
@@ -12,13 +16,54 @@ This installs dependencies and the app. After installation, restart Terminal or 
 
 ## Usage
 
-1. **Start app** (in Terminal): `vibemobile`
-2. **Start server**: Click "Start Server"
-3. **Create session**: Click "New Session" → Select folder
-4. **Connect from phone**:
-   - Same network: `http://YOUR_MAC_IP:8765`
-   - Remote: Click "Start Tunnel" → Copy URL
-5. **Pair device**: App → Devices → "Generate Pairing Code" → Enter on phone
+### 1. Start the App
+
+In Terminal, run:
+```bash
+vibemobile
+```
+
+### 2. Start Server & Create Session
+
+Click **"Start Server"**, then click **"+"** to create a new Claude Code session.
+
+<p align="center">
+  <img src="docs/pictures/desktop-main.png" width="500" alt="Start Server">
+</p>
+
+### 3. Connect from Phone
+
+- **Same network**: Open `http://YOUR_MAC_IP:8765` in your phone browser
+- **Remote access**: Click **"Start Tunnel"** and copy the generated URL
+
+<p align="center">
+  <img src="docs/pictures/desktop-tunnel.png" width="500" alt="Tunnel URL">
+</p>
+
+### 4. Pair Your Device
+
+1. In the desktop app, click **Devices** icon → **"Generate Pairing Code"**
+2. On your phone, enter the 6-digit code
+3. Approve the pairing request in the desktop app
+
+<p align="center">
+  <img src="docs/pictures/desktop-devices.png" width="400" alt="Generate Pairing Code">
+  <img src="docs/pictures/mobile-pairing.png" width="200" alt="Enter Code on Phone">
+</p>
+
+### 5. Control Claude Code
+
+Once paired, you can:
+- View sessions and real-time output
+- Send messages to Claude
+- Browse project files
+- Upload images
+
+<p align="center">
+  <img src="docs/pictures/mobile-sessions.png" width="200" alt="Session List">
+  <img src="docs/pictures/mobile-terminal.png" width="200" alt="Terminal View">
+  <img src="docs/pictures/mobile-files.png" width="200" alt="File Browser">
+</p>
 
 ## Custom Domain (Optional)
 
