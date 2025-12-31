@@ -1,0 +1,55 @@
+.terminal {
+  flex: 1;
+  background: var(--terminal-bg);
+  color: var(--terminal-text);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 13px;
+  line-height: 1.6;
+  padding: 12px;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+}
+
+.line {
+  margin-bottom: 4px;
+  word-break: break-word;
+  white-space: pre-wrap;
+}
+
+.placeholder {
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+.input {
+  color: var(--term-input);
+}
+
+.response {
+  color: var(--term-response);
+}
+
+.success {
+  color: var(--term-success);
+}
+
+.error {
+  color: var(--term-error);
+}
+
+.thinking {
+  color: var(--term-thinking);
+  font-style: italic;
+}
+
+.tool {
+  color: var(--term-tool);
+}
+
+.divider {
+  height: 1px;
+  background: #3f3f46;
+  margin: 12px 0;
+  opacity: 0.5;
+}
