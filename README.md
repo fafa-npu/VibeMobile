@@ -3,7 +3,7 @@
 Remote control for Claude Code sessions from your phone. **macOS only**.
 
 <p align="center">
-  <img src="docs/pictures/desktop-main.png" width="600" alt="Desktop App">
+  <img src="docs/pictures/mobile-terminal.png" width="100" alt="Desktop App">
 </p>
 
 ## Install
@@ -28,7 +28,7 @@ vibemobile
 Click **"Start Server"**, then click **"+"** to create a new Claude Code session.
 
 <p align="center">
-  <img src="docs/pictures/desktop-main.png" width="500" alt="Start Server">
+  <img src="docs/pictures/mobile-terminal.png" width="500" alt="Start Server">
 </p>
 
 ### 3. Connect from Phone
@@ -45,11 +45,16 @@ Click **"Start Server"**, then click **"+"** to create a new Claude Code session
 1. In the desktop app, click **Devices** icon → **"Generate Pairing Code"**
 2. On your phone, enter the 6-digit code
 3. Approve the pairing request in the desktop app
+<p align="center">
+  <img src="docs/pictures/desktop-main.png" width="400" alt="Tunnel URL">
+</p>
 
 <p align="center">
   <img src="docs/pictures/desktop-devices.png" width="400" alt="Generate Pairing Code">
-  <img src="docs/pictures/mobile-pairing.png" width="200" alt="Enter Code on Phone">
 </p>
+<p align="center">
+  <img src="docs/pictures/mobile-pairing.png" width="200" alt="Enter Code on Phone">
+  </p>
 
 ### 5. Control Claude Code
 
