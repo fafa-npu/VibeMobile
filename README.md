@@ -3,7 +3,7 @@
 Remote control for Claude Code sessions from your phone. **macOS only**.
 
 <p align="center">
-  <img src="docs/pictures/mobile-terminal.png" width="100" alt="Desktop App">
+  <img src="docs/pictures/mobile-terminal.png" width="400" alt="Desktop App">
 </p>
 
 ## Install
@@ -28,7 +28,7 @@ vibemobile
 Click **"Start Server"**, then click **"+"** to create a new Claude Code session.
 
 <p align="center">
-  <img src="docs/pictures/mobile-terminal.png" width="500" alt="Start Server">
+  <img src="docs/pictures/desktop-tunnel.png" width="500" alt="Tunnel URL">
 </p>
 
 ### 3. Connect from Phone
@@ -36,9 +36,7 @@ Click **"Start Server"**, then click **"+"** to create a new Claude Code session
 - **Same network**: Open `http://YOUR_MAC_IP:8765` in your phone browser
 - **Remote access**: Click **"Start Tunnel"** and copy the generated URL
 
-<p align="center">
-  <img src="docs/pictures/desktop-tunnel.png" width="500" alt="Tunnel URL">
-</p>
+
 
 ### 4. Pair Your Device
 
