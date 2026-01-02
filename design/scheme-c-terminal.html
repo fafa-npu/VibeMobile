@@ -1,0 +1,789 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VibeMobile - 方案C: 极简命令行式</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg: #0d1117;
+            --bg-surface: #161b22;
+            --bg-elevated: #21262d;
+            --bg-overlay: #30363d;
+            --text: #c9d1d9;
+            --text-muted: #8b949e;
+            --text-bright: #f0f6fc;
+            --accent: #58a6ff;
+            --accent-muted: #388bfd;
+            --success: #3fb950;
+            --success-muted: #238636;
+            --warning: #d29922;
+            --danger: #f85149;
+            --border: #30363d;
+            --font-mono: 'SF Mono', 'Fira Code', Monaco, Consolas, monospace;
+        }
+
+        body {
+            font-family: var(--font-mono);
+            background: var(--bg);
+            color: var(--text);
+            font-size: 13px;
+            line-height: 1.5;
+        }
+
+        /* 窗口容器 */
+        .window {
+            width: 560px;
+            min-height: 600px;
+            margin: 20px auto;
+            background: var(--bg-surface);
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 16px 48px rgba(0,0,0,0.4);
+            border: 1px solid var(--border);
+        }
+
+        /* 标题栏 */
+        .titlebar {
+            display: flex;
+            align-items: center;
+            padding: 10px 14px;
+            background: var(--bg-elevated);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .traffic-lights {
+            display: flex;
+            gap: 8px;
+        }
+
+        .traffic-light {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+
+        .traffic-light.red { background: #ff5f57; }
+        .traffic-light.yellow { background: #febc2e; }
+        .traffic-light.green { background: #28c840; }
+
+        .titlebar-title {
+            flex: 1;
+            text-align: center;
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        /* Tab 栏 */
+        .tabs {
+            display: flex;
+            background: var(--bg-elevated);
+            border-bottom: 1px solid var(--border);
+            padding: 0 8px;
+        }
+
+        .tab {
+            padding: 10px 16px;
+            font-size: 12px;
+            color: var(--text-muted);
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            transition: all 0.15s;
+        }
+
+        .tab:hover {
+            color: var(--text);
+        }
+
+        .tab.active {
+            color: var(--text-bright);
+            border-bottom-color: var(--accent);
+        }
+
+        /* 主内容 */
+        .content {
+            padding: 20px;
+        }
+
+        /* 状态面板 - 终端式显示 */
+        .terminal-panel {
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            overflow: hidden;
+            margin-bottom: 16px;
+        }
+
+        .terminal-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 8px 12px;
+            background: var(--bg-elevated);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .terminal-title {
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .terminal-actions {
+            display: flex;
+            gap: 4px;
+        }
+
+        .terminal-btn {
+            width: 24px;
+            height: 24px;
+            border: none;
+            background: transparent;
+            border-radius: 4px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-muted);
+            transition: all 0.15s;
+        }
+
+        .terminal-btn:hover {
+            background: var(--bg-overlay);
+            color: var(--text);
+        }
+
+        .terminal-body {
+            padding: 12px;
+        }
+
+        /* 状态行 - 方案C核心 */
+        .status-line {
+            display: flex;
+            align-items: center;
+            padding: 4px 0;
+            font-size: 12px;
+        }
+
+        .status-label {
+            color: var(--text-muted);
+            width: 100px;
+        }
+
+        .status-value {
+            color: var(--text);
+        }
+
+        .status-value.success {
+            color: var(--success);
+        }
+
+        .status-value.warning {
+            color: var(--warning);
+        }
+
+        .status-value.danger {
+            color: var(--danger);
+        }
+
+        .status-value.link {
+            color: var(--accent);
+            cursor: pointer;
+        }
+
+        .status-value.link:hover {
+            text-decoration: underline;
+        }
+
+        .status-dot {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            margin-right: 6px;
+        }
+
+        .status-dot.on {
+            background: var(--success);
+            box-shadow: 0 0 6px var(--success);
+        }
+
+        .status-dot.off {
+            background: var(--text-muted);
+        }
+
+        /* QR Code 区域 - 方案C: 居中大显示 */
+        .qr-panel {
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 24px;
+            text-align: center;
+            margin-bottom: 16px;
+        }
+
+        .qr-container {
+            display: inline-block;
+            padding: 16px;
+            background: #fff;
+            border-radius: 8px;
+            margin-bottom: 16px;
+        }
+
+        .qr-code {
+            width: 160px;
+            height: 160px;
+            background: repeating-linear-gradient(
+                45deg,
+                #000 0px,
+                #000 2px,
+                #fff 2px,
+                #fff 6px
+            );
+        }
+
+        .qr-url {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            background: var(--bg-elevated);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-size: 13px;
+            color: var(--accent);
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+
+        .qr-url:hover {
+            background: var(--bg-overlay);
+            border-color: var(--accent);
+        }
+
+        .qr-url svg {
+            opacity: 0.7;
+        }
+
+        .qr-hint {
+            margin-top: 12px;
+            font-size: 11px;
+            color: var(--text-muted);
+        }
+
+        /* 命令行式按钮 */
+        .cmd-buttons {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 20px;
+        }
+
+        .cmd-btn {
+            flex: 1;
+            padding: 10px 16px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            background: var(--bg);
+            color: var(--text);
+            font-family: var(--font-mono);
+            font-size: 12px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            transition: all 0.15s;
+        }
+
+        .cmd-btn:hover {
+            background: var(--bg-elevated);
+            border-color: var(--text-muted);
+        }
+
+        .cmd-btn.primary {
+            background: var(--success-muted);
+            border-color: var(--success);
+            color: var(--text-bright);
+        }
+
+        .cmd-btn.primary:hover {
+            background: var(--success);
+        }
+
+        .cmd-btn.danger {
+            border-color: var(--danger);
+            color: var(--danger);
+        }
+
+        .cmd-btn.danger:hover {
+            background: rgba(248, 81, 73, 0.1);
+        }
+
+        /* Session 列表 - 命令行式 */
+        .sessions-panel {
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            overflow: hidden;
+        }
+
+        .session-row {
+            display: flex;
+            align-items: center;
+            padding: 10px 12px;
+            border-bottom: 1px solid var(--border);
+            transition: background 0.15s;
+            cursor: pointer;
+        }
+
+        .session-row:last-child {
+            border-bottom: none;
+        }
+
+        .session-row:hover {
+            background: var(--bg-elevated);
+        }
+
+        .session-indicator {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--success);
+            margin-right: 10px;
+            flex-shrink: 0;
+        }
+
+        .session-indicator.idle {
+            background: var(--text-muted);
+        }
+
+        .session-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .session-name {
+            font-size: 13px;
+            color: var(--text);
+            font-weight: 500;
+        }
+
+        .session-path {
+            font-size: 11px;
+            color: var(--text-muted);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .session-meta {
+            font-size: 11px;
+            color: var(--text-muted);
+            margin-right: 12px;
+            flex-shrink: 0;
+        }
+
+        .session-actions {
+            display: flex;
+            gap: 2px;
+            opacity: 0;
+            transition: opacity 0.15s;
+        }
+
+        .session-row:hover .session-actions {
+            opacity: 1;
+        }
+
+        .session-btn {
+            width: 28px;
+            height: 28px;
+            border: none;
+            background: transparent;
+            border-radius: 4px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-muted);
+            transition: all 0.15s;
+        }
+
+        .session-btn:hover {
+            background: var(--bg-overlay);
+            color: var(--text);
+        }
+
+        .session-btn.danger:hover {
+            background: rgba(248, 81, 73, 0.1);
+            color: var(--danger);
+        }
+
+        /* 空状态 */
+        .empty-state {
+            padding: 40px 20px;
+            text-align: center;
+        }
+
+        .empty-ascii {
+            font-size: 36px;
+            margin-bottom: 12px;
+            opacity: 0.3;
+        }
+
+        .empty-text {
+            color: var(--text-muted);
+            font-size: 12px;
+        }
+
+        .empty-cmd {
+            display: inline-block;
+            margin-top: 16px;
+            padding: 8px 16px;
+            background: var(--bg-elevated);
+            border-radius: 4px;
+            color: var(--accent);
+            font-size: 12px;
+        }
+
+        /* 引导步骤 - 方案C: 命令行风格 */
+        .onboarding {
+            padding: 20px;
+        }
+
+        .onboarding-step {
+            display: flex;
+            align-items: flex-start;
+            padding: 12px 0;
+            border-bottom: 1px dashed var(--border);
+        }
+
+        .onboarding-step:last-child {
+            border-bottom: none;
+        }
+
+        .step-number {
+            width: 24px;
+            height: 24px;
+            background: var(--bg-overlay);
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-muted);
+            margin-right: 12px;
+            flex-shrink: 0;
+        }
+
+        .step-number.done {
+            background: var(--success-muted);
+            color: var(--text-bright);
+        }
+
+        .step-number.current {
+            background: var(--accent-muted);
+            color: var(--text-bright);
+        }
+
+        .step-content {
+            flex: 1;
+        }
+
+        .step-title {
+            font-size: 13px;
+            color: var(--text);
+            margin-bottom: 4px;
+        }
+
+        .step-title.done {
+            color: var(--text-muted);
+            text-decoration: line-through;
+        }
+
+        .step-desc {
+            font-size: 11px;
+            color: var(--text-muted);
+        }
+
+        .step-cmd {
+            display: inline-block;
+            margin-top: 8px;
+            padding: 4px 8px;
+            background: var(--bg);
+            border-radius: 4px;
+            font-size: 11px;
+            color: var(--success);
+        }
+
+        /* 设备连接 - 紧凑显示 */
+        .devices-compact {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 12px;
+            background: var(--bg-elevated);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            margin-bottom: 16px;
+        }
+
+        .devices-label {
+            font-size: 11px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .devices-list {
+            display: flex;
+            gap: 8px;
+            flex: 1;
+        }
+
+        .device-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 10px;
+            background: var(--bg);
+            border-radius: 12px;
+            font-size: 11px;
+            color: var(--text);
+        }
+
+        .device-badge .dot {
+            width: 6px;
+            height: 6px;
+            background: var(--success);
+            border-radius: 50%;
+        }
+
+        .devices-count {
+            font-size: 11px;
+            color: var(--text-muted);
+        }
+
+        /* 设计说明 */
+        .design-notes {
+            width: 560px;
+            margin: 40px auto 20px;
+            padding: 20px;
+            background: var(--bg-surface);
+            border-radius: 10px;
+            border: 1px solid var(--border);
+        }
+
+        .design-notes h3 {
+            color: var(--accent);
+            font-size: 14px;
+            margin-bottom: 12px;
+            font-weight: 600;
+        }
+
+        .design-notes ul {
+            color: var(--text-muted);
+            font-size: 12px;
+            padding-left: 20px;
+        }
+
+        .design-notes li {
+            margin-bottom: 8px;
+        }
+    </style>
+</head>
+<body>
+    <div class="window">
+        <div class="titlebar">
+            <div class="traffic-lights">
+                <div class="traffic-light red"></div>
+                <div class="traffic-light yellow"></div>
+                <div class="traffic-light green"></div>
+            </div>
+            <span class="titlebar-title">VibeMobile — localhost:8765</span>
+        </div>
+
+        <!-- Tab 栏 -->
+        <div class="tabs">
+            <div class="tab active">控制台</div>
+            <div class="tab">设备</div>
+            <div class="tab">日志</div>
+            <div class="tab">设置</div>
+        </div>
+
+        <div class="content">
+            <!-- 状态面板 -->
+            <div class="terminal-panel">
+                <div class="terminal-header">
+                    <span class="terminal-title">系统状态</span>
+                    <div class="terminal-actions">
+                        <button class="terminal-btn" title="刷新">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="23 4 23 10 17 10"/>
+                                <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+                <div class="terminal-body">
+                    <div class="status-line">
+                        <span class="status-label">Server</span>
+                        <span class="status-value success">
+                            <span class="status-dot on"></span>Running
+                        </span>
+                    </div>
+                    <div class="status-line">
+                        <span class="status-label">Port</span>
+                        <span class="status-value">8765</span>
+                    </div>
+                    <div class="status-line">
+                        <span class="status-label">Tunnel</span>
+                        <span class="status-value success">
+                            <span class="status-dot on"></span>Connected
+                        </span>
+                    </div>
+                    <div class="status-line">
+                        <span class="status-label">URL</span>
+                        <span class="status-value link">https://xxx.trycloudflare.com</span>
+                    </div>
+                    <div class="status-line">
+                        <span class="status-label">Sessions</span>
+                        <span class="status-value">2 active</span>
+                    </div>
+                    <div class="status-line">
+                        <span class="status-label">Devices</span>
+                        <span class="status-value">1 online</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- QR Code -->
+            <div class="qr-panel">
+                <div class="qr-container">
+                    <div class="qr-code"></div>
+                </div>
+                <div class="qr-url">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                    </svg>
+                    https://xxx.trycloudflare.com
+                </div>
+                <div class="qr-hint">手机扫码连接 · 点击复制链接</div>
+            </div>
+
+            <!-- 已连接设备 -->
+            <div class="devices-compact">
+                <span class="devices-label">Devices</span>
+                <div class="devices-list">
+                    <span class="device-badge">
+                        <span class="dot"></span>
+                        iPhone 15 Pro
+                    </span>
+                </div>
+                <span class="devices-count">1 online</span>
+            </div>
+
+            <!-- 操作按钮 -->
+            <div class="cmd-buttons">
+                <button class="cmd-btn primary">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="12" y1="5" x2="12" y2="19"/>
+                        <line x1="5" y1="12" x2="19" y2="12"/>
+                    </svg>
+                    New Session
+                </button>
+                <button class="cmd-btn">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                    </svg>
+                    Stop Server
+                </button>
+                <button class="cmd-btn danger">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"/>
+                        <line x1="15" y1="9" x2="9" y2="15"/>
+                        <line x1="9" y1="9" x2="15" y2="15"/>
+                    </svg>
+                    Kill All
+                </button>
+            </div>
+
+            <!-- Session 列表 -->
+            <div class="sessions-panel">
+                <div class="terminal-header">
+                    <span class="terminal-title">Sessions</span>
+                </div>
+                <div class="session-row">
+                    <div class="session-indicator"></div>
+                    <div class="session-info">
+                        <div class="session-name">vibe-1</div>
+                        <div class="session-path">/Users/zhaohua/Documents/repos/Test</div>
+                    </div>
+                    <span class="session-meta">12/31 23:53</span>
+                    <div class="session-actions">
+                        <button class="session-btn" title="Attach">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+                                <polyline points="15 3 21 3 21 9"/>
+                                <line x1="10" y1="14" x2="21" y2="3"/>
+                            </svg>
+                        </button>
+                        <button class="session-btn danger" title="Kill">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="18" y1="6" x2="6" y2="18"/>
+                                <line x1="6" y1="6" x2="18" y2="18"/>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+                <div class="session-row">
+                    <div class="session-indicator idle"></div>
+                    <div class="session-info">
+                        <div class="session-name">vibe-2</div>
+                        <div class="session-path">/Users/zhaohua/Projects/MyApp</div>
+                    </div>
+                    <span class="session-meta">01/01 10:22</span>
+                    <div class="session-actions">
+                        <button class="session-btn" title="Attach">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+                                <polyline points="15 3 21 3 21 9"/>
+                                <line x1="10" y1="14" x2="21" y2="3"/>
+                            </svg>
+                        </button>
+                        <button class="session-btn danger" title="Kill">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="18" y1="6" x2="6" y2="18"/>
+                                <line x1="6" y1="6" x2="18" y2="18"/>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="design-notes">
+        <h3>方案 C: 极简命令行式 (GitHub 深色主题)</h3>
+        <ul>
+            <li><strong>设计特点</strong>: 类 GitHub 深色风格，等宽字体，信息密度高</li>
+            <li><strong>布局</strong>: 垂直布局，上方状态 → 中间 QR → 下方操作和 Sessions</li>
+            <li><strong>状态显示</strong>: 键值对形式，一目了然，开发者友好</li>
+            <li><strong>QR Code</strong>: 大尺寸居中，白底黑码，扫码识别率高</li>
+            <li><strong>按钮设计</strong>: 命令行风格，扁平按钮，带 icon</li>
+            <li><strong>Session 列表</strong>: 紧凑行式，悬停显示操作按钮，节省空间</li>
+            <li><strong>Tab 导航</strong>: 顶部 Tab 切换，减少页面跳转</li>
+            <li><strong>适用场景</strong>: 喜欢终端/CLI 风格的开发者</li>
+        </ul>
+    </div>
+</body>
+</html>
