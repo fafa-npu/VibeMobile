@@ -15,10 +15,10 @@ interface CommandInputProps {
 
 type PermissionMode = 'bypass' | 'caution' | 'restricted';
 
-const PERMISSION_MODES: { key: PermissionMode; text: string }[] = [
-  { key: 'bypass', text: 'bypass permissions on' },
-  { key: 'caution', text: 'auto-accept edits' },
-  { key: 'restricted', text: 'normal mode' },
+const PERMISSION_MODES: { key: PermissionMode; text: string; icon: string }[] = [
+  { key: 'bypass', text: 'bypass permissions on', icon: '▶▶' },
+  { key: 'caution', text: 'auto-accept edits', icon: '▶' },
+  { key: 'restricted', text: 'normal mode', icon: '⏸' },
 ];
 
 const QUICK_ACTIONS = [
@@ -86,7 +86,9 @@ export function CommandInput({
     fileInputRef.current?.click();
   };
 
-  const currentModeText = PERMISSION_MODES.find(m => m.key === permissionMode)?.text || '';
+  const currentMode = PERMISSION_MODES.find(m => m.key === permissionMode);
+  const currentModeText = currentMode?.text || '';
+  const currentModeIcon = currentMode?.icon || '▶▶';
 
   return (
     <div className={styles.inputArea}>
@@ -97,7 +99,7 @@ export function CommandInput({
             className={`${styles.permissionIndicator} ${styles[permissionMode]}`}
             onClick={cyclePermissionMode}
           >
-            <span className={styles.permissionIcon}>▶▶</span>
+            <span className={styles.permissionIcon}>{currentModeIcon}</span>
             <span className={styles.permissionText}>{currentModeText}</span>
             <span className={styles.permissionHint}>(点击切换)</span>
           </div>

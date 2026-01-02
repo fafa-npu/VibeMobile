@@ -97,8 +97,6 @@ export function SessionDetail() {
             onUpload={handleUpload}
             disabled={sendCommand.isPending}
             placeholder={sendCommand.isPending ? '发送中...' : 'Message...'}
-            backgroundTasks={3}
-            tokenCount="2.1k"
           />
         </>
       ) : (

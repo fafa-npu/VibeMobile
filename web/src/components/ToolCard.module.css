@@ -1,0 +1,122 @@
+/* ToolCard styles - Scheme A v2 simplified */
+
+.toolCard {
+  background: var(--bg-secondary);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.toolCard:active {
+  opacity: 0.8;
+}
+
+.toolHeader {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px;
+  cursor: pointer;
+}
+
+.toolIcon {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  flex-shrink: 0;
+}
+
+.toolIcon.read {
+  background: var(--accent-blue-bg);
+}
+
+.toolIcon.search {
+  background: var(--accent-purple-bg);
+}
+
+.toolIcon.write {
+  background: var(--accent-green-bg);
+}
+
+.toolIcon.bash {
+  background: var(--accent-primary-bg);
+}
+
+.toolInfo {
+  flex: 1;
+  min-width: 0;
+}
+
+.toolName {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.toolDesc {
+  font-size: 11px;
+  color: var(--text-muted);
+  font-family: 'SF Mono', 'Menlo', monospace;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-top: 1px;
+}
+
+.toolStatus {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 500;
+  flex-shrink: 0;
+}
+
+.toolStatus.success {
+  color: var(--accent-green);
+}
+
+.toolStatus.running {
+  color: var(--accent-primary);
+}
+
+.toolStatus.failed {
+  color: var(--accent-red);
+}
+
+.statusIcon {
+  font-size: 11px;
+}
+
+.toolExpand {
+  color: var(--text-muted);
+  font-size: 10px;
+  transition: transform 0.2s ease;
+  padding: 4px;
+}
+
+.toolCard.expanded .toolExpand {
+  transform: rotate(180deg);
+}
+
+.toolContent {
+  padding: 0 12px 12px;
+}
+
+.toolOutput {
+  background: var(--bg-terminal);
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-family: 'SF Mono', 'Menlo', monospace;
+  font-size: 11px;
+  color: #e2e8f0;
+  max-height: 180px;
+  overflow-y: auto;
+  white-space: pre-wrap;
+  word-break: break-all;
+  margin: 0;
+  line-height: 1.5;
+}

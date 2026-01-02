@@ -11,14 +11,18 @@ interface TabBarProps {
 
 export function TabBar({ activeTab, onTabChange }: TabBarProps) {
   return (
-    <div className={styles.tabBar}>
+    <div className={styles.tabBar} role="tablist">
       <button
+        role="tab"
+        aria-selected={activeTab === 'terminal'}
         className={`${styles.tabBtn} ${activeTab === 'terminal' ? styles.active : ''}`}
         onClick={() => onTabChange('terminal')}
       >
         💬 终端
       </button>
       <button
+        role="tab"
+        aria-selected={activeTab === 'files'}
         className={`${styles.tabBtn} ${activeTab === 'files' ? styles.active : ''}`}
         onClick={() => onTabChange('files')}
       >

@@ -1,0 +1,68 @@
+/* ThinkingCard styles - Scheme A v2 simplified */
+
+.thinkingCard {
+  background: var(--bg-secondary);
+  border-radius: 12px;
+  padding: 12px;
+}
+
+.thinkingHeader {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.thinkingSpinner {
+  width: 20px;
+  height: 20px;
+  border: 2px solid var(--border-color);
+  border-top-color: var(--accent-primary);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  flex-shrink: 0;
+}
+
+.thinkingContent {
+  flex: 1;
+  min-width: 0;
+}
+
+.thinkingTitle {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--accent-primary);
+}
+
+.thinkingDesc {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-top: 1px;
+}
+
+.thinkingProgress {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.progressBar {
+  flex: 1;
+  height: 4px;
+  background: var(--bg-primary);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.progressFill {
+  height: 100%;
+  background: var(--accent-primary);
+  border-radius: 2px;
+  animation: progressPulse 1.5s ease-in-out infinite;
+}
+
+.progressText {
+  font-size: 10px;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
