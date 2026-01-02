@@ -78,10 +78,10 @@ The built-in tunnel generates a random URL each time. For a permanent domain:
 
 ## Manual Install
 
-Download `VibeMobile.dmg` from [Releases](https://github.com/fafa-npu/VibeMobile/releases), then:
-```bash
-xattr -cr /Applications/VibeMobile.app && open /Applications/VibeMobile.app
-```
+Download `VibeMobile.dmg` from [Releases](https://github.com/fafa-npu/VibeMobile/releases):
+
+1. Open DMG and drag VibeMobile to Applications
+2. Double-click to run (app is signed and notarized by Apple)
 
 **Requirements**: macOS 12+, Node.js 18+, tmux, cloudflared (`brew install node tmux cloudflare/cloudflare/cloudflared`)
 
@@ -90,7 +90,6 @@ xattr -cr /Applications/VibeMobile.app && open /Applications/VibeMobile.app
 | Issue | Fix |
 |-------|-----|
 | App won't open | `open /Applications/VibeMobile.app` |
-| "Apple cannot verify" | `xattr -cr /Applications/VibeMobile.app` |
 | Server won't start | Check Node.js: `node --version` |
 | No sessions | Check tmux: `tmux ls` |
 
