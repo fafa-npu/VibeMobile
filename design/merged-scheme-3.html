@@ -1,0 +1,1397 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VibeMobile - 合并方案3: 分步引导式</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg-primary: #f5f5f7;
+            --bg-sidebar: #ffffff;
+            --bg-card: #ffffff;
+            --text-primary: #1d1d1f;
+            --text-secondary: #86868b;
+            --accent: #007aff;
+            --accent-light: #e5f1ff;
+            --accent-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --success: #34c759;
+            --success-light: #e8f9ed;
+            --warning: #ff9500;
+            --danger: #ff3b30;
+            --border: #e5e5e7;
+            --shadow: 0 2px 12px rgba(0,0,0,0.08);
+            --shadow-hover: 0 4px 20px rgba(0,0,0,0.12);
+            --shadow-lg: 0 8px 32px rgba(0,0,0,0.15);
+            --radius: 12px;
+            --radius-lg: 16px;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', sans-serif;
+            background: #e8e8ed;
+            color: var(--text-primary);
+            line-height: 1.5;
+        }
+
+        .window {
+            width: 760px;
+            min-height: 580px;
+            margin: 20px auto;
+            background: var(--bg-primary);
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.15);
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+
+        .titlebar {
+            display: flex;
+            align-items: center;
+            padding: 12px 16px;
+            background: var(--bg-sidebar);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .traffic-lights {
+            display: flex;
+            gap: 8px;
+        }
+
+        .traffic-light {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+
+        .traffic-light.red { background: #ff5f57; }
+        .traffic-light.yellow { background: #febc2e; }
+        .traffic-light.green { background: #28c840; }
+
+        .titlebar-title {
+            flex: 1;
+            text-align: center;
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .titlebar-actions {
+            display: flex;
+            gap: 4px;
+        }
+
+        .titlebar-btn {
+            width: 28px;
+            height: 28px;
+            border: none;
+            background: transparent;
+            border-radius: 6px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-secondary);
+            transition: all 0.2s;
+        }
+
+        .titlebar-btn:hover {
+            background: var(--bg-primary);
+            color: var(--text-primary);
+        }
+
+        .main-container {
+            display: flex;
+            flex: 1;
+        }
+
+        /* 左侧边栏 - 更简洁 */
+        .sidebar {
+            width: 240px;
+            background: var(--bg-sidebar);
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* QR快捷连接区 - 极简设计 */
+        .quick-connect {
+            padding: 20px;
+            text-align: center;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .qr-mini-card {
+            background: var(--accent-gradient);
+            border-radius: var(--radius);
+            padding: 16px;
+            color: white;
+            cursor: pointer;
+            transition: all 0.2s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .qr-mini-card::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -50%;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+        }
+
+        .qr-mini-card:hover {
+            transform: scale(1.02);
+            box-shadow: var(--shadow-hover);
+        }
+
+        .qr-mini-preview {
+            width: 80px;
+            height: 80px;
+            background: white;
+            border-radius: 8px;
+            margin: 0 auto 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        .qr-mini-placeholder {
+            width: 64px;
+            height: 64px;
+            background: repeating-linear-gradient(
+                45deg,
+                #000 0px,
+                #000 1.5px,
+                #fff 1.5px,
+                #fff 4px
+            );
+            opacity: 0.4;
+            border-radius: 2px;
+        }
+
+        .qr-mini-label {
+            font-size: 13px;
+            font-weight: 600;
+            position: relative;
+        }
+
+        .qr-mini-hint {
+            font-size: 11px;
+            opacity: 0.8;
+            margin-top: 4px;
+            position: relative;
+        }
+
+        /* 状态指示 */
+        .connection-status {
+            padding: 12px 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .status-indicator {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: var(--success);
+            box-shadow: 0 0 8px var(--success);
+        }
+
+        .status-indicator.offline {
+            background: var(--text-secondary);
+            box-shadow: none;
+        }
+
+        .status-details {
+            flex: 1;
+        }
+
+        .status-label {
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+
+        .status-meta {
+            font-size: 11px;
+            color: var(--text-secondary);
+        }
+
+        /* 设备列表 */
+        .devices-panel {
+            flex: 1;
+            padding: 16px;
+            overflow-y: auto;
+        }
+
+        .panel-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 12px;
+        }
+
+        .panel-title {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .panel-action {
+            font-size: 12px;
+            color: var(--accent);
+            cursor: pointer;
+            text-decoration: none;
+        }
+
+        .panel-action:hover {
+            text-decoration: underline;
+        }
+
+        .device-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 12px;
+            background: var(--bg-card);
+            border-radius: 10px;
+            box-shadow: var(--shadow);
+            margin-bottom: 8px;
+            transition: all 0.2s;
+        }
+
+        .device-item:hover {
+            box-shadow: var(--shadow-hover);
+        }
+
+        .device-icon {
+            width: 36px;
+            height: 36px;
+            background: linear-gradient(135deg, var(--accent-light) 0%, #d4e6ff 100%);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--accent);
+        }
+
+        .device-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .device-name {
+            font-size: 13px;
+            font-weight: 500;
+        }
+
+        .device-status {
+            font-size: 11px;
+            color: var(--success);
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .device-status .dot {
+            width: 5px;
+            height: 5px;
+            background: var(--success);
+            border-radius: 50%;
+        }
+
+        /* 底部控制 */
+        .sidebar-footer {
+            padding: 16px;
+            border-top: 1px solid var(--border);
+        }
+
+        .server-control {
+            display: flex;
+            gap: 8px;
+        }
+
+        .control-btn {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: 500;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            transition: all 0.2s;
+        }
+
+        .control-btn.secondary {
+            background: var(--bg-primary);
+            color: var(--text-primary);
+        }
+
+        .control-btn.secondary:hover {
+            background: var(--border);
+        }
+
+        .control-btn.danger {
+            background: transparent;
+            color: var(--danger);
+            border: 1px solid rgba(255, 59, 48, 0.3);
+        }
+
+        .control-btn.danger:hover {
+            background: #fff5f5;
+            border-color: var(--danger);
+        }
+
+        /* 右侧主内容 */
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: var(--bg-primary);
+        }
+
+        .content-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px 20px;
+            background: var(--bg-sidebar);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .content-title {
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+        .content-title span {
+            font-weight: 400;
+            color: var(--text-secondary);
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .header-btn {
+            padding: 8px 14px;
+            border: none;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.2s;
+        }
+
+        .header-btn.secondary {
+            background: var(--bg-primary);
+            color: var(--text-primary);
+        }
+
+        .header-btn.secondary:hover {
+            background: var(--border);
+        }
+
+        .header-btn.primary {
+            background: var(--accent);
+            color: white;
+        }
+
+        .header-btn.primary:hover {
+            background: #0066d6;
+        }
+
+        /* Session 列表 - 表格式 + 卡片效果 */
+        .sessions-container {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+        }
+
+        .session-row {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding: 14px 16px;
+            background: var(--bg-card);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            margin-bottom: 12px;
+            transition: all 0.2s;
+        }
+
+        .session-row:hover {
+            box-shadow: var(--shadow-hover);
+            transform: translateY(-1px);
+        }
+
+        .session-icon {
+            width: 42px;
+            height: 42px;
+            background: linear-gradient(135deg, var(--accent-light) 0%, #d4e6ff 100%);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--accent);
+        }
+
+        .session-main {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .session-name {
+            font-size: 15px;
+            font-weight: 600;
+            margin-bottom: 2px;
+        }
+
+        .session-path {
+            font-size: 12px;
+            color: var(--text-secondary);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .session-meta {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 4px;
+        }
+
+        .session-status {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 500;
+            background: var(--success-light);
+            color: var(--success);
+        }
+
+        .session-status .dot {
+            width: 6px;
+            height: 6px;
+            background: var(--success);
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .session-status.idle {
+            background: var(--bg-primary);
+            color: var(--text-secondary);
+        }
+
+        .session-status.idle .dot {
+            background: var(--text-secondary);
+            animation: none;
+        }
+
+        .session-time {
+            font-size: 11px;
+            color: var(--text-secondary);
+        }
+
+        .session-actions {
+            display: flex;
+            gap: 6px;
+        }
+
+        .session-btn {
+            width: 34px;
+            height: 34px;
+            border: none;
+            background: var(--bg-primary);
+            border-radius: 8px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-secondary);
+            transition: all 0.2s;
+        }
+
+        .session-btn:hover {
+            background: var(--border);
+            color: var(--text-primary);
+        }
+
+        .session-btn.danger:hover {
+            background: #fef2f2;
+            color: var(--danger);
+        }
+
+        /* 状态栏 */
+        .statusbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 8px 16px;
+            background: var(--bg-sidebar);
+            border-top: 1px solid var(--border);
+            font-size: 11px;
+            color: var(--text-secondary);
+        }
+
+        .statusbar-left {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .statusbar-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .statusbar-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--success);
+        }
+
+        /* ========================================= */
+        /* 模态框 - 分步引导连接流程 (核心设计) */
+        /* ========================================= */
+        .modal-overlay {
+            position: absolute;
+            inset: 0;
+            background: rgba(0,0,0,0.4);
+            backdrop-filter: blur(4px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+        }
+
+        .modal-overlay.hidden {
+            display: none;
+        }
+
+        .modal {
+            width: 420px;
+            background: var(--bg-card);
+            border-radius: var(--radius-lg);
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+
+        .modal-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .modal-title {
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+        .modal-close {
+            width: 28px;
+            height: 28px;
+            border: none;
+            background: transparent;
+            border-radius: 6px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-secondary);
+            transition: all 0.2s;
+        }
+
+        .modal-close:hover {
+            background: var(--bg-primary);
+            color: var(--text-primary);
+        }
+
+        .modal-body {
+            padding: 24px;
+        }
+
+        /* 步骤指示器 */
+        .steps-indicator {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            margin-bottom: 24px;
+        }
+
+        .step-dot {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .step-dot.active {
+            background: var(--accent);
+            color: white;
+        }
+
+        .step-dot.completed {
+            background: var(--success);
+            color: white;
+        }
+
+        .step-dot.pending {
+            background: var(--bg-primary);
+            color: var(--text-secondary);
+        }
+
+        .step-line {
+            width: 40px;
+            height: 2px;
+            background: var(--border);
+            transition: all 0.3s;
+        }
+
+        .step-line.completed {
+            background: var(--success);
+        }
+
+        /* 步骤内容 */
+        .step-content {
+            text-align: center;
+        }
+
+        .step-content.hidden {
+            display: none;
+        }
+
+        /* 步骤1: 扫描二维码 */
+        .qr-display {
+            margin-bottom: 20px;
+        }
+
+        .qr-box {
+            width: 200px;
+            height: 200px;
+            background: white;
+            border: 2px solid var(--border);
+            border-radius: 16px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .qr-box-placeholder {
+            width: 180px;
+            height: 180px;
+            background: repeating-linear-gradient(
+                45deg,
+                #000 0px,
+                #000 2px,
+                #fff 2px,
+                #fff 6px
+            );
+            opacity: 0.3;
+            border-radius: 8px;
+        }
+
+        .step-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 8px;
+        }
+
+        .step-desc {
+            font-size: 14px;
+            color: var(--text-secondary);
+            margin-bottom: 16px;
+        }
+
+        .url-display {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 16px;
+            background: var(--accent-light);
+            border-radius: 10px;
+            font-family: 'SF Mono', Monaco, monospace;
+            font-size: 13px;
+            color: var(--accent);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .url-display:hover {
+            background: #d4e6ff;
+        }
+
+        /* 步骤2: 输入配对码 */
+        .code-display-large {
+            padding: 24px;
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border-radius: 16px;
+            margin-bottom: 16px;
+        }
+
+        .code-label {
+            font-size: 12px;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 8px;
+        }
+
+        .code-value {
+            font-size: 42px;
+            font-weight: 700;
+            letter-spacing: 10px;
+            color: #667eea;
+            font-family: 'SF Mono', Monaco, monospace;
+        }
+
+        .code-timer {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            margin-top: 12px;
+            font-size: 13px;
+            color: var(--warning);
+        }
+
+        .code-timer-bar {
+            width: 100%;
+            height: 4px;
+            background: var(--border);
+            border-radius: 2px;
+            margin-top: 8px;
+            overflow: hidden;
+        }
+
+        .code-timer-progress {
+            height: 100%;
+            background: var(--warning);
+            width: 80%;
+            transition: width 1s linear;
+        }
+
+        /* 步骤3: 确认配对请求 */
+        .request-card {
+            background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 16px;
+        }
+
+        .request-device {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            margin-bottom: 16px;
+        }
+
+        .request-device-icon {
+            width: 52px;
+            height: 52px;
+            background: white;
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--warning);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+
+        .request-device-info {
+            text-align: left;
+        }
+
+        .request-device-name {
+            font-size: 16px;
+            font-weight: 600;
+            color: #92400e;
+        }
+
+        .request-device-meta {
+            font-size: 13px;
+            color: #a16207;
+        }
+
+        .request-actions {
+            display: flex;
+            gap: 12px;
+        }
+
+        .request-btn {
+            flex: 1;
+            padding: 14px;
+            border: none;
+            border-radius: 12px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .request-btn.reject {
+            background: white;
+            color: #b91c1c;
+        }
+
+        .request-btn.reject:hover {
+            background: #fef2f2;
+        }
+
+        .request-btn.approve {
+            background: var(--success);
+            color: white;
+        }
+
+        .request-btn.approve:hover {
+            background: #2ebd4e;
+            transform: translateY(-1px);
+        }
+
+        /* 步骤4: 完成 */
+        .success-icon {
+            width: 80px;
+            height: 80px;
+            background: var(--success-light);
+            border-radius: 50%;
+            margin: 0 auto 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--success);
+        }
+
+        .success-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: var(--success);
+            margin-bottom: 8px;
+        }
+
+        .success-desc {
+            font-size: 14px;
+            color: var(--text-secondary);
+            margin-bottom: 20px;
+        }
+
+        .modal-action-btn {
+            padding: 14px 32px;
+            background: var(--accent);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .modal-action-btn:hover {
+            background: #0066d6;
+        }
+
+        /* 设计说明 */
+        .design-notes {
+            width: 760px;
+            margin: 40px auto 20px;
+            padding: 24px;
+            background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%);
+            border-radius: 12px;
+            border: 1px solid #86efac;
+        }
+
+        .design-notes h3 {
+            color: #166534;
+            font-size: 16px;
+            margin-bottom: 12px;
+        }
+
+        .design-notes ul {
+            color: #15803d;
+            font-size: 14px;
+            padding-left: 20px;
+        }
+
+        .design-notes li {
+            margin-bottom: 8px;
+        }
+
+        .design-notes strong {
+            color: #166534;
+        }
+
+        /* 演示控制 */
+        .demo-controls {
+            width: 760px;
+            margin: 20px auto;
+            padding: 16px;
+            background: var(--bg-card);
+            border-radius: 12px;
+            box-shadow: var(--shadow);
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .demo-btn {
+            padding: 8px 16px;
+            border: 1px solid var(--border);
+            background: white;
+            border-radius: 8px;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .demo-btn:hover {
+            background: var(--accent-light);
+            border-color: var(--accent);
+        }
+
+        .demo-btn.active {
+            background: var(--accent);
+            color: white;
+            border-color: var(--accent);
+        }
+    </style>
+</head>
+<body>
+    <div class="demo-controls">
+        <button class="demo-btn" onclick="showStep(0)">关闭弹窗</button>
+        <button class="demo-btn active" onclick="showStep(1)">步骤1: 扫码</button>
+        <button class="demo-btn" onclick="showStep(2)">步骤2: 配对码</button>
+        <button class="demo-btn" onclick="showStep(3)">步骤3: 确认</button>
+        <button class="demo-btn" onclick="showStep(4)">步骤4: 完成</button>
+    </div>
+
+    <div class="window">
+        <div class="titlebar">
+            <div class="traffic-lights">
+                <div class="traffic-light red"></div>
+                <div class="traffic-light yellow"></div>
+                <div class="traffic-light green"></div>
+            </div>
+            <span class="titlebar-title">VibeMobile</span>
+            <div class="titlebar-actions">
+                <button class="titlebar-btn" title="Logs">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                        <polyline points="14 2 14 8 20 8"/>
+                    </svg>
+                </button>
+                <button class="titlebar-btn" title="Settings">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="3"/>
+                        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+                    </svg>
+                </button>
+            </div>
+        </div>
+
+        <div class="main-container">
+            <!-- 左侧边栏 -->
+            <div class="sidebar">
+                <!-- QR快捷连接 -->
+                <div class="quick-connect">
+                    <div class="qr-mini-card" onclick="showStep(1)">
+                        <div class="qr-mini-preview">
+                            <div class="qr-mini-placeholder"></div>
+                        </div>
+                        <div class="qr-mini-label">扫码连接</div>
+                        <div class="qr-mini-hint">点击展开</div>
+                    </div>
+                </div>
+
+                <!-- 连接状态 -->
+                <div class="connection-status">
+                    <div class="status-indicator"></div>
+                    <div class="status-details">
+                        <div class="status-label">服务已启动</div>
+                        <div class="status-meta">localhost:8765</div>
+                    </div>
+                </div>
+
+                <!-- 设备列表 -->
+                <div class="devices-panel">
+                    <div class="panel-header">
+                        <span class="panel-title">已连接设备</span>
+                        <a class="panel-action" onclick="showStep(1)">+ 添加</a>
+                    </div>
+                    <div class="device-item">
+                        <div class="device-icon">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <rect x="5" y="2" width="14" height="20" rx="2" ry="2"/>
+                                <line x1="12" y1="18" x2="12" y2="18"/>
+                            </svg>
+                        </div>
+                        <div class="device-info">
+                            <div class="device-name">iPhone 15 Pro</div>
+                            <div class="device-status">
+                                <span class="dot"></span>
+                                在线
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 底部控制 -->
+                <div class="sidebar-footer">
+                    <div class="server-control">
+                        <button class="control-btn secondary">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                            </svg>
+                            停止
+                        </button>
+                        <button class="control-btn danger">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="10"/>
+                                <rect x="9" y="9" width="6" height="6"/>
+                            </svg>
+                            全部
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 右侧主内容 -->
+            <div class="main-content">
+                <div class="content-header">
+                    <span class="content-title">Sessions <span>(2)</span></span>
+                    <div class="header-actions">
+                        <button class="header-btn secondary">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="23 4 23 10 17 10"/>
+                                <polyline points="1 20 1 14 7 14"/>
+                                <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+                            </svg>
+                            刷新
+                        </button>
+                        <button class="header-btn primary">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="12" y1="5" x2="12" y2="19"/>
+                                <line x1="5" y1="12" x2="19" y2="12"/>
+                            </svg>
+                            新建
+                        </button>
+                    </div>
+                </div>
+
+                <div class="sessions-container">
+                    <div class="session-row">
+                        <div class="session-icon">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="4 17 10 11 4 5"/>
+                                <line x1="12" y1="19" x2="20" y2="19"/>
+                            </svg>
+                        </div>
+                        <div class="session-main">
+                            <div class="session-name">vibe-1</div>
+                            <div class="session-path">/Users/zhaohua/Documents/repos/Test</div>
+                        </div>
+                        <div class="session-meta">
+                            <div class="session-status">
+                                <span class="dot"></span>
+                                运行中
+                            </div>
+                            <span class="session-time">12/31 23:53</span>
+                        </div>
+                        <div class="session-actions">
+                            <button class="session-btn" title="打开终端">
+                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+                                    <polyline points="15 3 21 3 21 9"/>
+                                    <line x1="10" y1="14" x2="21" y2="3"/>
+                                </svg>
+                            </button>
+                            <button class="session-btn danger" title="关闭">
+                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <line x1="18" y1="6" x2="6" y2="18"/>
+                                    <line x1="6" y1="6" x2="18" y2="18"/>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="session-row">
+                        <div class="session-icon">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="4 17 10 11 4 5"/>
+                                <line x1="12" y1="19" x2="20" y2="19"/>
+                            </svg>
+                        </div>
+                        <div class="session-main">
+                            <div class="session-name">vibe-2</div>
+                            <div class="session-path">/Users/zhaohua/Projects/MyApp</div>
+                        </div>
+                        <div class="session-meta">
+                            <div class="session-status idle">
+                                <span class="dot"></span>
+                                空闲
+                            </div>
+                            <span class="session-time">01/01 10:22</span>
+                        </div>
+                        <div class="session-actions">
+                            <button class="session-btn" title="打开终端">
+                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+                                    <polyline points="15 3 21 3 21 9"/>
+                                    <line x1="10" y1="14" x2="21" y2="3"/>
+                                </svg>
+                            </button>
+                            <button class="session-btn danger" title="关闭">
+                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <line x1="18" y1="6" x2="6" y2="18"/>
+                                    <line x1="6" y1="6" x2="18" y2="18"/>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="statusbar">
+                    <div class="statusbar-left">
+                        <div class="statusbar-item">
+                            <div class="statusbar-dot"></div>
+                            <span>Server: localhost:8765</span>
+                        </div>
+                        <div class="statusbar-item">
+                            <div class="statusbar-dot"></div>
+                            <span>Tunnel: 已连接</span>
+                        </div>
+                    </div>
+                    <span>2 Sessions · 1 设备在线</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 模态框: 分步引导连接流程 -->
+        <div class="modal-overlay" id="modalOverlay">
+            <div class="modal">
+                <div class="modal-header">
+                    <span class="modal-title">连接新设备</span>
+                    <button class="modal-close" onclick="showStep(0)">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="18" y1="6" x2="6" y2="18"/>
+                            <line x1="6" y1="6" x2="18" y2="18"/>
+                        </svg>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <!-- 步骤指示器 -->
+                    <div class="steps-indicator">
+                        <div class="step-dot" id="stepDot1">1</div>
+                        <div class="step-line" id="stepLine1"></div>
+                        <div class="step-dot" id="stepDot2">2</div>
+                        <div class="step-line" id="stepLine2"></div>
+                        <div class="step-dot" id="stepDot3">3</div>
+                    </div>
+
+                    <!-- 步骤1: 扫描二维码 -->
+                    <div class="step-content" id="step1">
+                        <div class="qr-display">
+                            <div class="qr-box">
+                                <div class="qr-box-placeholder"></div>
+                            </div>
+                        </div>
+                        <div class="step-title">扫描二维码</div>
+                        <div class="step-desc">使用手机浏览器扫描上方二维码</div>
+                        <div class="url-display">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+                                <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+                            </svg>
+                            xxx.trycloudflare.com
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                            </svg>
+                        </div>
+                    </div>
+
+                    <!-- 步骤2: 输入配对码 -->
+                    <div class="step-content hidden" id="step2">
+                        <div class="code-display-large">
+                            <div class="code-label">配对码</div>
+                            <div class="code-value">847293</div>
+                            <div class="code-timer">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <circle cx="12" cy="12" r="10"/>
+                                    <polyline points="12 6 12 12 16 14"/>
+                                </svg>
+                                48秒后刷新
+                            </div>
+                            <div class="code-timer-bar">
+                                <div class="code-timer-progress"></div>
+                            </div>
+                        </div>
+                        <div class="step-title">输入配对码</div>
+                        <div class="step-desc">在手机网页上输入以上6位配对码</div>
+                    </div>
+
+                    <!-- 步骤3: 确认配对请求 -->
+                    <div class="step-content hidden" id="step3">
+                        <div class="request-card">
+                            <div class="request-device">
+                                <div class="request-device-icon">
+                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <rect x="5" y="2" width="14" height="20" rx="2" ry="2"/>
+                                        <line x1="12" y1="18" x2="12" y2="18"/>
+                                    </svg>
+                                </div>
+                                <div class="request-device-info">
+                                    <div class="request-device-name">iPhone 15 Pro</div>
+                                    <div class="request-device-meta">Safari · 192.168.1.15</div>
+                                </div>
+                            </div>
+                            <div class="request-actions">
+                                <button class="request-btn reject">拒绝</button>
+                                <button class="request-btn approve" onclick="showStep(4)">批准连接</button>
+                            </div>
+                        </div>
+                        <div class="step-title">确认连接请求</div>
+                        <div class="step-desc">检查设备信息，确认是否允许连接</div>
+                    </div>
+
+                    <!-- 步骤4: 完成 -->
+                    <div class="step-content hidden" id="step4">
+                        <div class="success-icon">
+                            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="20 6 9 17 4 12"/>
+                            </svg>
+                        </div>
+                        <div class="success-title">连接成功!</div>
+                        <div class="success-desc">iPhone 15 Pro 已成功配对，现在可以开始远程控制了</div>
+                        <button class="modal-action-btn" onclick="showStep(0)">完成</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="design-notes">
+        <h3>合并方案3: 分步引导式</h3>
+        <ul>
+            <li><strong>核心设计</strong>: 点击QR码展开模态框，提供完整的分步引导连接流程</li>
+            <li><strong>主界面</strong>: 更简洁，QR码以缩略图形式显示在侧边栏，不占用太多空间</li>
+            <li><strong>配对流程</strong>:
+                <ul>
+                    <li>步骤1: 显示大尺寸QR码和URL</li>
+                    <li>步骤2: 用户扫码后自动切换到配对码显示，带进度条倒计时</li>
+                    <li>步骤3: 配对请求确认，设备信息一目了然</li>
+                    <li>步骤4: 成功反馈，关闭弹窗</li>
+                </ul>
+            </li>
+            <li><strong>用户体验</strong>: 步骤指示器清晰显示进度，用户始终知道自己在哪一步</li>
+            <li><strong>优势</strong>: 主界面保持简洁，配对流程集中在模态框内，不打断其他操作</li>
+            <li><strong>Session列表</strong>: 采用行卡片式布局，兼顾信息密度和美观</li>
+        </ul>
+    </div>
+
+    <script>
+        function showStep(step) {
+            // 更新按钮状态
+            document.querySelectorAll('.demo-btn').forEach((btn, i) => {
+                btn.classList.toggle('active', i === step);
+            });
+
+            const overlay = document.getElementById('modalOverlay');
+            const steps = [
+                document.getElementById('step1'),
+                document.getElementById('step2'),
+                document.getElementById('step3'),
+                document.getElementById('step4')
+            ];
+            const dots = [
+                document.getElementById('stepDot1'),
+                document.getElementById('stepDot2'),
+                document.getElementById('stepDot3')
+            ];
+            const lines = [
+                document.getElementById('stepLine1'),
+                document.getElementById('stepLine2')
+            ];
+
+            if (step === 0) {
+                overlay.classList.add('hidden');
+                return;
+            }
+
+            overlay.classList.remove('hidden');
+
+            // 隐藏所有步骤
+            steps.forEach(s => s.classList.add('hidden'));
+
+            // 显示当前步骤
+            if (step >= 1 && step <= 4) {
+                steps[step - 1].classList.remove('hidden');
+            }
+
+            // 更新步骤指示器
+            dots.forEach((dot, i) => {
+                dot.classList.remove('active', 'completed', 'pending');
+                if (i + 1 < step) {
+                    dot.classList.add('completed');
+                    dot.innerHTML = '✓';
+                } else if (i + 1 === step && step <= 3) {
+                    dot.classList.add('active');
+                    dot.innerHTML = i + 1;
+                } else if (step === 4) {
+                    dot.classList.add('completed');
+                    dot.innerHTML = '✓';
+                } else {
+                    dot.classList.add('pending');
+                    dot.innerHTML = i + 1;
+                }
+            });
+
+            lines.forEach((line, i) => {
+                line.classList.toggle('completed', i + 1 < step || step === 4);
+            });
+        }
+    </script>
+</body>
+</html>

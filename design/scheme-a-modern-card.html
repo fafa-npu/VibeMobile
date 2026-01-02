@@ -1,0 +1,856 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VibeMobile - 方案A: 现代卡片式</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg-primary: #f5f5f7;
+            --bg-card: #ffffff;
+            --bg-card-hover: #fafafa;
+            --text-primary: #1d1d1f;
+            --text-secondary: #86868b;
+            --accent: #007aff;
+            --accent-light: #e5f1ff;
+            --success: #34c759;
+            --success-light: #e8f9ed;
+            --warning: #ff9500;
+            --danger: #ff3b30;
+            --border: #e5e5e7;
+            --shadow: 0 2px 12px rgba(0,0,0,0.08);
+            --shadow-hover: 0 4px 20px rgba(0,0,0,0.12);
+            --radius: 12px;
+            --radius-lg: 16px;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.5;
+        }
+
+        /* 窗口容器 */
+        .window {
+            width: 480px;
+            min-height: 700px;
+            margin: 20px auto;
+            background: var(--bg-primary);
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.15);
+        }
+
+        /* 标题栏 */
+        .titlebar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 16px;
+            background: var(--bg-card);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .traffic-lights {
+            display: flex;
+            gap: 8px;
+        }
+
+        .traffic-light {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+
+        .traffic-light.red { background: #ff5f57; }
+        .traffic-light.yellow { background: #febc2e; }
+        .traffic-light.green { background: #28c840; }
+
+        .titlebar-title {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .titlebar-actions {
+            display: flex;
+            gap: 4px;
+        }
+
+        .titlebar-btn {
+            width: 28px;
+            height: 28px;
+            border: none;
+            background: transparent;
+            border-radius: 6px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-secondary);
+            transition: all 0.2s;
+        }
+
+        .titlebar-btn:hover {
+            background: var(--bg-primary);
+            color: var(--text-primary);
+        }
+
+        /* 主内容区 */
+        .content {
+            padding: 16px;
+        }
+
+        /* 欢迎引导卡片 - 方案A特色：大卡片引导 */
+        .welcome-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: var(--radius-lg);
+            padding: 24px;
+            color: white;
+            margin-bottom: 16px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .welcome-card::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -50%;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+        }
+
+        .welcome-card h2 {
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            position: relative;
+        }
+
+        .welcome-card p {
+            font-size: 14px;
+            opacity: 0.9;
+            margin-bottom: 16px;
+            position: relative;
+        }
+
+        .welcome-steps {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 20px;
+            position: relative;
+        }
+
+        .step {
+            flex: 1;
+            background: rgba(255,255,255,0.15);
+            backdrop-filter: blur(10px);
+            border-radius: 10px;
+            padding: 12px;
+            text-align: center;
+        }
+
+        .step-number {
+            width: 24px;
+            height: 24px;
+            background: white;
+            color: #667eea;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: 700;
+            margin: 0 auto 8px;
+        }
+
+        .step-text {
+            font-size: 11px;
+            line-height: 1.3;
+        }
+
+        .welcome-btn {
+            width: 100%;
+            padding: 14px;
+            background: white;
+            color: #667eea;
+            border: none;
+            border-radius: 10px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s;
+            position: relative;
+        }
+
+        .welcome-btn:hover {
+            transform: scale(1.02);
+        }
+
+        /* 状态卡片 */
+        .status-section {
+            margin-bottom: 16px;
+        }
+
+        .status-card {
+            background: var(--bg-card);
+            border-radius: var(--radius);
+            padding: 16px;
+            box-shadow: var(--shadow);
+            margin-bottom: 12px;
+            transition: all 0.2s;
+        }
+
+        .status-card:hover {
+            box-shadow: var(--shadow-hover);
+        }
+
+        .status-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 12px;
+        }
+
+        .status-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: var(--success);
+            box-shadow: 0 0 8px var(--success);
+        }
+
+        .status-dot.stopped {
+            background: var(--text-secondary);
+            box-shadow: none;
+        }
+
+        .status-title {
+            font-size: 15px;
+            font-weight: 600;
+        }
+
+        .status-subtitle {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        .status-badge {
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .status-badge.running {
+            background: var(--success-light);
+            color: var(--success);
+        }
+
+        .status-badge.stopped {
+            background: var(--bg-primary);
+            color: var(--text-secondary);
+        }
+
+        /* QR Code 区域 - 方案A特色：突出显示 */
+        .qr-section {
+            background: var(--bg-card);
+            border-radius: var(--radius);
+            padding: 20px;
+            box-shadow: var(--shadow);
+            margin-bottom: 16px;
+            text-align: center;
+        }
+
+        .qr-header {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+
+        .qr-icon {
+            color: var(--success);
+        }
+
+        .qr-title {
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .qr-container {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .qr-code {
+            width: 140px;
+            height: 140px;
+            background: white;
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        .qr-placeholder {
+            width: 120px;
+            height: 120px;
+            background: repeating-linear-gradient(
+                45deg,
+                #000 0px,
+                #000 2px,
+                #fff 2px,
+                #fff 6px
+            );
+            opacity: 0.3;
+            border-radius: 4px;
+        }
+
+        .qr-info {
+            text-align: left;
+        }
+
+        .qr-url {
+            font-family: 'SF Mono', Monaco, monospace;
+            font-size: 13px;
+            color: var(--accent);
+            background: var(--accent-light);
+            padding: 8px 12px;
+            border-radius: 8px;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+        }
+
+        .qr-url:hover {
+            background: #d4e6ff;
+        }
+
+        .qr-hint {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        /* 操作按钮组 */
+        .action-buttons {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 20px;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 12px 16px;
+            border: none;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            transition: all 0.2s;
+        }
+
+        .btn-primary {
+            background: var(--accent);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #0066d6;
+        }
+
+        .btn-secondary {
+            background: var(--bg-primary);
+            color: var(--text-primary);
+        }
+
+        .btn-secondary:hover {
+            background: var(--border);
+        }
+
+        .btn-danger {
+            background: transparent;
+            color: var(--danger);
+            border: 1px solid var(--danger);
+        }
+
+        .btn-danger:hover {
+            background: #fff5f5;
+        }
+
+        /* Sessions 区域 */
+        .sessions-section {
+            margin-top: 8px;
+        }
+
+        .section-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 12px;
+        }
+
+        .section-title {
+            font-size: 17px;
+            font-weight: 600;
+        }
+
+        .section-count {
+            font-size: 14px;
+            color: var(--text-secondary);
+            font-weight: 400;
+        }
+
+        .add-btn {
+            width: 32px;
+            height: 32px;
+            border: none;
+            background: var(--accent);
+            color: white;
+            border-radius: 8px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+
+        .add-btn:hover {
+            background: #0066d6;
+            transform: scale(1.05);
+        }
+
+        /* Session 卡片 */
+        .session-card {
+            background: var(--bg-card);
+            border-radius: var(--radius);
+            padding: 14px 16px;
+            box-shadow: var(--shadow);
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+
+        .session-card:hover {
+            box-shadow: var(--shadow-hover);
+            transform: translateY(-1px);
+        }
+
+        .session-icon {
+            width: 42px;
+            height: 42px;
+            background: linear-gradient(135deg, var(--accent-light) 0%, #d4e6ff 100%);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--accent);
+        }
+
+        .session-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .session-name {
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 2px;
+        }
+
+        .session-path {
+            font-size: 12px;
+            color: var(--text-secondary);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .session-time {
+            font-size: 11px;
+            color: var(--text-secondary);
+            opacity: 0.7;
+        }
+
+        .session-status {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 11px;
+            color: var(--success);
+            background: var(--success-light);
+            padding: 4px 8px;
+            border-radius: 12px;
+        }
+
+        .session-status .dot {
+            width: 6px;
+            height: 6px;
+            background: var(--success);
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .session-actions {
+            display: flex;
+            gap: 4px;
+        }
+
+        .session-btn {
+            width: 32px;
+            height: 32px;
+            border: none;
+            background: transparent;
+            border-radius: 8px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-secondary);
+            transition: all 0.2s;
+        }
+
+        .session-btn:hover {
+            background: var(--bg-primary);
+            color: var(--text-primary);
+        }
+
+        .session-btn.danger:hover {
+            background: #fff5f5;
+            color: var(--danger);
+        }
+
+        /* 已连接设备指示器 */
+        .connected-devices {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 14px;
+            background: var(--success-light);
+            border-radius: 10px;
+            margin-bottom: 16px;
+        }
+
+        .connected-icon {
+            color: var(--success);
+        }
+
+        .connected-text {
+            font-size: 13px;
+            color: var(--success);
+            font-weight: 500;
+        }
+
+        .connected-count {
+            margin-left: auto;
+            font-size: 12px;
+            color: var(--success);
+            opacity: 0.8;
+        }
+
+        /* 空状态 */
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--text-secondary);
+        }
+
+        .empty-icon {
+            font-size: 48px;
+            margin-bottom: 12px;
+            opacity: 0.5;
+        }
+
+        .empty-title {
+            font-size: 15px;
+            font-weight: 600;
+            margin-bottom: 4px;
+            color: var(--text-primary);
+        }
+
+        .empty-hint {
+            font-size: 13px;
+        }
+
+        /* 设计说明 */
+        .design-notes {
+            margin-top: 40px;
+            padding: 20px;
+            background: #fffbeb;
+            border-radius: 12px;
+            border: 1px solid #fcd34d;
+        }
+
+        .design-notes h3 {
+            color: #92400e;
+            font-size: 16px;
+            margin-bottom: 12px;
+        }
+
+        .design-notes ul {
+            color: #78350f;
+            font-size: 14px;
+            padding-left: 20px;
+        }
+
+        .design-notes li {
+            margin-bottom: 8px;
+        }
+    </style>
+</head>
+<body>
+    <div class="window">
+        <div class="titlebar">
+            <div class="traffic-lights">
+                <div class="traffic-light red"></div>
+                <div class="traffic-light yellow"></div>
+                <div class="traffic-light green"></div>
+            </div>
+            <span class="titlebar-title">VibeMobile</span>
+            <div class="titlebar-actions">
+                <button class="titlebar-btn" title="Devices">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="5" y="2" width="14" height="20" rx="2" ry="2"/>
+                        <line x1="12" y1="18" x2="12" y2="18"/>
+                    </svg>
+                </button>
+                <button class="titlebar-btn" title="Logs">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                        <polyline points="14 2 14 8 20 8"/>
+                        <line x1="16" y1="13" x2="8" y2="13"/>
+                        <line x1="16" y1="17" x2="8" y2="17"/>
+                    </svg>
+                </button>
+                <button class="titlebar-btn" title="Settings">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="3"/>
+                        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+                    </svg>
+                </button>
+            </div>
+        </div>
+
+        <div class="content">
+            <!-- 欢迎引导卡片 (首次使用时显示) -->
+            <!--
+            <div class="welcome-card">
+                <h2>欢迎使用 VibeMobile</h2>
+                <p>只需三步，用手机远程控制 Claude Code</p>
+                <div class="welcome-steps">
+                    <div class="step">
+                        <div class="step-number">1</div>
+                        <div class="step-text">启动服务器</div>
+                    </div>
+                    <div class="step">
+                        <div class="step-number">2</div>
+                        <div class="step-text">扫码连接</div>
+                    </div>
+                    <div class="step">
+                        <div class="step-number">3</div>
+                        <div class="step-text">开始控制</div>
+                    </div>
+                </div>
+                <button class="welcome-btn">一键启动</button>
+            </div>
+            -->
+
+            <!-- 状态卡片 -->
+            <div class="status-section">
+                <div class="status-card">
+                    <div class="status-header">
+                        <div class="status-info">
+                            <div class="status-dot"></div>
+                            <div>
+                                <div class="status-title">服务器</div>
+                                <div class="status-subtitle">localhost:8765</div>
+                            </div>
+                        </div>
+                        <span class="status-badge running">运行中</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- QR Code 区域 - 核心改进 -->
+            <div class="qr-section">
+                <div class="qr-header">
+                    <svg class="qr-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M5 12.55a11 11 0 0 1 14.08 0"/>
+                        <path d="M1.42 9a16 16 0 0 1 21.16 0"/>
+                        <path d="M8.53 16.11a6 6 0 0 1 6.95 0"/>
+                        <line x1="12" y1="20" x2="12" y2="20"/>
+                    </svg>
+                    <span class="qr-title">手机扫码连接</span>
+                </div>
+                <div class="qr-container">
+                    <div class="qr-code">
+                        <div class="qr-placeholder"></div>
+                    </div>
+                    <div class="qr-info">
+                        <div class="qr-url">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+                                <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+                            </svg>
+                            xxx.trycloudflare.com
+                        </div>
+                        <div class="qr-hint">点击复制链接</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 已连接设备 -->
+            <div class="connected-devices">
+                <svg class="connected-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="5" y="2" width="14" height="20" rx="2" ry="2"/>
+                    <line x1="12" y1="18" x2="12" y2="18"/>
+                </svg>
+                <span class="connected-text">iPhone 已连接</span>
+                <span class="connected-count">1 台设备在线</span>
+            </div>
+
+            <!-- 操作按钮 -->
+            <div class="action-buttons">
+                <button class="btn btn-secondary">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                    </svg>
+                    停止服务器
+                </button>
+                <button class="btn btn-danger">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"/>
+                        <rect x="9" y="9" width="6" height="6"/>
+                    </svg>
+                    全部停止
+                </button>
+            </div>
+
+            <!-- Sessions -->
+            <div class="sessions-section">
+                <div class="section-header">
+                    <span class="section-title">Sessions <span class="section-count">(2)</span></span>
+                    <button class="add-btn" title="新建 Session">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="12" y1="5" x2="12" y2="19"/>
+                            <line x1="5" y1="12" x2="19" y2="12"/>
+                        </svg>
+                    </button>
+                </div>
+
+                <div class="session-card">
+                    <div class="session-icon">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="4 17 10 11 4 5"/>
+                            <line x1="12" y1="19" x2="20" y2="19"/>
+                        </svg>
+                    </div>
+                    <div class="session-info">
+                        <div class="session-name">vibe-1</div>
+                        <div class="session-path">/Users/zhaohua/Documents/repos/Test</div>
+                        <div class="session-time">12/31 23:53 创建</div>
+                    </div>
+                    <div class="session-status">
+                        <span class="dot"></span>
+                        运行中
+                    </div>
+                    <div class="session-actions">
+                        <button class="session-btn" title="在终端打开">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+                                <polyline points="15 3 21 3 21 9"/>
+                                <line x1="10" y1="14" x2="21" y2="3"/>
+                            </svg>
+                        </button>
+                        <button class="session-btn danger" title="关闭">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="18" y1="6" x2="6" y2="18"/>
+                                <line x1="6" y1="6" x2="18" y2="18"/>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="session-card">
+                    <div class="session-icon">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="4 17 10 11 4 5"/>
+                            <line x1="12" y1="19" x2="20" y2="19"/>
+                        </svg>
+                    </div>
+                    <div class="session-info">
+                        <div class="session-name">vibe-2</div>
+                        <div class="session-path">/Users/zhaohua/Projects/MyApp</div>
+                        <div class="session-time">01/01 10:22 创建</div>
+                    </div>
+                    <div class="session-status">
+                        <span class="dot"></span>
+                        运行中
+                    </div>
+                    <div class="session-actions">
+                        <button class="session-btn" title="在终端打开">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+                                <polyline points="15 3 21 3 21 9"/>
+                                <line x1="10" y1="14" x2="21" y2="3"/>
+                            </svg>
+                        </button>
+                        <button class="session-btn danger" title="关闭">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="18" y1="6" x2="6" y2="18"/>
+                                <line x1="6" y1="6" x2="18" y2="18"/>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="design-notes">
+        <h3>方案 A: 现代卡片式设计</h3>
+        <ul>
+            <li><strong>设计特点</strong>: 类似 Apple 风格的圆角卡片，渐变欢迎引导，突出 QR Code</li>
+            <li><strong>QR Code</strong>: 居中大尺寸显示，配合 URL 文字，一目了然</li>
+            <li><strong>引导流程</strong>: 首次使用显示紫色渐变欢迎卡片，三步引导</li>
+            <li><strong>Session 状态</strong>: 新增"运行中"状态指示，带脉冲动画</li>
+            <li><strong>已连接设备</strong>: 在主界面直接显示连接状态</li>
+            <li><strong>交互</strong>: 卡片悬停有轻微上浮效果，增强反馈</li>
+        </ul>
+    </div>
+</body>
+</html>
