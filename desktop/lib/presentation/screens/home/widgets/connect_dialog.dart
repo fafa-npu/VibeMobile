@@ -505,9 +505,9 @@ class _ConnectDialogState extends ConsumerState<ConnectDialog>
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: pairingCode.code.split('').map((char) {
                       return Container(
-                        width: 48,
-                        height: 56,
-                        margin: const EdgeInsets.symmetric(horizontal: 4),
+                        width: 42,
+                        height: 50,
+                        margin: const EdgeInsets.symmetric(horizontal: 3),
                         decoration: BoxDecoration(
                           color: Colors.white,
                           borderRadius: BorderRadius.circular(10),
@@ -517,7 +517,7 @@ class _ConnectDialogState extends ConsumerState<ConnectDialog>
                           child: Text(
                             char,
                             style: TextStyle(
-                              fontSize: 28,
+                              fontSize: 24,
                               fontWeight: FontWeight.bold,
                               color: AppColors.gradientStart,
                               fontFamily: 'monospace',

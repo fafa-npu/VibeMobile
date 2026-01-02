@@ -28,6 +28,7 @@ class HomeScreen extends ConsumerStatefulWidget {
 class _HomeScreenState extends ConsumerState<HomeScreen> with WindowListener {
   bool _isWindowFocused = true;
   bool _hasCheckedSetup = false;
+  bool _isShowingPairingDialog = false;
 
   @override
   void initState() {
@@ -182,14 +183,20 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WindowListener {
       }
     });
 
-    // Auto-show pairing dialog when request arrives
-    if (deviceState.pendingRequest != null) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted && deviceState.pendingRequest != null) {
-          showConnectDialog(context, initialStep: PairingStep.confirmPair);
-        }
-      });
-    }
+    // Auto-show pairing dialog when request arrives (only once)
+    ref.listen<DeviceListState>(deviceProvider, (previous, next) {
+      if (previous?.pendingRequest == null &&
+          next.pendingRequest != null &&
+          !_isShowingPairingDialog) {
+        _isShowingPairingDialog = true;
+        WidgetsBinding.instance.addPostFrameCallback((_) async {
+          if (mounted) {
+            await showConnectDialog(context, initialStep: PairingStep.confirmPair);
+            _isShowingPairingDialog = false;
+          }
+        });
+      }
+    });
 
     return Scaffold(
       backgroundColor: AppColors.bgPrimary,

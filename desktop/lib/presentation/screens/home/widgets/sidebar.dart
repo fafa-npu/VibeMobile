@@ -261,7 +261,7 @@ class Sidebar extends ConsumerWidget {
                     itemCount: deviceState.devices.length,
                     separatorBuilder: (_, __) => const SizedBox(height: 8),
                     itemBuilder: (context, index) {
-                      return _buildDeviceItem(context, deviceState.devices[index]);
+                      return _buildDeviceItem(context, deviceState.devices[index], ref);
                     },
                   ),
           ),
@@ -293,7 +293,7 @@ class Sidebar extends ConsumerWidget {
     );
   }
 
-  Widget _buildDeviceItem(BuildContext context, Device device) {
+  Widget _buildDeviceItem(BuildContext context, Device device, WidgetRef ref) {
     return Container(
       padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(
@@ -361,9 +361,54 @@ class Sidebar extends ConsumerWidget {
               ],
             ),
           ),
+          // Delete button
+          GestureDetector(
+            onTap: () => _showRemoveDeviceDialog(context, device, ref),
+            child: Padding(
+              padding: const EdgeInsets.all(4),
+              child: Icon(
+                Icons.close,
+                size: 16,
+                color: AppColors.textSecondary,
+              ),
+            ),
+          ),
         ],
       ),
     );
+  }
+
+  Future<void> _showRemoveDeviceDialog(BuildContext context, Device device, WidgetRef ref) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
+        title: const Text('移除设备'),
+        content: Text('确定要移除 "${device.name}" 吗？该设备将无法继续访问。'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: Text(
+              '取消',
+              style: TextStyle(color: AppColors.textSecondary),
+            ),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: Text(
+              '移除',
+              style: TextStyle(color: AppColors.danger),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      await ref.read(deviceProvider.notifier).revokeDevice(device.id);
+    }
   }
 
   IconData _getDeviceIcon(String browser) {
