@@ -73,19 +73,52 @@ jobs:
           echo "=== Bundled dist files ==="
           ls -la "$SERVER_DIR/dist/" | head -20
 
-      # ===== Sign App (ad-hoc) =====
-      - name: Sign app (ad-hoc)
+      # ===== Import Certificate =====
+      - name: Import Code Signing Certificate
+        env:
+          CERTIFICATE_BASE64: ${{ secrets.CERTIFICATE_BASE64 }}
+          CERTIFICATE_PASSWORD: ${{ secrets.CERTIFICATE_PASSWORD }}
+        run: |
+          # Create temporary keychain
+          KEYCHAIN_PATH=$RUNNER_TEMP/app-signing.keychain-db
+          KEYCHAIN_PASSWORD=$(openssl rand -base64 32)
+
+          # Create keychain
+          security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+          security set-keychain-settings -lut 21600 "$KEYCHAIN_PATH"
+          security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+
+          # Import certificate
+          echo "$CERTIFICATE_BASE64" | base64 --decode > $RUNNER_TEMP/certificate.p12
+          security import $RUNNER_TEMP/certificate.p12 -P "$CERTIFICATE_PASSWORD" -A -t cert -f pkcs12 -k "$KEYCHAIN_PATH"
+
+          # Add keychain to search list
+          security list-keychain -d user -s "$KEYCHAIN_PATH"
+
+          # Allow codesign to access the key
+          security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+
+          # Verify certificate is available
+          security find-identity -v -p codesigning "$KEYCHAIN_PATH"
+
+      # ===== Sign App with Developer ID =====
+      - name: Sign app with Developer ID
+        env:
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
         run: |
           APP_PATH="desktop/build/macos/Build/Products/Release/VibeMobile.app"
 
           # Remove any existing signatures and extended attributes
           xattr -cr "$APP_PATH"
 
-          # Ad-hoc sign the app (allows it to run without "damaged" error)
-          codesign --force --deep --sign - "$APP_PATH"
+          # Sign with Developer ID certificate
+          codesign --force --deep --options runtime \
+            --sign "Developer ID Application: Hua Zhao ($APPLE_TEAM_ID)" \
+            "$APP_PATH"
 
           # Verify the signature
-          codesign --verify --verbose "$APP_PATH" || echo "Verification completed"
+          codesign --verify --verbose "$APP_PATH"
+          echo "App signed successfully!"
 
       # ===== Create DMG =====
       - name: Create DMG
@@ -107,6 +140,30 @@ jobs:
 
           # Move DMG to workspace root
           mv VibeMobile.dmg $GITHUB_WORKSPACE/
+
+      # ===== Notarize DMG =====
+      - name: Notarize DMG
+        env:
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_APP_PASSWORD: ${{ secrets.APPLE_APP_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          # Submit for notarization
+          echo "Submitting for notarization..."
+          xcrun notarytool submit VibeMobile.dmg \
+            --apple-id "$APPLE_ID" \
+            --password "$APPLE_APP_PASSWORD" \
+            --team-id "$APPLE_TEAM_ID" \
+            --wait
+
+          # Staple the notarization ticket
+          echo "Stapling notarization ticket..."
+          xcrun stapler staple VibeMobile.dmg
+
+          # Verify
+          echo "Verifying notarization..."
+          spctl --assess --type open --context context:primary-signature -v VibeMobile.dmg || true
+          echo "Notarization complete!"
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
@@ -155,11 +212,9 @@ jobs:
 
             1. Download `VibeMobile.dmg`
             2. Open DMG and drag VibeMobile to Applications
-            3. **First time only**: Right-click the app → Open → Click "Open" in the dialog
-               (This is required because the app is not notarized by Apple)
-            4. Run VibeMobile
+            3. Run VibeMobile from Applications
 
-            **That's it!** The server is bundled inside the app.
+            **That's it!** The app is signed and notarized by Apple.
 
             ### Requirements
 
