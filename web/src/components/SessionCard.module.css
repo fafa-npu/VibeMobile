@@ -1,9 +1,11 @@
+/* SessionCard styles - Scheme A v2 */
+
 .card {
-  background: var(--bg-card);
-  border-radius: 20px;
+  background: var(--bg-secondary);
+  border-radius: 16px;
   padding: 16px;
   margin-bottom: 12px;
-  box-shadow: var(--shadow);
+  box-shadow: var(--shadow-sm);
   cursor: pointer;
   transition: all 0.2s;
   -webkit-tap-highlight-color: transparent;
@@ -11,7 +13,7 @@
 
 .card:active {
   transform: scale(0.98);
-  box-shadow: var(--shadow-lg);
+  opacity: 0.9;
 }
 
 .card.ended {
@@ -26,27 +28,26 @@
 }
 
 .sessionIcon {
-  width: 48px;
-  height: 48px;
-  background: linear-gradient(135deg, var(--accent-blue) 0%, var(--accent-purple) 100%);
-  border-radius: 14px;
+  width: 44px;
+  height: 44px;
+  background: linear-gradient(135deg, var(--accent-primary) 0%, var(--accent-primary-light) 100%);
+  border-radius: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 24px;
+  font-size: 22px;
   margin-bottom: 10px;
 }
 
 .card.ended .sessionIcon {
-  background: var(--bg-elevated);
+  background: var(--bg-primary);
   filter: grayscale(1);
 }
 
 .name {
-  font-size: 18px;
-  font-weight: 700;
-  letter-spacing: -0.3px;
-  color: var(--text);
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--text-primary);
   margin-bottom: 2px;
 }
 
@@ -63,10 +64,10 @@
 }
 
 .status {
-  padding: 6px 10px;
-  border-radius: 14px;
+  padding: 4px 10px;
+  border-radius: 20px;
   font-size: 11px;
-  font-weight: 600;
+  font-weight: 500;
   white-space: nowrap;
   flex-shrink: 0;
 }
@@ -76,25 +77,25 @@
 }
 
 .status.active {
-  background: rgba(5, 150, 105, 0.1);
+  background: var(--accent-green-bg);
   color: var(--accent-green);
 }
 
 .status.ended {
-  background: var(--bg-elevated);
+  background: var(--bg-primary);
   color: var(--text-muted);
 }
 
 .preview {
-  background: var(--accent);
-  border-radius: 12px;
-  padding: 12px;
-  font-family: 'IBM Plex Mono', monospace;
+  background: var(--bg-terminal);
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-family: 'SF Mono', 'Menlo', monospace;
   font-size: 11px;
-  line-height: 1.6;
+  line-height: 1.5;
   color: rgba(255,255,255,0.7);
   margin-bottom: 12px;
-  max-height: 72px;
+  max-height: 66px;
   overflow: hidden;
   position: relative;
 }
@@ -106,7 +107,7 @@
   left: 0;
   right: 0;
   height: 20px;
-  background: linear-gradient(transparent, var(--accent));
+  background: linear-gradient(transparent, var(--bg-terminal));
 }
 
 .previewLine {
@@ -118,21 +119,21 @@
 
 /* Color code preview lines based on content */
 .previewLine.input {
-  color: var(--term-input);
+  color: var(--accent-green);
 }
 
 .previewLine.response {
-  color: var(--term-response);
+  color: var(--accent-blue-light);
 }
 
 .previewLine.success {
-  color: var(--term-success);
+  color: var(--accent-green);
 }
 
 .meta {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  font-size: 12px;
+  font-size: 11px;
   color: var(--text-muted);
 }

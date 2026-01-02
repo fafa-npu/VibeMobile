@@ -1,108 +1,141 @@
+/* Header styles - Scheme A v2 */
+
 .header {
-  position: sticky;
-  top: 0;
-  background: var(--card-bg);
-  padding: 12px 16px;
-  border-bottom: 1px solid var(--border);
-  z-index: 100;
+  background: var(--bg-secondary);
+  padding: calc(var(--safe-area-top) + 12px) 16px 12px;
+  border-bottom: 1px solid var(--border-color);
+  box-shadow: var(--shadow-sm);
+}
+
+.headerMain {
   display: flex;
   align-items: center;
   gap: 12px;
-}
-
-.left {
-  width: 40px;
-  flex-shrink: 0;
-}
-
-.logo {
-  width: 32px;
-  height: 32px;
-  background: linear-gradient(135deg, var(--primary), var(--primary-light));
-  border-radius: 8px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: white;
-  font-size: 16px;
-  font-weight: 600;
 }
 
 .backBtn {
   width: 36px;
   height: 36px;
   border-radius: 10px;
-  border: none;
-  background: var(--bg);
-  color: var(--text);
-  font-size: 18px;
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
   display: flex;
   align-items: center;
   justify-content: center;
+  font-size: 18px;
+  color: var(--accent-blue);
+  cursor: pointer;
+  transition: all 0.2s;
 }
 
 .backBtn:active {
-  background: var(--border);
+  transform: scale(0.95);
+  background: var(--border-color);
 }
 
-.center {
+.logo {
+  width: 36px;
+  height: 36px;
+  background: linear-gradient(135deg, var(--accent-primary) 0%, var(--accent-primary-light) 100%);
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.headerInfo {
   flex: 1;
   min-width: 0;
 }
 
-.title {
-  font-size: 18px;
+.headerTitle {
+  font-size: 17px;
   font-weight: 600;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.subtitle {
-  font-size: 12px;
-  color: var(--text-secondary);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.status {
+  color: var(--text-primary);
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
+}
+
+.headerSubtitle {
   font-size: 12px;
   color: var(--text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
   margin-top: 2px;
 }
 
+/* Status Badge */
+.statusBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.statusBadge.running {
+  background: var(--accent-green-bg);
+  color: var(--accent-green);
+}
+
+.statusBadge.thinking {
+  background: var(--accent-primary-bg);
+  color: var(--accent-primary);
+}
+
+.statusBadge.waiting {
+  background: var(--accent-blue-bg);
+  color: var(--accent-blue);
+}
+
+.statusBadge.ended {
+  background: var(--bg-primary);
+  color: var(--text-muted);
+}
+
 .statusDot {
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
   border-radius: 50%;
+  background: currentColor;
 }
 
-.statusDot.connected {
-  background: var(--success);
-  animation: pulse 2s infinite;
+.statusBadge.thinking .statusDot {
+  animation: pulse 1.5s ease-in-out infinite;
 }
 
-.statusDot.connecting {
-  background: var(--warning);
-  animation: pulse 1s infinite;
+.statusBadge.running .statusDot {
+  animation: pulse 2s ease-in-out infinite;
 }
 
-.statusDot.disconnected {
-  background: var(--danger);
-}
-
-@keyframes pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.5; }
-}
-
-.right {
-  width: 40px;
-  flex-shrink: 0;
+.headerActions {
   display: flex;
-  justify-content: flex-end;
+  gap: 8px;
+}
+
+.iconBtn {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.iconBtn:active {
+  transform: scale(0.95);
+  background: var(--border-color);
 }

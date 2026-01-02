@@ -1,6 +1,8 @@
-// Header component
+// Header component with status badge
 
 import styles from './Header.module.css';
+
+export type SessionStatus = 'running' | 'thinking' | 'waiting' | 'ended';
 
 interface HeaderProps {
   title: string;
@@ -8,7 +10,25 @@ interface HeaderProps {
   showBack?: boolean;
   onBack?: () => void;
   rightElement?: React.ReactNode;
-  status?: 'connected' | 'connecting' | 'disconnected';
+  status?: SessionStatus;
+}
+
+function StatusBadge({ status }: { status: SessionStatus }) {
+  const statusConfig = {
+    running: { label: '运行中', className: styles.running },
+    thinking: { label: '思考中', className: styles.thinking },
+    waiting: { label: '等待中', className: styles.waiting },
+    ended: { label: '已结束', className: styles.ended },
+  };
+
+  const config = statusConfig[status];
+
+  return (
+    <span className={`${styles.statusBadge} ${config.className}`}>
+      <span className={styles.statusDot}></span>
+      {config.label}
+    </span>
+  );
 }
 
 export function Header({
@@ -21,7 +41,7 @@ export function Header({
 }: HeaderProps) {
   return (
     <header className={styles.header}>
-      <div className={styles.left}>
+      <div className={styles.headerMain}>
         {showBack ? (
           <button className={styles.backBtn} onClick={onBack}>
             ←
@@ -29,28 +49,19 @@ export function Header({
         ) : (
           <div className={styles.logo}>V</div>
         )}
-      </div>
 
-      <div className={styles.center}>
-        <h1 className={styles.title}>{title}</h1>
-        {subtitle && <div className={styles.subtitle}>{subtitle}</div>}
-        {status && (
-          <div className={styles.status}>
-            <span
-              className={`${styles.statusDot} ${styles[status]}`}
-            />
-            <span>
-              {status === 'connected'
-                ? '已连接'
-                : status === 'connecting'
-                ? '连接中...'
-                : '已断开'}
-            </span>
+        <div className={styles.headerInfo}>
+          <div className={styles.headerTitle}>
+            {title}
+            {status && <StatusBadge status={status} />}
           </div>
-        )}
-      </div>
+          {subtitle && <div className={styles.headerSubtitle}>{subtitle}</div>}
+        </div>
 
-      <div className={styles.right}>{rightElement}</div>
+        <div className={styles.headerActions}>
+          {rightElement || <button className={styles.iconBtn}>⋯</button>}
+        </div>
+      </div>
     </header>
   );
 }

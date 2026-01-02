@@ -9,7 +9,7 @@ interface SessionCardProps {
   onClick: () => void;
 }
 
-// Filter out TUI/box-drawing lines
+// Filter out TUI/box-drawing lines and system prompts
 function filterOutputLines(text: string): string[] {
   return text
     .split('\n')
@@ -23,6 +23,19 @@ function filterOutputLines(text: string): string[] {
       if (/^[_─━\-=]+$/.test(trimmed) && trimmed.length >= 10) return false;
       // Skip lines with box sides
       if (/^│.*│$/.test(trimmed)) return false;
+
+      // Skip system prompts and UI hints
+      // Lines starting with special UI characters
+      if (/^[?⏵▶►]\s/.test(trimmed)) return false;
+      // Lines containing keyboard shortcut hints or mode indicators
+      if (/\b(for shortcuts?|permissions? on|mode$|shift\+tab|to cycle)/i.test(trimmed)) return false;
+      // Slash command hints (not executed commands)
+      if (/^\/\w+\s+to\s+/i.test(trimmed)) return false;
+
+      // Skip prompt lines that only contain system UI elements
+      if (/^[>❯]\s*[?⏵▶►]/.test(trimmed)) return false;
+      if (/^[>❯]\s*$/.test(trimmed)) return false;
+
       return true;
     });
 }

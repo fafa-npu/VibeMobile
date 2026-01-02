@@ -1,4 +1,5 @@
-// Terminal output display component
+// Terminal component - Raw terminal output display
+// Shows terminal content as-is with syntax highlighting
 
 import { useEffect, useRef } from 'react';
 import styles from './Terminal.module.css';
@@ -8,112 +9,114 @@ interface TerminalProps {
   autoScroll?: boolean;
 }
 
+// Determine line type for syntax highlighting
+function getLineType(line: string): string {
+  const trimmed = line.trim();
+
+  // Claude output (starts with ● or ⏺)
+  if (/^[●⏺]/.test(trimmed)) return 'claude';
+
+  // User input (starts with > or ❯)
+  if (/^[>❯]/.test(trimmed)) return 'user';
+
+  // Tool commands (Bash, Read, Edit, Write, Glob, Grep)
+  if (/^\s*(Bash|Read|Edit|Write|Glob|Grep)\s*\(/.test(trimmed)) return 'tool';
+
+  // Tool output (starts with └ or ├)
+  if (/^[└├]/.test(trimmed)) return 'output';
+
+  // Status line (starts with *)
+  if (/^\*/.test(trimmed)) return 'status';
+
+  // Hint/muted text (keyboard shortcuts, etc.)
+  if (/ctrl\+|shift\+|esc\s+to|to run in background|\?\s+for\s+shortcuts/i.test(trimmed)) return 'hint';
+
+  // Separator lines
+  if (/^[─━\-=_]+$/.test(trimmed) && trimmed.length >= 5) return 'separator';
+
+  return '';
+}
+
+// Check if line should be hidden (terminal input area)
+function shouldHideLine(line: string, lines: string[], index: number): boolean {
+  const trimmed = line.trim();
+
+  // Hide separator lines that are part of input area
+  if (/^[─━\-=_]+$/.test(trimmed) && trimmed.length >= 10) {
+    // Check if this is near the end and part of input area
+    const remainingLines = lines.length - index;
+    if (remainingLines <= 5) return true;
+  }
+
+  // Hide empty prompt lines (just > with nothing after)
+  if (/^[>❯]\s*$/.test(trimmed)) {
+    const remainingLines = lines.length - index;
+    if (remainingLines <= 4) return true;
+  }
+
+  // Hide status bar lines at the bottom
+  if (/^[▶⏵⏸]\s*(bypass|auto-accept|plan mode|normal mode)/i.test(trimmed)) {
+    return true;
+  }
+
+  // Hide background task info at the bottom
+  if (/^\d+\s+background\s+task/i.test(trimmed)) {
+    return true;
+  }
+
+  return false;
+}
+
 export function Terminal({ output, autoScroll = true }: TerminalProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const isAtBottomRef = useRef(true);
 
-  // Track if user has scrolled up
   const handleScroll = () => {
     if (!containerRef.current) return;
     const { scrollTop, scrollHeight, clientHeight } = containerRef.current;
     isAtBottomRef.current = scrollHeight - scrollTop - clientHeight < 50;
   };
 
-  // Auto-scroll to bottom when new output arrives
   useEffect(() => {
     if (autoScroll && isAtBottomRef.current && containerRef.current) {
       containerRef.current.scrollTop = containerRef.current.scrollHeight;
     }
   }, [output, autoScroll]);
 
-  // Parse and render output with basic styling
-  const renderOutput = () => {
-    if (!output) {
-      return (
+  if (!output) {
+    return (
+      <div ref={containerRef} className={styles.terminal} onScroll={handleScroll}>
         <div className={styles.placeholder}>
           等待输出...
         </div>
-      );
-    }
+      </div>
+    );
+  }
 
-    const lines = output.split('\n');
-    const filteredLines: { line: string; index: number }[] = [];
-
-    for (let i = 0; i < lines.length; i++) {
-      const line = lines[i];
-      const trimmedLine = line.trim();
-
-      // Skip lines that are part of Claude Code's TUI box/frame
-      // Box drawing characters: ─ │ ╭ ╮ ╰ ╯ ├ ┤ ┬ ┴ ┼ ━ ┃ ┏ ┓ ┗ ┛
-      if (/^[│├┤┃]\s/.test(line) || /\s[│├┤┃]$/.test(line)) {
-        continue; // Skip box side lines
-      }
-      if (/^[╭╮╰╯┏┓┗┛┌┐└┘]/.test(trimmedLine) || /[╭╮╰╯┏┓┗┛┌┐└┘]$/.test(trimmedLine)) {
-        continue; // Skip box corner lines
-      }
-
-      // Skip separator lines (underscores, dashes, box-drawing horizontal lines)
-      if (/^[_─━\-=─────]+$/.test(trimmedLine) && trimmedLine.length >= 10) {
-        // Add a subtle divider instead
-        filteredLines.push({ line: '---divider---', index: i });
-        continue;
-      }
-
-      // Skip Claude Code welcome box content (lines with │ on both sides)
-      if (/^│.*│$/.test(trimmedLine) || /^\|.*\|$/.test(trimmedLine)) {
-        continue;
-      }
-
-      // Skip empty lines that follow filtered content
-      if (trimmedLine === '') {
-        // Keep some empty lines for readability, but not too many consecutive ones
-        const lastLine = filteredLines[filteredLines.length - 1];
-        if (lastLine && (lastLine.line === '' || lastLine.line === '---divider---')) {
-          continue;
-        }
-      }
-
-      filteredLines.push({ line, index: i });
-    }
-
-    return filteredLines.map(({ line, index }) => {
-      // Render divider
-      if (line === '---divider---') {
-        return <div key={index} className={styles.divider} />;
-      }
-
-      let className = styles.line;
-
-      // Detect line types for styling
-      if (line.startsWith('>') || line.startsWith('❯')) {
-        className = `${styles.line} ${styles.input}`;
-      } else if (line.startsWith('⏺') || line.startsWith('●')) {
-        className = `${styles.line} ${styles.response}`;
-      } else if (line.includes('✓') || line.includes('成功') || line.includes('pass')) {
-        className = `${styles.line} ${styles.success}`;
-      } else if (line.includes('✗') || line.includes('失败') || line.includes('error') || line.includes('Error')) {
-        className = `${styles.line} ${styles.error}`;
-      } else if (line.startsWith('[') && line.includes(']')) {
-        className = `${styles.line} ${styles.thinking}`;
-      } else if (line.includes('Read') || line.includes('Edit') || line.includes('Bash') || line.includes('Write')) {
-        className = `${styles.line} ${styles.tool}`;
-      }
-
-      return (
-        <div key={index} className={className}>
-          {line || '\u00A0'}
-        </div>
-      );
-    });
-  };
+  const lines = output.split('\n');
 
   return (
-    <div
-      ref={containerRef}
-      className={styles.terminal}
-      onScroll={handleScroll}
-    >
-      {renderOutput()}
+    <div ref={containerRef} className={styles.terminal} onScroll={handleScroll}>
+      {lines.map((line, index) => {
+        // Skip lines that should be hidden
+        if (shouldHideLine(line, lines, index)) {
+          return null;
+        }
+
+        const lineType = getLineType(line);
+        const className = lineType ? `${styles.line} ${styles[lineType]}` : styles.line;
+
+        // Handle empty lines
+        if (!line.trim()) {
+          return <div key={index} className={`${styles.line} ${styles.empty}`} />;
+        }
+
+        return (
+          <div key={index} className={className}>
+            {line}
+          </div>
+        );
+      })}
     </div>
   );
 }

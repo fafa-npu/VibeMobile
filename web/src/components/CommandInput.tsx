@@ -1,4 +1,4 @@
-// Command input component
+// Command input component with permission mode and quick actions
 
 import { useState, useRef, useEffect } from 'react';
 import styles from './CommandInput.module.css';
@@ -9,38 +9,24 @@ interface CommandInputProps {
   onUpload?: (file: File) => void;
   disabled?: boolean;
   placeholder?: string;
+  backgroundTasks?: number;
+  tokenCount?: string;
 }
 
-interface QuickAction {
-  label: string;
-  value?: string;
-  key?: string;
-}
+type PermissionMode = 'bypass' | 'caution' | 'restricted';
 
-interface ControlKey {
-  label: string;
-  key: string;
-  className?: string;
-}
-
-const QUICK_ACTIONS: QuickAction[] = [
-  { label: 'Ctrl+C', key: 'C-c' },
+const PERMISSION_MODES: { key: PermissionMode; text: string; icon: string }[] = [
+  { key: 'bypass', text: 'bypass permissions on', icon: '▶▶' },
+  { key: 'caution', text: 'auto-accept edits', icon: '▶' },
+  { key: 'restricted', text: 'normal mode', icon: '⏸' },
 ];
 
-// Navigation control keys for menu selection
-const NAV_KEYS: ControlKey[] = [
-  { label: '↑', key: 'Up', className: styles.navUp },
-  { label: '←', key: 'Left', className: styles.navLeft },
-  { label: '↓', key: 'Down', className: styles.navDown },
-  { label: '→', key: 'Right', className: styles.navRight },
-];
-
-// Special function keys
-const SPECIAL_KEYS: ControlKey[] = [
+const QUICK_ACTIONS = [
+  { label: 'Ctrl+C', key: 'C-c', danger: true },
+  { label: 'Enter', key: 'Enter' },
   { label: 'Esc', key: 'Escape' },
-  { label: 'Tab', key: 'Tab' },
-  { label: '⏎', key: 'Enter' },
-  { label: '模式', key: 'BTab' },  // shift+tab for auto-accept/bypass permission mode
+  { label: '↑', key: 'Up' },
+  { label: '↓', key: 'Down' },
 ];
 
 export function CommandInput({
@@ -48,9 +34,12 @@ export function CommandInput({
   onSpecialKey,
   onUpload,
   disabled = false,
-  placeholder = '输入指令...',
+  placeholder = 'Message...',
+  backgroundTasks = 0,
+  tokenCount = '',
 }: CommandInputProps) {
   const [value, setValue] = useState('');
+  const [permissionMode, setPermissionMode] = useState<PermissionMode>('bypass');
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -75,26 +64,14 @@ export function CommandInput({
     }
   };
 
-  const handleQuickAction = (action: QuickAction) => {
-    if (action.key) {
-      onSpecialKey?.(action.key);
-    } else if (action.value) {
-      onSend(action.value);
-    }
+  const handleQuickAction = (key: string) => {
+    onSpecialKey?.(key);
   };
 
-  const handleControlKey = async (key: string) => {
-    // Handle key sequences (e.g., "Escape Escape" for mode switch)
-    if (key.includes(' ')) {
-      const keys = key.split(' ');
-      for (const k of keys) {
-        onSpecialKey?.(k);
-        // Small delay between keys
-        await new Promise(resolve => setTimeout(resolve, 100));
-      }
-    } else {
-      onSpecialKey?.(key);
-    }
+  const cyclePermissionMode = () => {
+    const currentIndex = PERMISSION_MODES.findIndex(m => m.key === permissionMode);
+    const nextIndex = (currentIndex + 1) % PERMISSION_MODES.length;
+    setPermissionMode(PERMISSION_MODES[nextIndex].key);
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -102,7 +79,6 @@ export function CommandInput({
     if (file && onUpload) {
       onUpload(file);
     }
-    // Reset input so same file can be selected again
     e.target.value = '';
   };
 
@@ -110,14 +86,41 @@ export function CommandInput({
     fileInputRef.current?.click();
   };
 
+  const currentMode = PERMISSION_MODES.find(m => m.key === permissionMode);
+  const currentModeText = currentMode?.text || '';
+  const currentModeIcon = currentMode?.icon || '▶▶';
+
   return (
-    <div className={`${styles.container} safe-area-bottom`}>
+    <div className={styles.inputArea}>
+      {/* Status Bar - 从终端底部提取的状态信息 */}
+      <div className={styles.statusBar}>
+        <div className={styles.statusLeft}>
+          <div
+            className={`${styles.permissionIndicator} ${styles[permissionMode]}`}
+            onClick={cyclePermissionMode}
+          >
+            <span className={styles.permissionIcon}>{currentModeIcon}</span>
+            <span className={styles.permissionText}>{currentModeText}</span>
+            <span className={styles.permissionHint}>(点击切换)</span>
+          </div>
+        </div>
+        <div className={styles.statusRight}>
+          {backgroundTasks > 0 && (
+            <span className={styles.backgroundTasks}>{backgroundTasks} 后台任务</span>
+          )}
+          {tokenCount && (
+            <span className={styles.tokenCount}>↑ {tokenCount}</span>
+          )}
+        </div>
+      </div>
+
+      {/* Quick Actions */}
       <div className={styles.quickActions}>
         {QUICK_ACTIONS.map((action) => (
           <button
-            key={action.label}
-            className={styles.quickAction}
-            onClick={() => handleQuickAction(action)}
+            key={action.key}
+            className={`${styles.quickBtn} ${action.danger ? styles.danger : ''}`}
+            onClick={() => handleQuickAction(action.key)}
             disabled={disabled}
           >
             {action.label}
@@ -125,39 +128,9 @@ export function CommandInput({
         ))}
       </div>
 
-      {/* Navigation and special keys control area */}
-      <div className={styles.controlArea}>
-        {/* Arrow keys in cross layout */}
-        <div className={styles.navPad}>
-          {NAV_KEYS.map((navKey) => (
-            <button
-              key={navKey.key}
-              className={`${styles.navKey} ${navKey.className || ''}`}
-              onClick={() => handleControlKey(navKey.key)}
-              disabled={disabled}
-            >
-              {navKey.label}
-            </button>
-          ))}
-        </div>
-
-        {/* Special keys */}
-        <div className={styles.specialKeys}>
-          {SPECIAL_KEYS.map((specialKey) => (
-            <button
-              key={specialKey.key}
-              className={styles.specialKey}
-              onClick={() => handleControlKey(specialKey.key)}
-              disabled={disabled}
-            >
-              {specialKey.label}
-            </button>
-          ))}
-        </div>
-      </div>
-
+      {/* Input Row */}
       <div className={styles.inputRow}>
-        {/* Hidden file input for image upload */}
+        {/* Hidden file input */}
         <input
           ref={fileInputRef}
           type="file"
@@ -166,29 +139,22 @@ export function CommandInput({
           style={{ display: 'none' }}
         />
 
-        {/* Upload button */}
+        {/* Attachment Button */}
         <button
-          className={styles.uploadBtn}
+          className={styles.attachmentBtn}
           onClick={handleUploadClick}
           disabled={disabled}
-          title="上传图片"
+          title="Upload"
         >
-          <svg
-            width="20"
-            height="20"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-          >
-            <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48" />
-          </svg>
+          <span className={styles.attachmentIcon}>📎</span>
+          <span className={styles.attachmentPlus}>+</span>
         </button>
 
+        {/* Text Input */}
         <div className={styles.inputWrapper}>
           <textarea
             ref={textareaRef}
-            className={styles.input}
+            className={styles.messageInput}
             value={value}
             onChange={(e) => setValue(e.target.value)}
             onKeyDown={handleKeyDown}
@@ -197,6 +163,8 @@ export function CommandInput({
             rows={1}
           />
         </div>
+
+        {/* Send Button */}
         <button
           className={styles.sendBtn}
           onClick={handleSend}
