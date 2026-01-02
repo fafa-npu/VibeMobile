@@ -115,13 +115,55 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WindowListener {
     showConnectDialog(context);
   }
 
-  void _stopServer() {
-    ref.read(serverProvider.notifier).stop();
+  void _toggleService() async {
+    final serverState = ref.read(serverProvider);
+
+    if (serverState.isRunning) {
+      // Stop all services
+      ref.read(serverProvider.notifier).stop();
+      ref.read(tunnelProvider.notifier).stop();
+    } else {
+      // Start server
+      ref.read(serverProvider.notifier).start();
+
+      // Wait for server to start, then start Tunnel
+      _waitAndStartTunnel();
+    }
   }
 
-  void _stopAll() {
-    ref.read(serverProvider.notifier).stop();
-    ref.read(tunnelProvider.notifier).stop();
+  Future<void> _waitAndStartTunnel() async {
+    // Wait up to 10 seconds for server to start
+    for (int i = 0; i < 20; i++) {
+      await Future.delayed(const Duration(milliseconds: 500));
+
+      if (!mounted) return;
+
+      final currentServerState = ref.read(serverProvider);
+      final currentTunnelState = ref.read(tunnelProvider);
+
+      // If server failed to start or stopped, abort
+      if (!currentServerState.isRunning && !currentServerState.isStarting) {
+        return;
+      }
+
+      // If server is running and tunnel is not already active, start tunnel
+      if (currentServerState.isRunning &&
+          !currentTunnelState.isConnected &&
+          !currentTunnelState.isConnecting) {
+        final settings = ref.read(settingsProvider);
+        if (settings.tunnelName != null && settings.tunnelName!.isNotEmpty) {
+          ref.read(tunnelProvider.notifier).startNamed(settings.tunnelName!);
+        } else {
+          ref.read(tunnelProvider.notifier).startQuick(settings.apiPort);
+        }
+        return;
+      }
+
+      // If tunnel is already connecting or connected, we're done
+      if (currentTunnelState.isConnected || currentTunnelState.isConnecting) {
+        return;
+      }
+    }
   }
 
   @override
@@ -157,8 +199,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WindowListener {
           // Sidebar
           Sidebar(
             onQRTap: _showConnectDialog,
-            onStopServer: _stopServer,
-            onStopAll: _stopAll,
+            onToggleService: _toggleService,
           ),
           // Main content area
           Expanded(
@@ -235,7 +276,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WindowListener {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Quick actions bar
-          _buildQuickActionsBar(serverState, settings),
+          _buildQuickActionsBar(),
           const SizedBox(height: 24),
           // Session list
           Expanded(
@@ -262,9 +303,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WindowListener {
     );
   }
 
-  Widget _buildQuickActionsBar(ServerState serverState, Settings settings) {
-    final tunnelState = ref.watch(tunnelProvider);
-
+  Widget _buildQuickActionsBar() {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -274,40 +313,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WindowListener {
       ),
       child: Row(
         children: [
-          // Start server button
-          _buildActionButton(
-            label: serverState.isRunning ? '服务运行中' : '启动服务',
-            icon: serverState.isRunning ? Icons.check_circle : Icons.play_arrow,
-            isActive: serverState.isRunning,
-            isLoading: serverState.isStarting,
-            onPressed: serverState.isRunning
-                ? null
-                : () => ref.read(serverProvider.notifier).start(),
-          ),
-          const SizedBox(width: 12),
-          // Start tunnel button
-          _buildActionButton(
-            label: tunnelState.isConnected
-                ? 'Tunnel 已连接'
-                : tunnelState.isConnecting
-                    ? '连接中...'
-                    : '启动 Tunnel',
-            icon: tunnelState.isConnected
-                ? Icons.cloud_done
-                : tunnelState.isConnecting
-                    ? Icons.cloud_sync
-                    : Icons.cloud_upload,
-            isActive: tunnelState.isConnected,
-            isLoading: tunnelState.isConnecting,
-            onPressed: tunnelState.isConnected || tunnelState.isConnecting
-                ? null
-                : () {
-                    if (settings.tunnelName != null && settings.tunnelName!.isNotEmpty) {
-                      ref.read(tunnelProvider.notifier).startNamed(settings.tunnelName!);
-                    } else {
-                      ref.read(tunnelProvider.notifier).startQuick(settings.apiPort);
-                    }
-                  },
+          Text(
+            '会话管理',
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+              color: AppColors.textPrimary,
+            ),
           ),
           const Spacer(),
           // New session button
@@ -317,65 +329,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WindowListener {
             onPressed: () => _showNewSessionDialog(context),
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildActionButton({
-    required String label,
-    required IconData icon,
-    required bool isActive,
-    required bool isLoading,
-    required VoidCallback? onPressed,
-  }) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onPressed,
-        borderRadius: BorderRadius.circular(10),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-          decoration: BoxDecoration(
-            color: isActive
-                ? AppColors.successLight
-                : AppColors.bgPrimary,
-            borderRadius: BorderRadius.circular(10),
-            border: Border.all(
-              color: isActive ? AppColors.success.withOpacity(0.3) : AppColors.border,
-            ),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              if (isLoading)
-                SizedBox(
-                  width: 16,
-                  height: 16,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    valueColor: AlwaysStoppedAnimation<Color>(
-                      isActive ? AppColors.success : AppColors.textSecondary,
-                    ),
-                  ),
-                )
-              else
-                Icon(
-                  icon,
-                  size: 18,
-                  color: isActive ? AppColors.success : AppColors.textSecondary,
-                ),
-              const SizedBox(width: 8),
-              Text(
-                label,
-                style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w500,
-                  color: isActive ? AppColors.success : AppColors.textPrimary,
-                ),
-              ),
-            ],
-          ),
-        ),
       ),
     );
   }

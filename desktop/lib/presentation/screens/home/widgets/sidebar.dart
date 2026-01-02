@@ -13,14 +13,12 @@ import '../../../providers/settings_provider.dart';
 /// Contains QR code preview, connection status, device list, and server controls.
 class Sidebar extends ConsumerWidget {
   final VoidCallback onQRTap;
-  final VoidCallback onStopServer;
-  final VoidCallback onStopAll;
+  final VoidCallback onToggleService;
 
   const Sidebar({
     super.key,
     required this.onQRTap,
-    required this.onStopServer,
-    required this.onStopAll,
+    required this.onToggleService,
   });
 
   @override
@@ -54,7 +52,7 @@ class Sidebar extends ConsumerWidget {
           ),
 
           // Server controls
-          _buildServerControls(context, serverState),
+          _buildServerControls(context, serverState, tunnelState),
         ],
       ),
     );
@@ -377,7 +375,19 @@ class Sidebar extends ConsumerWidget {
     return Icons.devices;
   }
 
-  Widget _buildServerControls(BuildContext context, ServerState serverState) {
+  Widget _buildServerControls(BuildContext context, ServerState serverState, TunnelState tunnelState) {
+    final bool isRunning = serverState.isRunning;
+    final bool isLoading = serverState.isStarting || tunnelState.isConnecting;
+
+    String label;
+    if (isLoading) {
+      label = serverState.isStarting ? '启动中...' : '连接中...';
+    } else if (isRunning) {
+      label = '停止服务';
+    } else {
+      label = '一键启动';
+    }
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -385,36 +395,24 @@ class Sidebar extends ConsumerWidget {
           top: BorderSide(color: AppColors.border, width: 1),
         ),
       ),
-      child: Row(
-        children: [
-          Expanded(
-            child: _buildControlButton(
-              label: '停止',
-              icon: Icons.stop_rounded,
-              onPressed: serverState.isRunning ? onStopServer : null,
-              isSecondary: true,
-            ),
-          ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: _buildControlButton(
-              label: '全部',
-              icon: Icons.stop_circle_outlined,
-              onPressed: serverState.isRunning ? onStopAll : null,
-              isDanger: true,
-            ),
-          ),
-        ],
+      child: _buildSmartButton(
+        label: label,
+        icon: isRunning ? Icons.stop_rounded : Icons.play_arrow_rounded,
+        onPressed: isLoading ? null : onToggleService,
+        isPrimary: !isRunning && !isLoading,
+        isDanger: isRunning && !isLoading,
+        isLoading: isLoading,
       ),
     );
   }
 
-  Widget _buildControlButton({
+  Widget _buildSmartButton({
     required String label,
     required IconData icon,
     required VoidCallback? onPressed,
-    bool isSecondary = false,
+    bool isPrimary = false,
     bool isDanger = false,
+    bool isLoading = false,
   }) {
     final bool isDisabled = onPressed == null;
 
@@ -422,43 +420,73 @@ class Sidebar extends ConsumerWidget {
       color: Colors.transparent,
       child: InkWell(
         onTap: onPressed,
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(10),
         child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 10),
+          padding: const EdgeInsets.symmetric(vertical: 12),
           decoration: BoxDecoration(
-            color: isDisabled
-                ? AppColors.bgPrimary.withOpacity(0.5)
-                : isDanger
-                    ? Colors.transparent
-                    : AppColors.bgPrimary,
-            borderRadius: BorderRadius.circular(8),
+            gradient: isPrimary ? AppColors.primaryGradient : null,
+            color: isPrimary
+                ? null
+                : isDisabled
+                    ? AppColors.bgPrimary.withOpacity(0.5)
+                    : isDanger
+                        ? Colors.transparent
+                        : AppColors.bgPrimary,
+            borderRadius: BorderRadius.circular(10),
             border: isDanger && !isDisabled
-                ? Border.all(color: AppColors.danger.withOpacity(0.3))
+                ? Border.all(color: AppColors.danger.withOpacity(0.5), width: 1.5)
+                : isPrimary
+                    ? null
+                    : Border.all(color: AppColors.border),
+            boxShadow: isPrimary
+                ? [
+                    BoxShadow(
+                      color: AppColors.gradientStart.withOpacity(0.3),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ]
                 : null,
           ),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(
-                icon,
-                size: 14,
-                color: isDisabled
-                    ? AppColors.textSecondary.withOpacity(0.5)
-                    : isDanger
-                        ? AppColors.danger
-                        : AppColors.textPrimary,
-              ),
-              const SizedBox(width: 6),
+              if (isLoading)
+                SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    valueColor: AlwaysStoppedAnimation<Color>(
+                      isPrimary ? Colors.white : AppColors.textSecondary,
+                    ),
+                  ),
+                )
+              else
+                Icon(
+                  icon,
+                  size: 18,
+                  color: isPrimary
+                      ? Colors.white
+                      : isDisabled
+                          ? AppColors.textSecondary.withOpacity(0.5)
+                          : isDanger
+                              ? AppColors.danger
+                              : AppColors.textPrimary,
+                ),
+              const SizedBox(width: 8),
               Text(
                 label,
                 style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w500,
-                  color: isDisabled
-                      ? AppColors.textSecondary.withOpacity(0.5)
-                      : isDanger
-                          ? AppColors.danger
-                          : AppColors.textPrimary,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: isPrimary
+                      ? Colors.white
+                      : isDisabled
+                          ? AppColors.textSecondary.withOpacity(0.5)
+                          : isDanger
+                              ? AppColors.danger
+                              : AppColors.textPrimary,
                 ),
               ),
             ],
