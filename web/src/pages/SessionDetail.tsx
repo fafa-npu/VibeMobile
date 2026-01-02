@@ -1,15 +1,15 @@
-// Session detail page - Scheme B style
+// Session detail page - Scheme A v2 Chat Bubble style
 
 import { useState } from 'react';
 import { useAppStore } from '../stores/appStore';
 import { useSession, useSessionOutput, useSendCommand } from '../hooks';
 import { api } from '../services/api';
+import { Header, type SessionStatus } from '../components/Header';
+import { TabBar, type TabType } from '../components/TabBar';
 import { Terminal } from '../components/Terminal';
 import { CommandInput } from '../components/CommandInput';
 import FileBrowser from '../components/FileBrowser';
 import styles from './SessionDetail.module.css';
-
-type TabType = 'terminal' | 'files';
 
 export function SessionDetail() {
   const currentSessionId = useAppStore((s) => s.currentSessionId);
@@ -22,7 +22,14 @@ export function SessionDetail() {
   const sendCommand = useSendCommand();
 
   const output = currentSessionId ? sessionOutputs[currentSessionId] || '' : '';
-  const isEnded = session?.status === 'ended';
+
+  // Map session status to UI status
+  const getHeaderStatus = (): SessionStatus => {
+    if (!session) return 'waiting';
+    if (session.status === 'ended') return 'ended';
+    if (session.status === 'active') return 'running';
+    return 'waiting';
+  };
 
   const handleBack = () => {
     setCurrentSessionId(null);
@@ -55,35 +62,22 @@ export function SessionDetail() {
     return null;
   }
 
+  // Extract session name from session_id (e.g., "vibe-1" from "vibe-1")
+  const sessionName = session?.session_id?.replace(/^vibe-/, '') || currentSessionId;
+
   return (
     <div className={styles.container}>
       {/* Header */}
-      <div className={styles.detailHeader}>
-        <div className={styles.detailTop}>
-          <button className={styles.backBtn} onClick={handleBack}>←</button>
-          <div className={styles.detailInfo}>
-            <h1>{session?.session_id || currentSessionId}</h1>
-            <p>{session?.project_path || ''}</p>
-          </div>
-          <span className={`${styles.detailBadge} ${isEnded ? styles.ended : styles.active}`}>
-            {isEnded ? '已结束' : '运行中'}
-          </span>
-        </div>
-        <div className={styles.tabBar}>
-          <button
-            className={`${styles.tabBtn} ${activeTab === 'terminal' ? styles.active : ''}`}
-            onClick={() => setActiveTab('terminal')}
-          >
-            💬 终端
-          </button>
-          <button
-            className={`${styles.tabBtn} ${activeTab === 'files' ? styles.active : ''}`}
-            onClick={() => setActiveTab('files')}
-          >
-            📁 文件
-          </button>
-        </div>
-      </div>
+      <Header
+        title={`vibe-${sessionName}`}
+        subtitle={session?.project_path || ''}
+        showBack
+        onBack={handleBack}
+        status={getHeaderStatus()}
+      />
+
+      {/* Tab Bar */}
+      <TabBar activeTab={activeTab} onTabChange={setActiveTab} />
 
       {activeTab === 'terminal' ? (
         <>
@@ -102,7 +96,9 @@ export function SessionDetail() {
             onSpecialKey={handleSpecialKey}
             onUpload={handleUpload}
             disabled={sendCommand.isPending}
-            placeholder={sendCommand.isPending ? '发送中...' : '输入指令...'}
+            placeholder={sendCommand.isPending ? '发送中...' : 'Message...'}
+            backgroundTasks={3}
+            tokenCount="2.1k"
           />
         </>
       ) : (

@@ -1,0 +1,36 @@
+/* TabBar styles - underline style tabs */
+
+.tabBar {
+  display: flex;
+  padding: 0 16px;
+  background: var(--bg-secondary);
+  gap: 0;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.tabBtn {
+  flex: 1;
+  padding: 12px 16px;
+  border: none;
+  border-bottom: 2px solid transparent;
+  background: transparent;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.tabBtn.active {
+  color: var(--accent-blue);
+  border-bottom-color: var(--accent-blue);
+  background: transparent;
+}
+
+.tabBtn:not(.active):active {
+  background: var(--bg-primary);
+}

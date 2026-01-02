@@ -1,55 +1,67 @@
+/* Terminal styles - Raw output display */
+
 .terminal {
   flex: 1;
-  background: var(--terminal-bg);
-  color: var(--terminal-text);
-  font-family: 'IBM Plex Mono', monospace;
+  overflow-y: auto;
+  padding: 16px;
+  font-family: 'SF Mono', 'Menlo', 'Monaco', 'Consolas', monospace;
   font-size: 13px;
   line-height: 1.6;
-  padding: 12px;
-  overflow-y: auto;
+  background: var(--bg-terminal);
   -webkit-overflow-scrolling: touch;
-  overscroll-behavior: contain;
-}
-
-.line {
-  margin-bottom: 4px;
-  word-break: break-word;
-  white-space: pre-wrap;
 }
 
 .placeholder {
   color: var(--text-muted);
   font-style: italic;
+  text-align: center;
+  padding: 40px 20px;
 }
 
-.input {
-  color: var(--term-input);
+/* Line styles */
+.line {
+  margin-bottom: 2px;
+  white-space: pre-wrap;
+  word-break: break-all;
+  color: #cdd6f4;
 }
 
-.response {
-  color: var(--term-response);
+.line.empty {
+  height: 1.6em;
 }
 
-.success {
-  color: var(--term-success);
+/* Claude output - orange */
+.line.claude {
+  color: var(--accent-primary);
 }
 
-.error {
-  color: var(--term-error);
+/* User input - green */
+.line.user {
+  color: var(--accent-green);
 }
 
-.thinking {
-  color: var(--term-thinking);
-  font-style: italic;
+/* Tool commands - blue */
+.line.tool {
+  color: var(--accent-blue);
 }
 
-.tool {
-  color: var(--term-tool);
+/* Tool output - gray */
+.line.output {
+  color: #6c7086;
 }
 
-.divider {
-  height: 1px;
-  background: #3f3f46;
-  margin: 12px 0;
+/* Status line - yellow */
+.line.status {
+  color: var(--accent-yellow);
+}
+
+/* Hint text - dark gray */
+.line.hint {
+  color: #585b70;
+}
+
+/* Separator lines */
+.line.separator {
+  color: #45475a;
   opacity: 0.5;
 }
