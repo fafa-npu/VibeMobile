@@ -170,35 +170,43 @@ jobs:
           APPLE_APP_PASSWORD: ${{ secrets.APPLE_APP_PASSWORD }}
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
         run: |
-          # Submit for notarization and capture the submission ID
+          # Submit for notarization
           echo "Submitting for notarization..."
-          SUBMISSION_OUTPUT=$(xcrun notarytool submit VibeMobile.dmg \
+
+          # Run notarytool and capture output to a file for reliable parsing
+          xcrun notarytool submit VibeMobile.dmg \
             --apple-id "$APPLE_ID" \
             --password "$APPLE_APP_PASSWORD" \
             --team-id "$APPLE_TEAM_ID" \
-            --wait 2>&1) || true
+            --wait \
+            --output-format json > notarization_result.json 2>&1 || true
 
-          echo "$SUBMISSION_OUTPUT"
+          echo "=== Notarization Result ==="
+          cat notarization_result.json
+          echo "==========================="
 
-          # Extract submission ID
-          SUBMISSION_ID=$(echo "$SUBMISSION_OUTPUT" | grep -o 'id: [a-f0-9-]*' | head -1 | cut -d' ' -f2)
+          # Parse the JSON result
+          STATUS=$(cat notarization_result.json | python3 -c "import sys, json; data = json.load(sys.stdin); print(data.get('status', 'Unknown'))" 2>/dev/null || echo "Unknown")
+          SUBMISSION_ID=$(cat notarization_result.json | python3 -c "import sys, json; data = json.load(sys.stdin); print(data.get('id', ''))" 2>/dev/null || echo "")
 
-          # Check if notarization was successful
-          if echo "$SUBMISSION_OUTPUT" | grep -q "status: Accepted"; then
+          echo "Status: $STATUS"
+          echo "Submission ID: $SUBMISSION_ID"
+
+          if [ "$STATUS" = "Accepted" ]; then
             echo "Notarization successful!"
           else
-            echo "Notarization may have failed. Fetching detailed log..."
+            echo "Notarization failed or status unknown. Fetching detailed log..."
             if [ -n "$SUBMISSION_ID" ]; then
               xcrun notarytool log "$SUBMISSION_ID" \
                 --apple-id "$APPLE_ID" \
                 --password "$APPLE_APP_PASSWORD" \
-                --team-id "$APPLE_TEAM_ID" || true
+                --team-id "$APPLE_TEAM_ID" notarization_log.json || true
+              echo "=== Notarization Log ==="
+              cat notarization_log.json 2>/dev/null || echo "Could not fetch log"
+              echo "========================"
             fi
-            # Exit with error if not accepted
-            if ! echo "$SUBMISSION_OUTPUT" | grep -q "status: Accepted"; then
-              echo "Notarization failed!"
-              exit 1
-            fi
+            echo "Notarization failed with status: $STATUS"
+            exit 1
           fi
 
           # Staple the notarization ticket
