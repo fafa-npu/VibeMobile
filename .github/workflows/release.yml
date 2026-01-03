@@ -107,21 +107,37 @@ jobs:
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
         run: |
           APP_PATH="desktop/build/macos/Build/Products/Release/VibeMobile.app"
+          IDENTITY="Developer ID Application: Hua Zhao ($APPLE_TEAM_ID)"
 
           # Remove any existing signatures and extended attributes
           xattr -cr "$APP_PATH"
 
-          # Sign with Developer ID certificate
-          codesign --force --deep --options runtime \
-            --sign "Developer ID Application: Hua Zhao ($APPLE_TEAM_ID)" \
+          # Sign all nested frameworks and libraries first (inside-out signing)
+          echo "Signing nested components..."
+          find "$APP_PATH/Contents/Frameworks" -type f -perm +111 -exec codesign --force --options runtime --sign "$IDENTITY" {} \; 2>/dev/null || true
+          find "$APP_PATH/Contents/Frameworks" -name "*.dylib" -exec codesign --force --options runtime --sign "$IDENTITY" {} \; 2>/dev/null || true
+          find "$APP_PATH/Contents/Frameworks" -name "*.framework" -exec codesign --force --options runtime --sign "$IDENTITY" {} \; 2>/dev/null || true
+
+          # Sign any helper apps or XPC services
+          find "$APP_PATH/Contents/XPCServices" -name "*.xpc" -exec codesign --force --options runtime --sign "$IDENTITY" {} \; 2>/dev/null || true
+          find "$APP_PATH/Contents/MacOS" -type f -perm +111 ! -name "VibeMobile" -exec codesign --force --options runtime --sign "$IDENTITY" {} \; 2>/dev/null || true
+
+          # Sign the main app bundle
+          echo "Signing main app bundle..."
+          codesign --force --options runtime \
+            --sign "$IDENTITY" \
             "$APP_PATH"
 
           # Verify the signature
-          codesign --verify --verbose "$APP_PATH"
+          echo "Verifying signature..."
+          codesign --verify --verbose=2 "$APP_PATH"
+          codesign -dv --verbose=4 "$APP_PATH"
           echo "App signed successfully!"
 
-      # ===== Create DMG =====
-      - name: Create DMG
+      # ===== Create and Sign DMG =====
+      - name: Create and Sign DMG
+        env:
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
         run: |
           cd desktop/build/macos/Build/Products/Release
 
@@ -138,6 +154,12 @@ jobs:
             -ov -format UDZO \
             VibeMobile.dmg
 
+          # Sign the DMG (required for notarization)
+          echo "Signing DMG..."
+          codesign --force --sign "Developer ID Application: Hua Zhao ($APPLE_TEAM_ID)" VibeMobile.dmg
+          codesign --verify --verbose VibeMobile.dmg
+          echo "DMG signed successfully!"
+
           # Move DMG to workspace root
           mv VibeMobile.dmg $GITHUB_WORKSPACE/
 
@@ -148,13 +170,36 @@ jobs:
           APPLE_APP_PASSWORD: ${{ secrets.APPLE_APP_PASSWORD }}
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
         run: |
-          # Submit for notarization
+          # Submit for notarization and capture the submission ID
           echo "Submitting for notarization..."
-          xcrun notarytool submit VibeMobile.dmg \
+          SUBMISSION_OUTPUT=$(xcrun notarytool submit VibeMobile.dmg \
             --apple-id "$APPLE_ID" \
             --password "$APPLE_APP_PASSWORD" \
             --team-id "$APPLE_TEAM_ID" \
-            --wait
+            --wait 2>&1) || true
+
+          echo "$SUBMISSION_OUTPUT"
+
+          # Extract submission ID
+          SUBMISSION_ID=$(echo "$SUBMISSION_OUTPUT" | grep -o 'id: [a-f0-9-]*' | head -1 | cut -d' ' -f2)
+
+          # Check if notarization was successful
+          if echo "$SUBMISSION_OUTPUT" | grep -q "status: Accepted"; then
+            echo "Notarization successful!"
+          else
+            echo "Notarization may have failed. Fetching detailed log..."
+            if [ -n "$SUBMISSION_ID" ]; then
+              xcrun notarytool log "$SUBMISSION_ID" \
+                --apple-id "$APPLE_ID" \
+                --password "$APPLE_APP_PASSWORD" \
+                --team-id "$APPLE_TEAM_ID" || true
+            fi
+            # Exit with error if not accepted
+            if ! echo "$SUBMISSION_OUTPUT" | grep -q "status: Accepted"; then
+              echo "Notarization failed!"
+              exit 1
+            fi
+          fi
 
           # Staple the notarization ticket
           echo "Stapling notarization ticket..."
