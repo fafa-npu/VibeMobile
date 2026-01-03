@@ -108,23 +108,31 @@ jobs:
         run: |
           APP_PATH="desktop/build/macos/Build/Products/Release/VibeMobile.app"
           IDENTITY="Developer ID Application: Hua Zhao ($APPLE_TEAM_ID)"
+          ENTITLEMENTS="desktop/macos/Runner/Release.entitlements"
 
           # Remove any existing signatures and extended attributes
           xattr -cr "$APP_PATH"
 
           # Sign all nested frameworks and libraries first (inside-out signing)
+          # Frameworks need entitlements for hardened runtime
           echo "Signing nested components..."
-          find "$APP_PATH/Contents/Frameworks" -type f -perm +111 -exec codesign --force --options runtime --sign "$IDENTITY" {} \; 2>/dev/null || true
-          find "$APP_PATH/Contents/Frameworks" -name "*.dylib" -exec codesign --force --options runtime --sign "$IDENTITY" {} \; 2>/dev/null || true
-          find "$APP_PATH/Contents/Frameworks" -name "*.framework" -exec codesign --force --options runtime --sign "$IDENTITY" {} \; 2>/dev/null || true
+
+          # Sign individual dylibs in Frameworks
+          find "$APP_PATH/Contents/Frameworks" -name "*.dylib" -exec codesign --force --options runtime --entitlements "$ENTITLEMENTS" --sign "$IDENTITY" {} \; 2>/dev/null || true
+
+          # Sign framework bundles (sign the bundle, not individual files inside)
+          find "$APP_PATH/Contents/Frameworks" -name "*.framework" -maxdepth 1 -exec codesign --force --options runtime --entitlements "$ENTITLEMENTS" --sign "$IDENTITY" {} \; 2>/dev/null || true
 
           # Sign any helper apps or XPC services
-          find "$APP_PATH/Contents/XPCServices" -name "*.xpc" -exec codesign --force --options runtime --sign "$IDENTITY" {} \; 2>/dev/null || true
-          find "$APP_PATH/Contents/MacOS" -type f -perm +111 ! -name "VibeMobile" -exec codesign --force --options runtime --sign "$IDENTITY" {} \; 2>/dev/null || true
+          find "$APP_PATH/Contents/XPCServices" -name "*.xpc" -exec codesign --force --options runtime --entitlements "$ENTITLEMENTS" --sign "$IDENTITY" {} \; 2>/dev/null || true
 
-          # Sign the main app bundle
+          # Sign helper executables in MacOS folder
+          find "$APP_PATH/Contents/MacOS" -type f -perm +111 ! -name "VibeMobile" -exec codesign --force --options runtime --entitlements "$ENTITLEMENTS" --sign "$IDENTITY" {} \; 2>/dev/null || true
+
+          # Sign the main app bundle with entitlements
           echo "Signing main app bundle..."
           codesign --force --options runtime \
+            --entitlements "$ENTITLEMENTS" \
             --sign "$IDENTITY" \
             "$APP_PATH"
 
@@ -132,6 +140,10 @@ jobs:
           echo "Verifying signature..."
           codesign --verify --verbose=2 "$APP_PATH"
           codesign -dv --verbose=4 "$APP_PATH"
+
+          # Check entitlements were applied
+          echo "=== Entitlements ==="
+          codesign -d --entitlements - "$APP_PATH" 2>/dev/null || true
           echo "App signed successfully!"
 
       # ===== Create and Sign DMG =====
@@ -173,24 +185,36 @@ jobs:
           # Submit for notarization
           echo "Submitting for notarization..."
 
-          # Run notarytool and capture output to a file for reliable parsing
+          # Run notarytool - capture stdout (JSON) and stderr separately
+          # The --output-format json writes JSON to stdout only
+          NOTARY_EXIT_CODE=0
           xcrun notarytool submit VibeMobile.dmg \
             --apple-id "$APPLE_ID" \
             --password "$APPLE_APP_PASSWORD" \
             --team-id "$APPLE_TEAM_ID" \
             --wait \
-            --output-format json > notarization_result.json 2>&1 || true
+            --output-format json > notarization_result.json 2> notarization_stderr.log || NOTARY_EXIT_CODE=$?
 
-          echo "=== Notarization Result ==="
-          cat notarization_result.json
+          echo "=== Notarization stderr ==="
+          cat notarization_stderr.log || true
           echo "==========================="
 
+          echo "=== Notarization Result (JSON) ==="
+          cat notarization_result.json || true
+          echo "=================================="
+
           # Parse the JSON result
-          STATUS=$(cat notarization_result.json | python3 -c "import sys, json; data = json.load(sys.stdin); print(data.get('status', 'Unknown'))" 2>/dev/null || echo "Unknown")
-          SUBMISSION_ID=$(cat notarization_result.json | python3 -c "import sys, json; data = json.load(sys.stdin); print(data.get('id', ''))" 2>/dev/null || echo "")
+          STATUS="Unknown"
+          SUBMISSION_ID=""
+
+          if [ -s notarization_result.json ]; then
+            STATUS=$(python3 -c "import sys, json; data = json.load(open('notarization_result.json')); print(data.get('status', 'Unknown'))" 2>/dev/null || echo "Unknown")
+            SUBMISSION_ID=$(python3 -c "import sys, json; data = json.load(open('notarization_result.json')); print(data.get('id', ''))" 2>/dev/null || echo "")
+          fi
 
           echo "Status: $STATUS"
           echo "Submission ID: $SUBMISSION_ID"
+          echo "Exit code: $NOTARY_EXIT_CODE"
 
           if [ "$STATUS" = "Accepted" ]; then
             echo "Notarization successful!"
@@ -200,7 +224,7 @@ jobs:
               xcrun notarytool log "$SUBMISSION_ID" \
                 --apple-id "$APPLE_ID" \
                 --password "$APPLE_APP_PASSWORD" \
-                --team-id "$APPLE_TEAM_ID" notarization_log.json || true
+                --team-id "$APPLE_TEAM_ID" notarization_log.json 2>&1 || true
               echo "=== Notarization Log ==="
               cat notarization_log.json 2>/dev/null || echo "Could not fetch log"
               echo "========================"
