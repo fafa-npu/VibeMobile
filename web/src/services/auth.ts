@@ -7,6 +7,30 @@ import type {
 
 const API_BASE = import.meta.env.VITE_API_URL || '';
 
+// Simple hash function for non-secure contexts (fallback when crypto.subtle unavailable)
+function simpleHash(str: string): string {
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    const char = str.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash = hash & hash; // Convert to 32bit integer
+  }
+  // Convert to hex and pad to ensure consistent length
+  const hex = Math.abs(hash).toString(16);
+  // Create a longer hash by hashing different portions
+  let result = '';
+  for (let i = 0; i < 4; i++) {
+    let subHash = 0;
+    for (let j = 0; j < str.length; j++) {
+      const char = str.charCodeAt(j);
+      subHash = ((subHash << 5) - subHash + i) + char;
+      subHash = subHash & subHash;
+    }
+    result += Math.abs(subHash).toString(16).padStart(8, '0');
+  }
+  return result + hex.padStart(8, '0');
+}
+
 // Generate device fingerprint
 export async function generateFingerprint(): Promise<string> {
   const components = [
@@ -23,12 +47,23 @@ export async function generateFingerprint(): Promise<string> {
 
   const data = components.join('|');
 
-  // Hash the fingerprint
-  const encoder = new TextEncoder();
-  const dataBuffer = encoder.encode(data);
-  const hashBuffer = await crypto.subtle.digest('SHA-256', dataBuffer);
-  const hashArray = Array.from(new Uint8Array(hashBuffer));
-  return hashArray.map((b) => b.toString(16).padStart(2, '0')).join('');
+  // Use crypto.subtle if available (requires secure context: HTTPS or localhost)
+  // Otherwise fall back to simple hash for HTTP connections
+  if (typeof crypto !== 'undefined' && crypto.subtle) {
+    try {
+      const encoder = new TextEncoder();
+      const dataBuffer = encoder.encode(data);
+      const hashBuffer = await crypto.subtle.digest('SHA-256', dataBuffer);
+      const hashArray = Array.from(new Uint8Array(hashBuffer));
+      return hashArray.map((b) => b.toString(16).padStart(2, '0')).join('');
+    } catch (error) {
+      console.warn('crypto.subtle failed, using fallback hash:', error);
+    }
+  }
+
+  // Fallback for non-secure contexts (HTTP)
+  console.warn('crypto.subtle not available (non-HTTPS context), using fallback fingerprint');
+  return simpleHash(data);
 }
 
 export const authApi = {
