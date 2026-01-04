@@ -189,48 +189,122 @@ jobs:
           APPLE_ID: ${{ secrets.APPLE_ID }}
           APPLE_APP_PASSWORD: ${{ secrets.APPLE_APP_PASSWORD }}
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        timeout-minutes: 60
         run: |
-          # Submit for notarization with timeout (30 minutes max)
+          # Function to check notarization status
+          check_status() {
+            local submission_id=$1
+            xcrun notarytool info "$submission_id" \
+              --apple-id "$APPLE_ID" \
+              --password "$APPLE_APP_PASSWORD" \
+              --team-id "$APPLE_TEAM_ID" \
+              --output-format json 2>&1
+          }
+
+          # Submit for notarization WITHOUT --wait (async submission)
           echo "Submitting for notarization..."
           SUBMIT_OUTPUT=$(xcrun notarytool submit VibeMobile.dmg \
             --apple-id "$APPLE_ID" \
             --password "$APPLE_APP_PASSWORD" \
             --team-id "$APPLE_TEAM_ID" \
-            --wait \
-            --timeout 30m \
-            --output-format json 2>&1) || true
+            --output-format json 2>&1)
 
-          echo "Notarytool output: $SUBMIT_OUTPUT"
+          echo "Submission output: $SUBMIT_OUTPUT"
 
-          # Extract submission ID for log retrieval
-          SUBMISSION_ID=$(echo "$SUBMIT_OUTPUT" | grep -o '"id" *: *"[^"]*"' | head -1 | sed 's/.*: *"\([^"]*\)".*/\1/' || true)
+          # Extract submission ID
+          SUBMISSION_ID=$(echo "$SUBMIT_OUTPUT" | grep -o '"id" *: *"[^"]*"' | head -1 | sed 's/.*: *"\([^"]*\)".*/\1/')
 
-          # Check the status
-          STATUS=$(echo "$SUBMIT_OUTPUT" | grep -o '"status" *: *"[^"]*"' | head -1 | sed 's/.*: *"\([^"]*\)".*/\1/' || true)
+          if [ -z "$SUBMISSION_ID" ]; then
+            echo "ERROR: Failed to get submission ID"
+            echo "Output was: $SUBMIT_OUTPUT"
+            exit 1
+          fi
 
           echo "Submission ID: $SUBMISSION_ID"
-          echo "Status: $STATUS"
+          echo "SUBMISSION_ID=$SUBMISSION_ID" >> $GITHUB_ENV
 
-          # If we have a submission ID, get the log regardless of status
-          if [ -n "$SUBMISSION_ID" ]; then
-            echo "=== Fetching notarization log ==="
+          # Poll for completion with exponential backoff
+          echo "Waiting for Apple to process notarization..."
+          MAX_ATTEMPTS=60  # 60 attempts
+          INITIAL_WAIT=30  # Start with 30 seconds
+          MAX_WAIT=120     # Max wait of 2 minutes between polls
+          ATTEMPT=1
+          WAIT_TIME=$INITIAL_WAIT
+
+          while [ $ATTEMPT -le $MAX_ATTEMPTS ]; do
+            echo "=== Attempt $ATTEMPT/$MAX_ATTEMPTS (waiting ${WAIT_TIME}s before check) ==="
+            sleep $WAIT_TIME
+
+            # Check status
+            STATUS_OUTPUT=$(check_status "$SUBMISSION_ID" || echo '{"status":"Error"}')
+            echo "Status output: $STATUS_OUTPUT"
+
+            STATUS=$(echo "$STATUS_OUTPUT" | grep -o '"status" *: *"[^"]*"' | head -1 | sed 's/.*: *"\([^"]*\)".*/\1/' || echo "Unknown")
+            echo "Current status: $STATUS"
+
+            case "$STATUS" in
+              "Accepted")
+                echo "✅ Notarization successful!"
+                break
+                ;;
+              "Invalid"|"Rejected")
+                echo "❌ Notarization failed with status: $STATUS"
+                # Fetch log for debugging
+                xcrun notarytool log "$SUBMISSION_ID" \
+                  --apple-id "$APPLE_ID" \
+                  --password "$APPLE_APP_PASSWORD" \
+                  --team-id "$APPLE_TEAM_ID" \
+                  notarization-log.json || true
+                if [ -f notarization-log.json ]; then
+                  echo "=== Notarization Log ==="
+                  cat notarization-log.json
+                fi
+                exit 1
+                ;;
+              "In Progress"|"Unknown"|"Error")
+                echo "Still processing or temporary error, will retry..."
+                ;;
+              *)
+                echo "Unknown status: $STATUS, will retry..."
+                ;;
+            esac
+
+            ATTEMPT=$((ATTEMPT + 1))
+            # Increase wait time (exponential backoff with cap)
+            WAIT_TIME=$((WAIT_TIME + 15))
+            if [ $WAIT_TIME -gt $MAX_WAIT ]; then
+              WAIT_TIME=$MAX_WAIT
+            fi
+          done
+
+          # Final check
+          if [ "$STATUS" != "Accepted" ]; then
+            echo "❌ Notarization did not complete in time. Final status: $STATUS"
+            # Try to fetch the log anyway
             xcrun notarytool log "$SUBMISSION_ID" \
               --apple-id "$APPLE_ID" \
               --password "$APPLE_APP_PASSWORD" \
               --team-id "$APPLE_TEAM_ID" \
-              notarization-log.json || true
-
+              notarization-log.json 2>/dev/null || true
             if [ -f notarization-log.json ]; then
               echo "=== Notarization Log ==="
               cat notarization-log.json
-              echo "========================"
             fi
+            exit 1
           fi
 
-          # Check if notarization was successful
-          if [ "$STATUS" != "Accepted" ]; then
-            echo "Notarization failed with status: $STATUS"
-            exit 1
+          # Fetch log for successful notarization
+          echo "=== Fetching notarization log ==="
+          xcrun notarytool log "$SUBMISSION_ID" \
+            --apple-id "$APPLE_ID" \
+            --password "$APPLE_APP_PASSWORD" \
+            --team-id "$APPLE_TEAM_ID" \
+            notarization-log.json || true
+
+          if [ -f notarization-log.json ]; then
+            echo "=== Notarization Log ==="
+            cat notarization-log.json
+            echo "========================"
           fi
 
           # Staple the notarization ticket
@@ -240,7 +314,7 @@ jobs:
           # Verify
           echo "Verifying notarization..."
           spctl --assess --type open --context context:primary-signature -v VibeMobile.dmg || true
-          echo "Notarization complete!"
+          echo "✅ Notarization complete!"
 
       - name: Upload notarization log
         if: always()
