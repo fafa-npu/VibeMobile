@@ -12,7 +12,7 @@ on:
         default: 'v0.0.0'
 
 jobs:
-  build:
+  build-macos:
     name: Build macOS App with Bundled Server
     runs-on: macos-latest
     steps:
@@ -107,21 +107,56 @@ jobs:
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
         run: |
           APP_PATH="desktop/build/macos/Build/Products/Release/VibeMobile.app"
+          SIGN_IDENTITY="Developer ID Application: Hua Zhao ($APPLE_TEAM_ID)"
+          ENTITLEMENTS="desktop/macos/Runner/Release.entitlements"
 
           # Remove any existing signatures and extended attributes
           xattr -cr "$APP_PATH"
 
-          # Sign with Developer ID certificate
-          codesign --force --deep --options runtime \
-            --sign "Developer ID Application: Hua Zhao ($APPLE_TEAM_ID)" \
+          echo "=== Signing nested components (inside-out) ==="
+
+          # Sign all frameworks first (from innermost to outermost)
+          find "$APP_PATH/Contents/Frameworks" -name "*.framework" -type d 2>/dev/null | while read framework; do
+            echo "Signing framework: $framework"
+            codesign --force --options runtime --sign "$SIGN_IDENTITY" "$framework"
+          done
+
+          # Sign all dylibs
+          find "$APP_PATH" -name "*.dylib" -type f 2>/dev/null | while read dylib; do
+            echo "Signing dylib: $dylib"
+            codesign --force --options runtime --sign "$SIGN_IDENTITY" "$dylib"
+          done
+
+          # Sign all embedded executables in Helpers or MacOS subdirectories
+          find "$APP_PATH/Contents" -type f -perm +111 ! -name "*.dylib" 2>/dev/null | while read exe; do
+            # Skip the main executable, we'll sign it with the app
+            if [[ "$exe" != "$APP_PATH/Contents/MacOS/"* ]]; then
+              echo "Signing executable: $exe"
+              codesign --force --options runtime --sign "$SIGN_IDENTITY" "$exe"
+            fi
+          done
+
+          # Sign the main app bundle with entitlements
+          echo "=== Signing main app bundle ==="
+          codesign --force --options runtime \
+            --entitlements "$ENTITLEMENTS" \
+            --sign "$SIGN_IDENTITY" \
             "$APP_PATH"
 
           # Verify the signature
-          codesign --verify --verbose "$APP_PATH"
+          echo "=== Verifying signature ==="
+          codesign --verify --verbose=2 "$APP_PATH"
+
+          # Check for any unsigned code
+          echo "=== Checking for unsigned code ==="
+          codesign --verify --deep --strict --verbose=2 "$APP_PATH" 2>&1 || true
+
           echo "App signed successfully!"
 
-      # ===== Create DMG =====
-      - name: Create DMG
+      # ===== Create and Sign DMG =====
+      - name: Create and Sign DMG
+        env:
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
         run: |
           cd desktop/build/macos/Build/Products/Release
 
@@ -138,6 +173,13 @@ jobs:
             -ov -format UDZO \
             VibeMobile.dmg
 
+          # Sign the DMG
+          echo "Signing DMG..."
+          codesign --force --sign "Developer ID Application: Hua Zhao ($APPLE_TEAM_ID)" VibeMobile.dmg
+
+          # Verify DMG signature
+          codesign --verify --verbose VibeMobile.dmg
+
           # Move DMG to workspace root
           mv VibeMobile.dmg $GITHUB_WORKSPACE/
 
@@ -148,13 +190,48 @@ jobs:
           APPLE_APP_PASSWORD: ${{ secrets.APPLE_APP_PASSWORD }}
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
         run: |
-          # Submit for notarization
+          # Submit for notarization with timeout (30 minutes max)
           echo "Submitting for notarization..."
-          xcrun notarytool submit VibeMobile.dmg \
+          SUBMIT_OUTPUT=$(xcrun notarytool submit VibeMobile.dmg \
             --apple-id "$APPLE_ID" \
             --password "$APPLE_APP_PASSWORD" \
             --team-id "$APPLE_TEAM_ID" \
-            --wait
+            --wait \
+            --timeout 30m \
+            --output-format json 2>&1) || true
+
+          echo "Notarytool output: $SUBMIT_OUTPUT"
+
+          # Extract submission ID for log retrieval
+          SUBMISSION_ID=$(echo "$SUBMIT_OUTPUT" | grep -o '"id" *: *"[^"]*"' | head -1 | sed 's/.*: *"\([^"]*\)".*/\1/' || true)
+
+          # Check the status
+          STATUS=$(echo "$SUBMIT_OUTPUT" | grep -o '"status" *: *"[^"]*"' | head -1 | sed 's/.*: *"\([^"]*\)".*/\1/' || true)
+
+          echo "Submission ID: $SUBMISSION_ID"
+          echo "Status: $STATUS"
+
+          # If we have a submission ID, get the log regardless of status
+          if [ -n "$SUBMISSION_ID" ]; then
+            echo "=== Fetching notarization log ==="
+            xcrun notarytool log "$SUBMISSION_ID" \
+              --apple-id "$APPLE_ID" \
+              --password "$APPLE_APP_PASSWORD" \
+              --team-id "$APPLE_TEAM_ID" \
+              notarization-log.json || true
+
+            if [ -f notarization-log.json ]; then
+              echo "=== Notarization Log ==="
+              cat notarization-log.json
+              echo "========================"
+            fi
+          fi
+
+          # Check if notarization was successful
+          if [ "$STATUS" != "Accepted" ]; then
+            echo "Notarization failed with status: $STATUS"
+            exit 1
+          fi
 
           # Staple the notarization ticket
           echo "Stapling notarization ticket..."
@@ -165,15 +242,96 @@ jobs:
           spctl --assess --type open --context context:primary-signature -v VibeMobile.dmg || true
           echo "Notarization complete!"
 
+      - name: Upload notarization log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: notarization-log
+          path: notarization-log.json
+          if-no-files-found: ignore
+
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: VibeMobile-macOS
           path: VibeMobile.dmg
 
+  build-windows:
+    name: Build Windows App with Bundled Server
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # ===== Build Web Server =====
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: web/package-lock.json
+
+      - name: Install web dependencies
+        working-directory: web
+        run: npm ci
+
+      - name: Build web server
+        working-directory: web
+        run: npm run build
+
+      # ===== Build Windows App =====
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.24.3'
+          channel: 'stable'
+          cache: true
+
+      - name: Install Flutter dependencies
+        working-directory: desktop
+        run: flutter pub get
+
+      - name: Build Windows app
+        working-directory: desktop
+        run: flutter build windows --release
+
+      # ===== Bundle Server into App =====
+      - name: Bundle server into app
+        shell: pwsh
+        run: |
+          $APP_PATH = "desktop\build\windows\x64\runner\Release"
+          $SERVER_DIR = "$APP_PATH\server"
+
+          # Create server directory
+          New-Item -ItemType Directory -Force -Path $SERVER_DIR
+
+          # Copy server files
+          Copy-Item "web\dist\server.cjs" -Destination $SERVER_DIR
+
+          # Copy frontend static files
+          New-Item -ItemType Directory -Force -Path "$SERVER_DIR\dist"
+          Copy-Item -Recurse "web\dist\*" -Destination "$SERVER_DIR\dist\" -Force
+
+          # Verify bundle
+          Write-Host "=== Bundled server files ==="
+          Get-ChildItem $SERVER_DIR
+
+      # ===== Create ZIP Archive =====
+      - name: Create ZIP archive
+        shell: pwsh
+        run: |
+          $APP_PATH = "desktop\build\windows\x64\runner\Release"
+          Compress-Archive -Path "$APP_PATH\*" -DestinationPath "VibeMobile-Windows.zip" -Force
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: VibeMobile-Windows
+          path: VibeMobile-Windows.zip
+
   release:
     name: Create Release
-    needs: build
+    needs: [build-macos, build-windows]
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -181,10 +339,15 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Download artifact
+      - name: Download macOS artifact
         uses: actions/download-artifact@v4
         with:
           name: VibeMobile-macOS
+
+      - name: Download Windows artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: VibeMobile-Windows
 
       - name: Get version
         id: version
@@ -202,32 +365,43 @@ jobs:
           name: VibeMobile ${{ steps.version.outputs.version }}
           draft: false
           prerelease: false
-          files: VibeMobile.dmg
+          files: |
+            VibeMobile.dmg
+            VibeMobile-Windows.zip
           body: |
             ## VibeMobile ${{ steps.version.outputs.version }}
 
             Remote control for Claude Code sessions from your phone.
 
-            ### Installation
+            ### Downloads
+
+            | Platform | File | Requirements |
+            |----------|------|--------------|
+            | macOS | `VibeMobile.dmg` | macOS 12.0+, Node.js 18+, tmux |
+            | Windows | `VibeMobile-Windows.zip` | Windows 10+, Node.js 18+ |
+
+            ### macOS Installation
 
             1. Download `VibeMobile.dmg`
             2. Open DMG and drag VibeMobile to Applications
             3. Run VibeMobile from Applications
 
-            **That's it!** The app is signed and notarized by Apple.
+            **Requirements:** `brew install node tmux`
 
-            ### Requirements
+            ### Windows Installation
 
-            - macOS 12.0+
-            - Node.js 18+ (`brew install node`)
-            - tmux (`brew install tmux`)
+            1. Download `VibeMobile-Windows.zip`
+            2. Extract to a folder (e.g., `C:\Program Files\VibeMobile`)
+            3. Run `vibemobile.exe`
+
+            **Requirements:** Install Node.js from [nodejs.org](https://nodejs.org) or via `winget install OpenJS.NodeJS.LTS`
 
             ### Usage
 
             1. Open VibeMobile app
             2. Click "Start Server"
             3. Click "New Session" to create a Claude Code session
-            4. Connect from your phone: `http://YOUR_MAC_IP:8765`
+            4. Connect from your phone: `http://YOUR_IP:8765`
             5. Pair your device using the 6-digit code
 
             See [README](https://github.com/${{ github.repository }}#readme) for full documentation.
