@@ -189,7 +189,7 @@ jobs:
           APPLE_ID: ${{ secrets.APPLE_ID }}
           APPLE_APP_PASSWORD: ${{ secrets.APPLE_APP_PASSWORD }}
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
-        timeout-minutes: 90
+        timeout-minutes: 120
         run: |
           # Function to check notarization status
           check_status() {
@@ -223,12 +223,15 @@ jobs:
           echo "Submission ID: $SUBMISSION_ID"
           echo "SUBMISSION_ID=$SUBMISSION_ID" >> $GITHUB_ENV
 
+          # Save submission ID to file for artifact upload
+          echo "$SUBMISSION_ID" > submission-id.txt
+
           # Poll for completion with fixed 60-second intervals
-          # This allows for up to ~85 minutes of polling within the 90 minute timeout
+          # This allows for up to ~115 minutes of polling within the 120 minute timeout
           echo "Waiting for Apple to process notarization..."
-          echo "Note: Apple notarization typically takes 5-15 minutes but can take 60+ minutes during peak times"
-          MAX_ATTEMPTS=85  # 85 attempts at 60 seconds = ~85 minutes max
-          WAIT_TIME=60     # Check every 60 seconds
+          echo "Note: Apple notarization typically takes 5-15 minutes but can take 90+ minutes during peak times"
+          MAX_ATTEMPTS=115  # 115 attempts at 60 seconds = ~115 minutes max
+          WAIT_TIME=60      # Check every 60 seconds
           ATTEMPT=1
 
           while [ $ATTEMPT -le $MAX_ATTEMPTS ]; do
@@ -324,6 +327,14 @@ jobs:
         with:
           name: notarization-log
           path: notarization-log.json
+          if-no-files-found: ignore
+
+      - name: Upload submission ID
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: notarization-submission-id
+          path: submission-id.txt
           if-no-files-found: ignore
 
       - name: Upload artifact
