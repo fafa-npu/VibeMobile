@@ -189,7 +189,7 @@ jobs:
           APPLE_ID: ${{ secrets.APPLE_ID }}
           APPLE_APP_PASSWORD: ${{ secrets.APPLE_APP_PASSWORD }}
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
-        timeout-minutes: 60
+        timeout-minutes: 90
         run: |
           # Function to check notarization status
           check_status() {
@@ -223,20 +223,28 @@ jobs:
           echo "Submission ID: $SUBMISSION_ID"
           echo "SUBMISSION_ID=$SUBMISSION_ID" >> $GITHUB_ENV
 
-          # Poll for completion with exponential backoff
+          # Poll for completion with fixed 60-second intervals
+          # This allows for up to ~85 minutes of polling within the 90 minute timeout
           echo "Waiting for Apple to process notarization..."
-          MAX_ATTEMPTS=60  # 60 attempts
-          INITIAL_WAIT=30  # Start with 30 seconds
-          MAX_WAIT=120     # Max wait of 2 minutes between polls
+          echo "Note: Apple notarization typically takes 5-15 minutes but can take 60+ minutes during peak times"
+          MAX_ATTEMPTS=85  # 85 attempts at 60 seconds = ~85 minutes max
+          WAIT_TIME=60     # Check every 60 seconds
           ATTEMPT=1
-          WAIT_TIME=$INITIAL_WAIT
 
           while [ $ATTEMPT -le $MAX_ATTEMPTS ]; do
             echo "=== Attempt $ATTEMPT/$MAX_ATTEMPTS (waiting ${WAIT_TIME}s before check) ==="
             sleep $WAIT_TIME
 
-            # Check status
-            STATUS_OUTPUT=$(check_status "$SUBMISSION_ID" || echo '{"status":"Error"}')
+            # Check status with retry on network errors
+            for retry in 1 2 3; do
+              STATUS_OUTPUT=$(check_status "$SUBMISSION_ID" 2>&1)
+              if echo "$STATUS_OUTPUT" | grep -q '"status"'; then
+                break
+              fi
+              echo "Network error on try $retry, retrying in 5s..."
+              sleep 5
+            done
+
             echo "Status output: $STATUS_OUTPUT"
 
             STATUS=$(echo "$STATUS_OUTPUT" | grep -o '"status" *: *"[^"]*"' | head -1 | sed 's/.*: *"\([^"]*\)".*/\1/' || echo "Unknown")
@@ -261,25 +269,19 @@ jobs:
                 fi
                 exit 1
                 ;;
-              "In Progress"|"Unknown"|"Error")
-                echo "Still processing or temporary error, will retry..."
-                ;;
-              *)
-                echo "Unknown status: $STATUS, will retry..."
+              "In Progress"|"Unknown"|"Error"|*)
+                echo "Still processing (attempt $ATTEMPT of $MAX_ATTEMPTS)..."
                 ;;
             esac
 
             ATTEMPT=$((ATTEMPT + 1))
-            # Increase wait time (exponential backoff with cap)
-            WAIT_TIME=$((WAIT_TIME + 15))
-            if [ $WAIT_TIME -gt $MAX_WAIT ]; then
-              WAIT_TIME=$MAX_WAIT
-            fi
           done
 
           # Final check
           if [ "$STATUS" != "Accepted" ]; then
             echo "❌ Notarization did not complete in time. Final status: $STATUS"
+            echo "Submission ID: $SUBMISSION_ID"
+            echo "You can check the status later with: xcrun notarytool info $SUBMISSION_ID"
             # Try to fetch the log anyway
             xcrun notarytool log "$SUBMISSION_ID" \
               --apple-id "$APPLE_ID" \
