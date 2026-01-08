@@ -180,6 +180,46 @@
   background: var(--bg-primary);
   border-radius: 22px;
   padding: 10px 16px;
+  position: relative;
+}
+
+/* Interim text bubble - shows during recording */
+.interimText {
+  position: absolute;
+  bottom: 100%;
+  left: 0;
+  right: 0;
+  margin-bottom: 8px;
+  background: var(--bg-secondary);
+  border-radius: 12px;
+  padding: 10px 14px;
+  font-size: 14px;
+  color: var(--text-secondary);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15);
+  animation: fadeInUp 0.2s ease-out;
+}
+
+.interimText::after {
+  content: '';
+  position: absolute;
+  bottom: -6px;
+  left: 20px;
+  width: 12px;
+  height: 12px;
+  background: var(--bg-secondary);
+  transform: rotate(45deg);
+  box-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .messageInput {
@@ -228,4 +268,112 @@
 .sendBtn:disabled {
   background: var(--border-color);
   color: var(--text-muted);
+}
+
+/* ===== Voice Input Styles (Scheme A: Toggle Mode) ===== */
+
+/* Voice Button - Toggle mode (click to start/stop) */
+.voiceBtn {
+  width: 44px;
+  height: 44px;
+  border-radius: 22px;
+  border: none;
+  background: var(--bg-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+  font-size: 20px;
+  color: var(--accent-blue);
+  transition: all 0.15s;
+}
+
+.voiceBtn:active {
+  transform: scale(0.95);
+}
+
+.voiceBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.voiceBtn.recording {
+  background: var(--accent-red);
+  color: white;
+  animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+}
+
+/* Hold to Talk Button (legacy, kept for compatibility) */
+.holdToTalkBtn {
+  flex: 1;
+  height: 44px;
+  border: none;
+  background: var(--bg-primary);
+  border-radius: 22px;
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: all 0.15s;
+  touch-action: none;
+  user-select: none;
+}
+
+.holdToTalkBtn:active {
+  background: var(--accent-blue);
+  color: white;
+  transform: scale(0.98);
+}
+
+.holdToTalkBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Voice/Keyboard Toggle Button */
+.voiceToggleBtn {
+  width: 44px;
+  height: 44px;
+  border-radius: 22px;
+  border: none;
+  background: var(--bg-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+  color: var(--text-secondary);
+  transition: all 0.15s;
+}
+
+.voiceToggleBtn:active {
+  background: var(--border-color);
+}
+
+.voiceToggleBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.voiceToggleBtn.active {
+  color: var(--accent-blue);
+}
+
+.micIcon {
+  width: 22px;
+  height: 22px;
+}
+
+.keyboardIcon {
+  font-size: 20px;
 }

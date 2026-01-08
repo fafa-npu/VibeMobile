@@ -1,7 +1,9 @@
-// Command input component with permission mode and quick actions
+// Command input component with permission mode, quick actions, and voice input (Scheme A)
+// Voice input uses toggle mode: click to start/stop, results go to input box
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import styles from './CommandInput.module.css';
+import { useVoiceInput } from '../hooks/useVoiceInput';
 
 interface CommandInputProps {
   onSend: (content: string) => void;
@@ -40,8 +42,37 @@ export function CommandInput({
 }: CommandInputProps) {
   const [value, setValue] = useState('');
   const [permissionMode, setPermissionMode] = useState<PermissionMode>('bypass');
+
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Voice input hook - results go to input box instead of sending directly
+  const {
+    state: voiceState,
+    isSupported: isVoiceSupported,
+    interimTranscript,
+    finalTranscript,
+    startRecording,
+    stopRecording,
+    clearTranscript,
+  } = useVoiceInput({
+    lang: 'zh-CN',
+    onResult: (transcript) => {
+      // Insert transcript into input box instead of sending
+      if (transcript.trim()) {
+        setValue(prev => prev + transcript.trim());
+        // Focus the textarea after inserting text
+        textareaRef.current?.focus();
+      }
+    },
+    onError: (error) => {
+      console.error('Voice input error:', error);
+    },
+  });
+
+  // Current interim transcript to display above input
+  const showInterim = voiceState === 'recording' && (interimTranscript || finalTranscript);
+  const interimDisplay = finalTranscript + interimTranscript || '正在聆听...';
 
   // Auto-resize textarea
   useEffect(() => {
@@ -86,13 +117,30 @@ export function CommandInput({
     fileInputRef.current?.click();
   };
 
+  // Toggle voice recording (Scheme A: click to start/stop)
+  const toggleVoiceRecording = useCallback(() => {
+    if (!isVoiceSupported) {
+      alert('当前浏览器不支持语音输入功能');
+      return;
+    }
+
+    if (voiceState === 'recording') {
+      stopRecording();
+    } else {
+      clearTranscript();
+      startRecording();
+    }
+  }, [isVoiceSupported, voiceState, startRecording, stopRecording, clearTranscript]);
+
+  const isRecording = voiceState === 'recording';
+
   const currentMode = PERMISSION_MODES.find(m => m.key === permissionMode);
   const currentModeText = currentMode?.text || '';
   const currentModeIcon = currentMode?.icon || '▶▶';
 
   return (
     <div className={styles.inputArea}>
-      {/* Status Bar - 从终端底部提取的状态信息 */}
+      {/* Status Bar */}
       <div className={styles.statusBar}>
         <div className={styles.statusLeft}>
           <div
@@ -150,8 +198,24 @@ export function CommandInput({
           <span className={styles.attachmentPlus}>+</span>
         </button>
 
-        {/* Text Input */}
+        {/* Voice Button (Scheme A: toggle mode) */}
+        <button
+          className={`${styles.voiceBtn} ${isRecording ? styles.recording : ''}`}
+          onClick={toggleVoiceRecording}
+          disabled={disabled}
+          title={isRecording ? '停止录音' : '开始语音输入'}
+        >
+          {isRecording ? '⏹' : '🎤'}
+        </button>
+
+        {/* Input Wrapper with interim text bubble */}
         <div className={styles.inputWrapper}>
+          {/* Interim text bubble - shows during recording */}
+          {showInterim && (
+            <div className={styles.interimText}>
+              {interimDisplay}
+            </div>
+          )}
           <textarea
             ref={textareaRef}
             className={styles.messageInput}

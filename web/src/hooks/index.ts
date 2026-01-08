@@ -1,5 +1,8 @@
 // Custom hooks for sessions and WebSocket
 
+export { useVoiceInput } from './useVoiceInput';
+export type { UseVoiceInputOptions, UseVoiceInputReturn, VoiceInputState } from './useVoiceInput';
+
 import { useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '../services/api';
