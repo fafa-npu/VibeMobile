@@ -208,22 +208,26 @@ jobs:
           echo "=== Validation complete ==="
 
       # ===== Notarize DMG =====
+      # NOTE: Notarization is currently non-blocking due to Apple service issues.
+      # Apple notarization submissions are stuck "In Progress" for 24+ hours.
+      # Once Apple resolves the issue, remove continue-on-error to enforce notarization.
       - name: Notarize DMG
+        continue-on-error: true
         env:
           APPLE_ID: ${{ secrets.APPLE_ID }}
           APPLE_APP_PASSWORD: ${{ secrets.APPLE_APP_PASSWORD }}
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
-        timeout-minutes: 60
+        timeout-minutes: 30
         run: |
           echo "=== Submitting for notarization ==="
 
-          # Submit and wait with built-in timeout (55 minutes to leave room for stapling)
+          # Submit and wait with built-in timeout
           xcrun notarytool submit VibeMobile.dmg \
             --apple-id "$APPLE_ID" \
             --password "$APPLE_APP_PASSWORD" \
             --team-id "$APPLE_TEAM_ID" \
             --wait \
-            --timeout 55m \
+            --timeout 25m \
             2>&1 | tee notarization-output.txt
 
           # Save submission ID for artifacts
@@ -247,7 +251,7 @@ jobs:
 
             echo "✅ Notarization and stapling complete!"
           else
-            echo "❌ Notarization failed or timed out"
+            echo "⚠️ Notarization did not complete in time or failed"
             echo "=== Full output ==="
             cat notarization-output.txt
 
@@ -266,6 +270,9 @@ jobs:
               fi
             fi
 
+            echo ""
+            echo "⚠️ DMG will be released without notarization."
+            echo "Users may need to run: xattr -cr /Applications/VibeMobile.app"
             exit 1
           fi
 
