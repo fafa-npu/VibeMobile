@@ -36,12 +36,16 @@ class SetupStatus {
   final DependencyStatus homebrew;
   final DependencyStatus tmux;
   final DependencyStatus node;
+  final DependencyStatus githubCli;
+  final DependencyStatus githubCopilotCli;
   final DependencyStatus devTunnel;
 
   const SetupStatus({
     required this.homebrew,
     required this.tmux,
     required this.node,
+    required this.githubCli,
+    required this.githubCopilotCli,
     required this.devTunnel,
   });
 
@@ -50,6 +54,8 @@ class SetupStatus {
       homebrew.isInstalled &&
       tmux.isInstalled &&
       node.isInstalled &&
+      githubCli.isInstalled &&
+      githubCopilotCli.isInstalled &&
       devTunnel.isInstalled;
 
   /// Get list of missing dependencies.
@@ -58,6 +64,8 @@ class SetupStatus {
     if (!homebrew.isInstalled) deps.add(homebrew);
     if (!tmux.isInstalled) deps.add(tmux);
     if (!node.isInstalled) deps.add(node);
+    if (!githubCli.isInstalled) deps.add(githubCli);
+    if (!githubCopilotCli.isInstalled) deps.add(githubCopilotCli);
     if (!devTunnel.isInstalled) deps.add(devTunnel);
     return deps;
   }
@@ -67,6 +75,8 @@ class SetupStatus {
         homebrew,
         tmux,
         node,
+        githubCli,
+        githubCopilotCli,
         devTunnel,
       ];
 }
@@ -107,6 +117,8 @@ class SetupService {
       _checkHomebrew(),
       _checkTmux(),
       _checkNode(),
+      _checkGithubCli(),
+      _checkGithubCopilotCli(),
       _checkDevTunnel(),
     ]);
 
@@ -114,7 +126,9 @@ class SetupService {
       homebrew: results[0],
       tmux: results[1],
       node: results[2],
-      devTunnel: results[3],
+      githubCli: results[3],
+      githubCopilotCli: results[4],
+      devTunnel: results[5],
     );
 
     AppLogger.info('SetupService: Environment check complete. Ready: ${status.isReady}');
@@ -211,6 +225,40 @@ class SetupService {
     );
   }
 
+  /// Check if GitHub CLI is installed for GitHub Copilot CLI support.
+  Future<DependencyStatus> _checkGithubCli() async {
+    final result = await _runCommand('which', ['gh']);
+    String? version;
+
+    if (result.success) {
+      final versionResult = await _runCommand('gh', ['--version']);
+      if (versionResult.success) {
+        final firstLine = versionResult.output?.split('\n').first;
+        version = firstLine;
+      }
+    }
+
+    return DependencyStatus(
+      name: 'gh',
+      displayName: 'GitHub CLI',
+      isInstalled: result.success,
+      version: version,
+      installCommand: 'brew install gh',
+    );
+  }
+
+  /// Check if the GitHub Copilot CLI extension is installed.
+  Future<DependencyStatus> _checkGithubCopilotCli() async {
+    final result = await _runCommand('gh', ['copilot', '--help']);
+
+    return DependencyStatus(
+      name: 'gh-copilot',
+      displayName: 'GitHub Copilot CLI',
+      isInstalled: result.success,
+      installCommand: 'gh extension install github/gh-copilot',
+    );
+  }
+
   /// Install Homebrew.
   Future<SetupResult> installHomebrew({Function(String)? onProgress}) async {
     onProgress?.call('Installing Homebrew...');
@@ -246,7 +294,9 @@ class SetupService {
       final packageName = dep == 'devtunnel'
           ? 'microsoft/dev-tunnels/devtunnel'
           : dep;
-      final result = await _runCommand('brew', ['install', packageName]);
+      final result = dep == 'gh-copilot'
+          ? await _runCommand('gh', ['extension', 'install', 'github/gh-copilot'])
+          : await _runCommand('brew', ['install', packageName]);
       if (!result.success) {
         return SetupResult.fail('Failed to install $dep: ${result.error}');
       }
@@ -256,7 +306,7 @@ class SetupService {
   }
 
   /// Run the full setup process.
-  /// Note: Installs Homebrew, tmux, Node.js, and Microsoft Dev Tunnel. Certificates are not needed.
+  /// Note: Installs Homebrew, tmux, Node.js, GitHub CLI, and Microsoft Dev Tunnel. Certificates are not needed.
   Future<SetupResult> runFullSetup({Function(String)? onProgress}) async {
     AppLogger.info('SetupService: Starting full setup');
 
@@ -280,6 +330,8 @@ class SetupService {
     final depsToInstall = <String>[];
     if (!status.tmux.isInstalled) depsToInstall.add('tmux');
     if (!status.node.isInstalled) depsToInstall.add('node');
+    if (!status.githubCli.isInstalled) depsToInstall.add('gh');
+    if (!status.githubCopilotCli.isInstalled) depsToInstall.add('gh-copilot');
     if (!status.devTunnel.isInstalled) depsToInstall.add('devtunnel');
 
     if (depsToInstall.isNotEmpty) {
@@ -344,6 +396,8 @@ class SetupService {
       'versions': {
         'tmux': status.tmux.version,
         'node': status.node.version,
+        'gh': status.githubCli.version,
+        'gh-copilot': status.githubCopilotCli.version,
         'devtunnel': status.devTunnel.version,
       },
     };

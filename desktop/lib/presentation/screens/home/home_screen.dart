@@ -447,86 +447,100 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WindowListener {
 
   Future<void> _showNewSessionDialog(BuildContext context) async {
     final workingDirController = TextEditingController();
-    final commandController = TextEditingController(text: 'claude');
+    var selectedAgent = CliAgent.claude;
 
     final result = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppColors.radiusMedium),
-        ),
-        title: Row(
-          children: [
-            Container(
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(
-                gradient: AppColors.primaryGradient,
-                borderRadius: BorderRadius.circular(10),
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AppColors.radiusMedium),
+          ),
+          title: Row(
+            children: [
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  gradient: AppColors.primaryGradient,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Icon(
+                  Icons.add,
+                  color: Colors.white,
+                ),
               ),
-              child: const Icon(
-                Icons.add,
-                color: Colors.white,
+              const SizedBox(width: 12),
+              const Text('新建会话'),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              DropdownButtonFormField<CliAgent>(
+                value: selectedAgent,
+                decoration: InputDecoration(
+                  labelText: 'AI CLI',
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+                items: CliAgent.values
+                    .map(
+                      (agent) => DropdownMenuItem(
+                        value: agent,
+                        child: Text(agent.displayName),
+                      ),
+                    )
+                    .toList(),
+                onChanged: (agent) {
+                  if (agent != null) {
+                    setDialogState(() => selectedAgent = agent);
+                  }
+                },
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: workingDirController,
+                decoration: InputDecoration(
+                  labelText: '工作目录',
+                  hintText: '/path/to/project',
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: Text(
+                '取消',
+                style: TextStyle(color: AppColors.textSecondary),
               ),
             ),
-            const SizedBox(width: 12),
-            const Text('新建会话'),
-          ],
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: workingDirController,
-              decoration: InputDecoration(
-                labelText: '工作目录',
-                hintText: '/path/to/project',
-                border: OutlineInputBorder(
+            ElevatedButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.gradientStart,
+                foregroundColor: Colors.white,
+                elevation: 0,
+                shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(8),
                 ),
               ),
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: commandController,
-              decoration: InputDecoration(
-                labelText: '启动命令',
-                hintText: 'claude',
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-              ),
+              child: const Text('创建'),
             ),
           ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: Text(
-              '取消',
-              style: TextStyle(color: AppColors.textSecondary),
-            ),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.gradientStart,
-              foregroundColor: Colors.white,
-              elevation: 0,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-            ),
-            child: const Text('创建'),
-          ),
-        ],
       ),
     );
 
     if (result == true && workingDirController.text.isNotEmpty) {
       await ref.read(sessionProvider.notifier).createSession(
         workingDir: workingDirController.text,
-        command: commandController.text.isEmpty ? 'claude' : commandController.text,
+        agent: selectedAgent,
       );
     }
   }

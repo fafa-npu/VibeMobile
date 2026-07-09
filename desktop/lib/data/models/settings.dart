@@ -10,6 +10,24 @@ enum RemoteTunnelProvider {
   microsoftDevTunnel,
 }
 
+/// Supported AI CLI agent enum.
+enum CliAgent {
+  claude,
+  copilot,
+}
+
+extension CliAgentCommand on CliAgent {
+  String get command => switch (this) {
+        CliAgent.claude => 'claude',
+        CliAgent.copilot => 'gh copilot suggest',
+      };
+
+  String get displayName => switch (this) {
+        CliAgent.claude => 'Claude Code',
+        CliAgent.copilot => 'GitHub Copilot CLI',
+      };
+}
+
 /// Application settings model.
 class Settings {
   final int apiPort;

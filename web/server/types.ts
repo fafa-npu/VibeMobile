@@ -1,5 +1,16 @@
 // Server types for VibeMobile
 
+export type CliAgent = 'claude' | 'copilot';
+
+export const CLI_AGENT_COMMANDS: Record<CliAgent, string> = {
+  claude: 'claude',
+  copilot: 'gh copilot suggest',
+};
+
+export function isCliAgent(value: unknown): value is CliAgent {
+  return value === 'claude' || value === 'copilot';
+}
+
 export interface Session {
   sessionId: string;
   projectPath: string;

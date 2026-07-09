@@ -58,10 +58,10 @@ class TmuxService {
     }
   }
 
-  /// Create a new tmux session running Claude.
+  /// Create a new tmux session running a supported AI CLI.
   Future<String?> createSession({
     required String workingDir,
-    String command = 'claude',
+    CliAgent agent = CliAgent.claude,
   }) async {
     // Generate session name
     final existing = await listSessions();
@@ -73,7 +73,8 @@ class TmuxService {
       sessionName = '$_prefix-$index';
     }
 
-    AppLogger.info('TmuxService: Creating session $sessionName in $workingDir');
+    final command = agent.command;
+    AppLogger.info('TmuxService: Creating ${agent.displayName} session $sessionName in $workingDir');
 
     try {
       final result = await Process.run('tmux', [

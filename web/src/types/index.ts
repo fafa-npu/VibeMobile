@@ -1,5 +1,7 @@
 // Session and API types
 
+export type CliAgent = 'claude' | 'copilot';
+
 export interface Session {
   session_id: string;
   project_path: string;

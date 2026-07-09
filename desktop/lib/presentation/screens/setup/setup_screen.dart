@@ -120,6 +120,8 @@ class SetupNotifier extends StateNotifier<SetupState> {
           break;
         case 'tmux':
         case 'node':
+        case 'gh':
+        case 'gh-copilot':
         case 'devtunnel':
           result = await _service.installDependencies(
             dependencies: [name],

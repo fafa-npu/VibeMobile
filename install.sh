@@ -57,7 +57,15 @@ echo ""
 echo "Checking dependencies..."
 check_and_install node node
 check_and_install tmux tmux
+check_and_install gh gh
 check_and_install devtunnel microsoft/dev-tunnels/devtunnel
+
+if gh copilot --help &> /dev/null; then
+    echo "✓ gh copilot"
+else
+    echo "Installing GitHub Copilot CLI extension..."
+    gh extension install github/gh-copilot || echo "Warning: Could not install gh-copilot. Run: gh extension install github/gh-copilot"
+fi
 echo ""
 
 # Download latest release

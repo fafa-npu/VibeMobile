@@ -1,6 +1,6 @@
 # VibeMobile
 
-Remote control for Claude Code sessions from your phone. **macOS desktop host, mobile browser client**.
+Remote control for Claude Code and GitHub Copilot CLI sessions from your phone. **macOS desktop host, mobile browser client**.
 
 <p align="center">
   <img src="docs/pictures/mobile-terminal.png" width="400" alt="Desktop App">
@@ -25,7 +25,7 @@ vibemobile
 
 ### 2. Start Server & Create Session
 
-Click **"Start Server"**, then click **"+"** to create a new Claude Code session.
+Click **"Start Server"**, then click **"+"** to create a new Claude Code or GitHub Copilot CLI session.
 
 <p align="center">
   <img src="docs/pictures/desktop-tunnel.png" width="500" alt="Tunnel URL">
@@ -54,11 +54,11 @@ Click **"Start Server"**, then click **"+"** to create a new Claude Code session
   <img src="docs/pictures/mobile-pairing.png" width="200" alt="Enter Code on Phone">
   </p>
 
-### 5. Control Claude Code
+### 5. Control AI CLI Sessions
 
 Once paired, you can:
 - View sessions and real-time output
-- Send messages to Claude
+- Send messages to Claude Code or GitHub Copilot CLI
 - Browse project files
 - Upload images
 
@@ -90,7 +90,7 @@ Download `VibeMobile.dmg` from [Releases](https://github.com/fafa-npu/VibeMobile
 1. Open DMG and drag VibeMobile to Applications
 2. Double-click to run (app is signed and notarized by Apple)
 
-**Requirements**: macOS 12+, Node.js 18+, tmux, devtunnel (`brew install node tmux microsoft/dev-tunnels/devtunnel`)
+**Requirements**: macOS 12+, Node.js 18+, tmux, GitHub CLI + Copilot extension, devtunnel (`brew install node tmux gh microsoft/dev-tunnels/devtunnel && gh extension install github/gh-copilot`)
 
 ## Troubleshooting
 

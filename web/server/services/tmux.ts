@@ -1,6 +1,7 @@
 // tmux session management service
 import { spawnSync, execSync } from 'child_process';
-import type { Session } from '../types.js';
+import type { CliAgent, Session } from '../types.js';
+import { CLI_AGENT_COMMANDS } from '../types.js';
 import { config } from '../config.js';
 
 interface TmuxResult {
@@ -35,7 +36,7 @@ class TmuxManager {
     }
   }
 
-  private isClaudeRunning(sessionId: string): boolean {
+  private isAgentRunning(sessionId: string): boolean {
     // Get the pane PID
     const { success, output: panePid } = this.runTmux([
       'display-message', '-t', sessionId, '-p', '#{pane_pid}'
@@ -44,12 +45,13 @@ class TmuxManager {
     if (!success || !panePid) return false;
 
     try {
-      // Check if the process or any child is 'claude'
+      // Check if the process or any child is a supported AI CLI
       const psResult = execSync(`ps -p ${panePid} -o command=`, {
         encoding: 'utf-8',
         timeout: 2000,
       });
-      if (psResult.toLowerCase().includes('claude')) return true;
+      const lowerCommand = psResult.toLowerCase();
+      if (lowerCommand.includes('claude') || lowerCommand.includes('copilot')) return true;
 
       // Check child processes
       try {
@@ -64,7 +66,8 @@ class TmuxManager {
               encoding: 'utf-8',
               timeout: 2000,
             });
-            if (childPs.toLowerCase().includes('claude')) return true;
+            const lowerChildCommand = childPs.toLowerCase();
+            if (lowerChildCommand.includes('claude') || lowerChildCommand.includes('copilot')) return true;
           }
         }
       } catch {
@@ -104,9 +107,9 @@ class TmuxManager {
         createdAt = new Date();
       }
 
-      // Determine status based on whether claude is running
-      const claudeRunning = this.isClaudeRunning(name);
-      const status = claudeRunning ? 'active' : 'ended';
+      // Determine status based on whether a supported AI CLI is running
+      const agentRunning = this.isAgentRunning(name);
+      const status = agentRunning ? 'active' : 'ended';
 
       // Get working directory
       const { output: panePath } = this.runTmux([
@@ -170,7 +173,7 @@ class TmuxManager {
     return success;
   }
 
-  createSession(command = 'claude', sessionName?: string): string | null {
+  createSession(agent: CliAgent = 'claude', sessionName?: string): string | null {
     if (!sessionName) {
       // Generate a unique session name
       const existing = this.listSessions();
@@ -182,6 +185,7 @@ class TmuxManager {
       sessionName = `${this.prefix}-${counter}`;
     }
 
+    const command = CLI_AGENT_COMMANDS[agent];
     const { success } = this.runTmux([
       'new-session', '-d', '-s', sessionName, command
     ]);

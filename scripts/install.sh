@@ -68,7 +68,16 @@ install_dep() {
 install_homebrew
 install_dep "tmux" "tmux"
 install_dep "node" "Node.js"
+install_dep "gh" "GitHub CLI"
 install_dep "devtunnel" "Microsoft Dev Tunnel" "microsoft/dev-tunnels/devtunnel"
+
+if gh copilot --help &>/dev/null; then
+    echo -e "  ${GREEN}✓${NC} GitHub Copilot CLI is already installed"
+else
+    echo -e "  ${YELLOW}→${NC} Installing GitHub Copilot CLI extension..."
+    gh extension install github/gh-copilot >/dev/null 2>&1 || \
+        echo -e "  ${YELLOW}!${NC} Could not install GitHub Copilot CLI. Run: gh extension install github/gh-copilot"
+fi
 
 echo -e "\n${BLUE}[2/4]${NC} Downloading VibeMobile..."
 

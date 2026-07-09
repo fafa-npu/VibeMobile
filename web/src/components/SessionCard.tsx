@@ -86,7 +86,7 @@ export function SessionCard({ session, onClick }: SessionCardProps) {
 
       <div className={styles.meta}>
         <span>{timeAgo}</span>
-        <span>Claude Opus 4.5</span>
+        <span>AI CLI</span>
       </div>
     </div>
   );

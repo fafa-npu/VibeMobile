@@ -63,8 +63,8 @@ export function SessionList() {
           <div className={styles.empty}>
             <div className={styles.emptyIcon}>📭</div>
             <h3>暂无会话</h3>
-            <p>在电脑上使用 vibe-claude 启动会话</p>
-            <code>vibe-claude</code>
+            <p>在电脑端创建 Claude Code 或 GitHub Copilot CLI 会话</p>
+            <code>Claude Code / GitHub Copilot CLI</code>
           </div>
         )}
 

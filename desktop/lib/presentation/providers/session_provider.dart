@@ -117,12 +117,12 @@ class SessionNotifier extends StateNotifier<SessionListState> {
   /// Create a new session.
   Future<bool> createSession({
     required String workingDir,
-    String command = 'claude',
+    CliAgent agent = CliAgent.claude,
   }) async {
     try {
       final sessionName = await _service.createSession(
         workingDir: workingDir,
-        command: command,
+        agent: agent,
       );
 
       if (sessionName != null) {

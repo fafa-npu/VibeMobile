@@ -426,7 +426,7 @@ class SessionRowList extends StatelessWidget {
             ),
             const SizedBox(height: 4),
             Text(
-              '启动 Claude Code 后会在这里显示',
+              '启动 Claude Code 或 GitHub Copilot CLI 后会在这里显示',
               style: TextStyle(
                 fontSize: 13,
                 color: AppColors.textSecondary.withOpacity(0.7),

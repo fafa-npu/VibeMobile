@@ -14,6 +14,7 @@ import {
   isHighRiskKey,
   type RiskLevel,
 } from '../middleware/auth.js';
+import { CLI_AGENT_COMMANDS, isCliAgent } from '../types.js';
 import type { Session } from '../types.js';
 
 const router = Router();
@@ -229,8 +230,14 @@ router.post('/:sessionId/key', requireAuth, (req, res) => {
 
 // POST /api/sessions - Create new session
 router.post('/', requireAuth, (req, res) => {
-  const { command = 'claude' } = req.body;
+  const requestedAgent = req.body?.agent ?? req.query.agent ?? req.body?.command ?? req.query.command ?? 'claude';
+  const agent = isCliAgent(requestedAgent) ? requestedAgent : null;
   const ctx = req.authContext!;
+
+  if (!agent) {
+    res.status(400).json({ error: 'Unsupported CLI agent. Use claude or copilot.' });
+    return;
+  }
 
   // HIGH risk operation
   if (!canPerform(ctx, 'high')) {
@@ -239,14 +246,14 @@ router.post('/', requireAuth, (req, res) => {
       deviceName: ctx.device?.name,
       ip: ctx.ip,
       action: 'session_create',
-      details: `Blocked: command=${command}`,
+      details: `Blocked: agent=${agent}`,
       result: 'blocked',
     });
     res.status(403).json({ error: 'Insufficient permission to create sessions' });
     return;
   }
 
-  const sessionName = tmuxManager.createSession(command);
+  const sessionName = tmuxManager.createSession(agent);
 
   if (!sessionName) {
     res.status(500).json({ error: 'Failed to create session' });
@@ -268,7 +275,7 @@ router.post('/', requireAuth, (req, res) => {
     ip: ctx.ip,
     action: 'session_create',
     sessionId: sessionName,
-    details: `command=${command}`,
+    details: `agent=${agent}, command=${CLI_AGENT_COMMANDS[agent]}`,
     result: 'success',
   });
 

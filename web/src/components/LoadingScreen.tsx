@@ -6,7 +6,7 @@ export function LoadingScreen() {
       <div className="loading-brand">
         <div className="loading-logo">📱</div>
         <h1>VibeMobile</h1>
-        <p>远程控制 Claude Code</p>
+        <p>远程控制 Claude Code / GitHub Copilot CLI</p>
       </div>
       <div className="loading-spinner"></div>
 

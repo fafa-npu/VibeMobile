@@ -1,6 +1,6 @@
 // API client for VibeMobile backend
 
-import type { Session, Command, SessionOutput, FileSystemResponse, FileTreeResponse } from '../types';
+import type { CliAgent, Session, Command, SessionOutput, FileSystemResponse, FileTreeResponse } from '../types';
 import { useAuthStore } from '../stores/authStore';
 
 const API_BASE = import.meta.env.VITE_API_URL || '';
@@ -90,10 +90,10 @@ export const api = {
     });
   },
 
-  async createSession(command = 'claude'): Promise<Session> {
-    const params = new URLSearchParams({ command });
-    return fetchJSON(`/api/sessions?${params}`, {
+  async createSession(agent: CliAgent = 'claude'): Promise<Session> {
+    return fetchJSON('/api/sessions', {
       method: 'POST',
+      body: JSON.stringify({ agent }),
     });
   },
 
