@@ -152,7 +152,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WindowListener {
           !currentTunnelState.isConnected &&
           !currentTunnelState.isConnecting) {
         final settings = ref.read(settingsProvider);
-        if (settings.tunnelName != null && settings.tunnelName!.isNotEmpty) {
+        if (settings.tunnelProvider == RemoteTunnelProvider.cloudflare &&
+            settings.tunnelName != null &&
+            settings.tunnelName!.isNotEmpty) {
           ref.read(tunnelProvider.notifier).startNamed(settings.tunnelName!);
         } else {
           ref.read(tunnelProvider.notifier).startQuick(settings.apiPort);

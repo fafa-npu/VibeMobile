@@ -86,6 +86,12 @@ class SettingsNotifier extends StateNotifier<Settings> {
     _saveSettings();
   }
 
+  /// Update tunnel provider.
+  void setTunnelProvider(RemoteTunnelProvider provider) {
+    state = state.copyWith(tunnelProvider: provider);
+    _saveSettings();
+  }
+
   /// Update tunnel name.
   void setTunnelName(String? name) {
     if (name == null || name.isEmpty) {
@@ -132,6 +138,7 @@ class SettingsNotifier extends StateNotifier<Settings> {
     bool? launchAtLogin,
     TerminalApp? terminalApp,
     bool? enableTunnel,
+    RemoteTunnelProvider? tunnelProvider,
     String? tunnelName,
     String? tunnelHostname,
     String? proxyUrl,
@@ -145,6 +152,7 @@ class SettingsNotifier extends StateNotifier<Settings> {
       launchAtLogin: launchAtLogin,
       terminalApp: terminalApp,
       enableTunnel: enableTunnel,
+      tunnelProvider: tunnelProvider,
       tunnelName: tunnelName,
       tunnelHostname: tunnelHostname,
       proxyUrl: proxyUrl,

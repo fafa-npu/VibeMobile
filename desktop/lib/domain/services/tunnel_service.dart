@@ -10,11 +10,12 @@ typedef TunnelReadyCallback = void Function(String url);
 typedef TunnelDisconnectedCallback = void Function();
 typedef TunnelErrorCallback = void Function(String error);
 
-/// Service for managing Cloudflare Tunnel.
+/// Service for managing remote tunnels.
 class TunnelService {
   Process? _tunnelProcess;
   bool _isConnected = false;
   String? _publicUrl;
+  StreamSubscription? _stdoutSubscription;
   StreamSubscription? _stderrSubscription;
   bool _isStarting = false;
   Timer? _startTimeout;
@@ -55,6 +56,53 @@ class TunnelService {
       return null;
     } catch (e) {
       return null;
+    }
+  }
+
+  /// Check if Microsoft Dev Tunnel CLI is installed.
+  Future<bool> isDevTunnelInstalled() async {
+    try {
+      final result = await Process.run('which', ['devtunnel'])
+          .timeout(_processTimeout);
+      return result.exitCode == 0;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  /// Get Microsoft Dev Tunnel CLI version.
+  Future<String?> getDevTunnelVersion() async {
+    try {
+      final result = await Process.run('devtunnel', ['--version'])
+          .timeout(_processTimeout);
+      if (result.exitCode == 0) {
+        return result.stdout.toString().trim();
+      }
+      return null;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  /// Check if Microsoft Dev Tunnel CLI has an active user session.
+  Future<bool> isDevTunnelLoggedIn() async {
+    try {
+      final result = await Process.run('devtunnel', ['user', 'show'])
+          .timeout(_processTimeout);
+      return result.exitCode == 0;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  /// Start Microsoft Dev Tunnel login process.
+  Future<bool> loginDevTunnel() async {
+    try {
+      final result = await Process.run('devtunnel', ['user', 'login'])
+          .timeout(const Duration(minutes: 5));
+      return result.exitCode == 0;
+    } catch (e) {
+      return false;
     }
   }
 
@@ -186,7 +234,112 @@ class TunnelService {
     }
   }
 
+  /// Start a Microsoft Dev Tunnel with anonymous access.
+  Future<bool> startDevTunnel(int port, {String? proxyUrl}) async {
+    if (_isConnected || _isStarting) return _isConnected;
+
+    _isStarting = true;
+    String? lastError;
+
+    AppLogger.info('TunnelService: Starting Microsoft Dev Tunnel for port $port');
+
+    _startTimeout = Timer(const Duration(seconds: 30), () {
+      if (_isStarting) {
+        AppLogger.warning('TunnelService: Dev Tunnel startup timeout');
+        _cancelStarting();
+        onTunnelError?.call('Dev Tunnel 启动超时，请检查登录状态或网络连接');
+      }
+    });
+
+    try {
+      final environment = Map<String, String>.from(Platform.environment);
+      if (proxyUrl != null && proxyUrl.isNotEmpty) {
+        environment['HTTPS_PROXY'] = proxyUrl;
+        environment['HTTP_PROXY'] = proxyUrl;
+        AppLogger.info('TunnelService: Using proxy: $proxyUrl');
+      }
+
+      _tunnelProcess = await Process.start(
+        'devtunnel',
+        ['host', '-p', port.toString(), '--allow-anonymous'],
+        environment: environment,
+      );
+
+      void handleOutput(String data) {
+        final urlMatch = RegExp(r'https://[\w.-]+\.devtunnels\.ms(?::\d+)?')
+            .firstMatch(data);
+        if (urlMatch != null && !_isConnected) {
+          _publicUrl = urlMatch.group(0);
+          _isConnected = true;
+          _isStarting = false;
+          _startTimeout?.cancel();
+          _startTimeout = null;
+          AppLogger.info('TunnelService: Dev Tunnel connected at $_publicUrl');
+          onTunnelReady?.call(_publicUrl!);
+        }
+
+        final lower = data.toLowerCase();
+        if (lower.contains('not logged in') ||
+            lower.contains('login') ||
+            lower.contains('authentication')) {
+          lastError = 'Dev Tunnel 需要先登录 Microsoft 账号，请运行 devtunnel user login';
+          AppLogger.warning('TunnelService: $lastError');
+        } else if (lower.contains('error') || lower.contains('failed')) {
+          lastError = 'Dev Tunnel 连接失败，请检查网络或 CLI 配置';
+          AppLogger.warning('TunnelService: $lastError');
+        }
+      }
+
+      _stdoutSubscription = _tunnelProcess!.stdout
+          .transform(utf8.decoder)
+          .listen(handleOutput, onError: (error) {
+        AppLogger.warning('devtunnel stdout error: $error');
+        lastError = error.toString();
+      }, cancelOnError: false);
+
+      _stderrSubscription = _tunnelProcess!.stderr
+          .transform(utf8.decoder)
+          .listen(handleOutput, onError: (error) {
+        AppLogger.warning('devtunnel stderr error: $error');
+        lastError = error.toString();
+      }, cancelOnError: false);
+
+      _tunnelProcess!.exitCode.then((exitCode) {
+        AppLogger.info('TunnelService: devtunnel exited with code $exitCode');
+        final wasStarting = _isStarting;
+        _cleanup();
+
+        if (wasStarting && exitCode != 0) {
+          onTunnelError?.call(lastError ?? 'devtunnel 启动失败 (code: $exitCode)');
+        } else {
+          onTunnelDisconnected?.call();
+        }
+      });
+
+      await Future.delayed(const Duration(milliseconds: 500));
+
+      if (_tunnelProcess == null) {
+        _isStarting = false;
+        _startTimeout?.cancel();
+        _startTimeout = null;
+        return false;
+      }
+
+      return true;
+    } catch (e, stack) {
+      AppLogger.error('TunnelService: Failed to start devtunnel', e, stack);
+      _isStarting = false;
+      _startTimeout?.cancel();
+      _startTimeout = null;
+      _cleanup();
+      onTunnelError?.call('无法启动 devtunnel: $e');
+      return false;
+    }
+  }
+
   void _cleanup() {
+    _stdoutSubscription?.cancel();
+    _stdoutSubscription = null;
     _stderrSubscription?.cancel();
     _stderrSubscription = null;
     _startTimeout?.cancel();
@@ -203,6 +356,8 @@ class TunnelService {
     AppLogger.info('TunnelService: Cancelling tunnel startup');
     _startTimeout?.cancel();
     _startTimeout = null;
+    _stdoutSubscription?.cancel();
+    _stdoutSubscription = null;
     _stderrSubscription?.cancel();
     _stderrSubscription = null;
 
@@ -315,6 +470,8 @@ class TunnelService {
     AppLogger.info('TunnelService: Stopping tunnel');
     _startTimeout?.cancel();
     _startTimeout = null;
+    _stdoutSubscription?.cancel();
+    _stdoutSubscription = null;
     _stderrSubscription?.cancel();
     _stderrSubscription = null;
     if (_tunnelProcess != null) {

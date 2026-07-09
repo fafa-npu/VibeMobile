@@ -31,23 +31,26 @@ class DependencyStatus {
 }
 
 /// Represents the overall setup status.
-/// Note: mkcert and certificates are no longer required since Cloudflare Tunnel handles HTTPS.
+/// Note: mkcert and certificates are no longer required since tunnel providers handle HTTPS.
 class SetupStatus {
   final DependencyStatus homebrew;
   final DependencyStatus tmux;
   final DependencyStatus node;
+  final DependencyStatus devTunnel;
 
   const SetupStatus({
     required this.homebrew,
     required this.tmux,
     required this.node,
+    required this.devTunnel,
   });
 
   /// Check if all required dependencies are ready.
   bool get isReady =>
       homebrew.isInstalled &&
       tmux.isInstalled &&
-      node.isInstalled;
+      node.isInstalled &&
+      devTunnel.isInstalled;
 
   /// Get list of missing dependencies.
   List<DependencyStatus> get missingDependencies {
@@ -55,6 +58,7 @@ class SetupStatus {
     if (!homebrew.isInstalled) deps.add(homebrew);
     if (!tmux.isInstalled) deps.add(tmux);
     if (!node.isInstalled) deps.add(node);
+    if (!devTunnel.isInstalled) deps.add(devTunnel);
     return deps;
   }
 
@@ -63,6 +67,7 @@ class SetupStatus {
         homebrew,
         tmux,
         node,
+        devTunnel,
       ];
 }
 
@@ -94,7 +99,7 @@ class SetupService {
   String get _homeDir => Platform.environment['HOME'] ?? '/Users';
 
   /// Check all dependencies and return the setup status.
-  /// Note: mkcert and certificates are no longer required (Cloudflare handles HTTPS).
+  /// Note: mkcert and certificates are no longer required (tunnel providers handle HTTPS).
   Future<SetupStatus> checkEnvironment() async {
     AppLogger.info('SetupService: Checking environment...');
 
@@ -102,12 +107,14 @@ class SetupService {
       _checkHomebrew(),
       _checkTmux(),
       _checkNode(),
+      _checkDevTunnel(),
     ]);
 
     final status = SetupStatus(
       homebrew: results[0],
       tmux: results[1],
       node: results[2],
+      devTunnel: results[3],
     );
 
     AppLogger.info('SetupService: Environment check complete. Ready: ${status.isReady}');
@@ -183,6 +190,27 @@ class SetupService {
     );
   }
 
+  /// Check if Microsoft Dev Tunnel CLI is installed.
+  Future<DependencyStatus> _checkDevTunnel() async {
+    final result = await _runCommand('which', ['devtunnel']);
+    String? version;
+
+    if (result.success) {
+      final versionResult = await _runCommand('devtunnel', ['--version']);
+      if (versionResult.success) {
+        version = versionResult.output;
+      }
+    }
+
+    return DependencyStatus(
+      name: 'devtunnel',
+      displayName: 'Microsoft Dev Tunnel',
+      isInstalled: result.success,
+      version: version,
+      installCommand: 'brew install microsoft/dev-tunnels/devtunnel',
+    );
+  }
+
   /// Install Homebrew.
   Future<SetupResult> installHomebrew({Function(String)? onProgress}) async {
     onProgress?.call('Installing Homebrew...');
@@ -215,7 +243,10 @@ class SetupService {
       onProgress?.call('Installing $dep...');
       AppLogger.info('SetupService: Installing $dep');
 
-      final result = await _runCommand('brew', ['install', dep]);
+      final packageName = dep == 'devtunnel'
+          ? 'microsoft/dev-tunnels/devtunnel'
+          : dep;
+      final result = await _runCommand('brew', ['install', packageName]);
       if (!result.success) {
         return SetupResult.fail('Failed to install $dep: ${result.error}');
       }
@@ -225,7 +256,7 @@ class SetupService {
   }
 
   /// Run the full setup process.
-  /// Note: Only installs Homebrew, tmux, and Node.js. Certificates are not needed.
+  /// Note: Installs Homebrew, tmux, Node.js, and Microsoft Dev Tunnel. Certificates are not needed.
   Future<SetupResult> runFullSetup({Function(String)? onProgress}) async {
     AppLogger.info('SetupService: Starting full setup');
 
@@ -245,10 +276,11 @@ class SetupService {
       );
     }
 
-    // Install missing dependencies (only tmux and node now)
+    // Install missing dependencies.
     final depsToInstall = <String>[];
     if (!status.tmux.isInstalled) depsToInstall.add('tmux');
     if (!status.node.isInstalled) depsToInstall.add('node');
+    if (!status.devTunnel.isInstalled) depsToInstall.add('devtunnel');
 
     if (depsToInstall.isNotEmpty) {
       final result = await installDependencies(
@@ -312,6 +344,7 @@ class SetupService {
       'versions': {
         'tmux': status.tmux.version,
         'node': status.node.version,
+        'devtunnel': status.devTunnel.version,
       },
     };
 

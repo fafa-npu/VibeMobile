@@ -120,6 +120,7 @@ class SetupNotifier extends StateNotifier<SetupState> {
           break;
         case 'tmux':
         case 'node':
+        case 'devtunnel':
           result = await _service.installDependencies(
             dependencies: [name],
             onProgress: (step) => state = state.copyWith(currentStep: step),

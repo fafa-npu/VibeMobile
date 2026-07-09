@@ -52,6 +52,7 @@ install_homebrew() {
 install_dep() {
     local name=$1
     local display=$2
+    local brew_pkg=${3:-$name}
 
     if command -v "$name" &>/dev/null; then
         echo -e "  ${GREEN}✓${NC} $display is already installed"
@@ -59,14 +60,15 @@ install_dep() {
     fi
 
     echo -e "  ${YELLOW}→${NC} Installing $display..."
-    brew install "$name" >/dev/null 2>&1
+    brew install "$brew_pkg" >/dev/null 2>&1
     echo -e "  ${GREEN}✓${NC} $display installed"
 }
 
-# Install dependencies (only tmux and node - no mkcert needed, Cloudflare handles HTTPS)
+# Install dependencies (tmux/node for local server, tunnel CLIs for remote access)
 install_homebrew
 install_dep "tmux" "tmux"
 install_dep "node" "Node.js"
+install_dep "devtunnel" "Microsoft Dev Tunnel" "microsoft/dev-tunnels/devtunnel"
 
 echo -e "\n${BLUE}[2/4]${NC} Downloading VibeMobile..."
 
@@ -168,7 +170,7 @@ echo ""
 echo "Quick Start:"
 echo "  1. Open the VibeMobile app"
 echo "  2. Start the server"
-echo "  3. Enable Cloudflare Tunnel for remote access"
+echo "  3. Enable Microsoft Dev Tunnel for remote access"
 echo "  4. Connect from your mobile device"
 echo ""
 echo -e "Documentation: ${BLUE}https://github.com/$GITHUB_REPO#readme${NC}"

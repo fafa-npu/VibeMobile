@@ -29,6 +29,9 @@ check_and_install() {
             cloudflared)
                 version=$(cloudflared --version 2>&1 | head -1)
                 ;;
+            devtunnel)
+                version=$(devtunnel --version 2>&1 | head -1)
+                ;;
             *)
                 version=$($cmd --version 2>&1 | head -1)
                 ;;
@@ -54,7 +57,7 @@ echo ""
 echo "Checking dependencies..."
 check_and_install node node
 check_and_install tmux tmux
-check_and_install cloudflared cloudflare/cloudflare/cloudflared
+check_and_install devtunnel microsoft/dev-tunnels/devtunnel
 echo ""
 
 # Download latest release

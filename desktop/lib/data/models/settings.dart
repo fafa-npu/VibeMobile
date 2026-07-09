@@ -4,6 +4,12 @@ enum TerminalApp {
   iterm,
 }
 
+/// Remote tunnel provider enum.
+enum RemoteTunnelProvider {
+  cloudflare,
+  microsoftDevTunnel,
+}
+
 /// Application settings model.
 class Settings {
   final int apiPort;
@@ -14,6 +20,7 @@ class Settings {
   final bool launchAtLogin;
   final TerminalApp terminalApp;
   final bool enableTunnel;
+  final RemoteTunnelProvider tunnelProvider;
   final String? tunnelName;
   final String? tunnelHostname;
   final String? proxyUrl;
@@ -27,6 +34,7 @@ class Settings {
     this.launchAtLogin = false,
     this.terminalApp = TerminalApp.terminal,
     this.enableTunnel = false,
+    this.tunnelProvider = RemoteTunnelProvider.microsoftDevTunnel,
     this.tunnelName,
     this.tunnelHostname,
     this.proxyUrl,
@@ -41,6 +49,7 @@ class Settings {
     bool? launchAtLogin,
     TerminalApp? terminalApp,
     bool? enableTunnel,
+    RemoteTunnelProvider? tunnelProvider,
     String? tunnelName,
     String? tunnelHostname,
     String? proxyUrl,
@@ -57,6 +66,7 @@ class Settings {
       launchAtLogin: launchAtLogin ?? this.launchAtLogin,
       terminalApp: terminalApp ?? this.terminalApp,
       enableTunnel: enableTunnel ?? this.enableTunnel,
+      tunnelProvider: tunnelProvider ?? this.tunnelProvider,
       tunnelName: clearTunnelName ? null : (tunnelName ?? this.tunnelName),
       tunnelHostname: clearTunnelHostname ? null : (tunnelHostname ?? this.tunnelHostname),
       proxyUrl: clearProxyUrl ? null : (proxyUrl ?? this.proxyUrl),
@@ -75,6 +85,11 @@ class Settings {
           ? TerminalApp.iterm
           : TerminalApp.terminal,
       enableTunnel: json['enable_tunnel'] as bool? ?? false,
+      tunnelProvider: json.containsKey('tunnel_provider')
+          ? (json['tunnel_provider'] == 'microsoft_dev_tunnel'
+              ? RemoteTunnelProvider.microsoftDevTunnel
+              : RemoteTunnelProvider.cloudflare)
+          : RemoteTunnelProvider.cloudflare,
       tunnelName: json['tunnel_name'] as String?,
       tunnelHostname: json['tunnel_hostname'] as String?,
       proxyUrl: json['proxy_url'] as String?,
@@ -91,6 +106,9 @@ class Settings {
       'launch_at_login': launchAtLogin,
       'terminal_app': terminalApp == TerminalApp.iterm ? 'iterm' : 'terminal',
       'enable_tunnel': enableTunnel,
+      'tunnel_provider': tunnelProvider == RemoteTunnelProvider.microsoftDevTunnel
+          ? 'microsoft_dev_tunnel'
+          : 'cloudflare',
       'tunnel_name': tunnelName,
       'tunnel_hostname': tunnelHostname,
       'proxy_url': proxyUrl,
@@ -110,6 +128,7 @@ class Settings {
           launchAtLogin == other.launchAtLogin &&
           terminalApp == other.terminalApp &&
           enableTunnel == other.enableTunnel &&
+          tunnelProvider == other.tunnelProvider &&
           tunnelName == other.tunnelName &&
           tunnelHostname == other.tunnelHostname &&
           proxyUrl == other.proxyUrl;
@@ -124,6 +143,7 @@ class Settings {
         launchAtLogin,
         terminalApp,
         enableTunnel,
+        tunnelProvider,
         tunnelName,
         tunnelHostname,
         proxyUrl,

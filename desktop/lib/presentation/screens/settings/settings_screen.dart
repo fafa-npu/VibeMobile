@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../providers/settings_provider.dart';
+import '../../providers/tunnel_provider.dart';
 import '../../../data/models/settings.dart';
 
 /// Settings screen.
@@ -109,35 +110,59 @@ class SettingsScreen extends ConsumerWidget {
           const SizedBox(height: 24),
 
           // Tunnel Settings
-          _buildSectionHeader(context, 'Cloudflare Tunnel'),
+          _buildSectionHeader(context, 'Remote Access'),
           _buildSwitchSetting(
             context: context,
             title: 'Enable Tunnel',
-            subtitle: 'Allow remote access via Cloudflare Tunnel',
+            subtitle: 'Allow remote access through a secure tunnel provider',
             value: settings.enableTunnel,
             onChanged: (value) {
               ref.read(settingsProvider.notifier).setEnableTunnel(value);
             },
           ),
           if (settings.enableTunnel) ...[
-            _buildTextSetting(
+            _buildDropdownSetting(
               context: context,
-              title: 'Tunnel Name (Optional)',
-              value: settings.tunnelName ?? '',
-              hint: 'my-tunnel',
+              title: 'Tunnel Provider',
+              value: settings.tunnelProvider,
+              items: const [
+                DropdownMenuItem(
+                  value: RemoteTunnelProvider.cloudflare,
+                  child: Text('Cloudflare Tunnel'),
+                ),
+                DropdownMenuItem(
+                  value: RemoteTunnelProvider.microsoftDevTunnel,
+                  child: Text('Microsoft Dev Tunnel'),
+                ),
+              ],
               onChanged: (value) {
-                ref.read(settingsProvider.notifier).setTunnelName(value.isEmpty ? null : value);
+                if (value != null) {
+                  ref.read(settingsProvider.notifier).setTunnelProvider(value);
+                }
               },
             ),
-            _buildTextSetting(
-              context: context,
-              title: 'Tunnel Hostname (Optional)',
-              value: settings.tunnelHostname ?? '',
-              hint: 'vibe.example.com',
-              onChanged: (value) {
-                ref.read(settingsProvider.notifier).setTunnelHostname(value.isEmpty ? null : value);
-              },
-            ),
+            if (settings.tunnelProvider == RemoteTunnelProvider.microsoftDevTunnel)
+              _buildDevTunnelLoginSetting(context, ref),
+            if (settings.tunnelProvider == RemoteTunnelProvider.cloudflare) ...[
+              _buildTextSetting(
+                context: context,
+                title: 'Tunnel Name (Optional)',
+                value: settings.tunnelName ?? '',
+                hint: 'my-tunnel',
+                onChanged: (value) {
+                  ref.read(settingsProvider.notifier).setTunnelName(value.isEmpty ? null : value);
+                },
+              ),
+              _buildTextSetting(
+                context: context,
+                title: 'Tunnel Hostname (Optional)',
+                value: settings.tunnelHostname ?? '',
+                hint: 'vibe.example.com',
+                onChanged: (value) {
+                  ref.read(settingsProvider.notifier).setTunnelHostname(value.isEmpty ? null : value);
+                },
+              ),
+            ],
             _buildTextSetting(
               context: context,
               title: 'Proxy URL (Optional)',
@@ -270,6 +295,32 @@ class SettingsScreen extends ConsumerWidget {
           items: items,
           onChanged: onChanged,
           underline: const SizedBox(),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDevTunnelLoginSetting(BuildContext context, WidgetRef ref) {
+    return Card(
+      child: ListTile(
+        title: const Text('Microsoft Account'),
+        subtitle: const Text('Sign in once to create Microsoft Dev Tunnels.'),
+        trailing: OutlinedButton(
+          onPressed: () async {
+            final messenger = ScaffoldMessenger.of(context);
+            final success = await ref.read(tunnelServiceProvider).loginDevTunnel();
+            if (!context.mounted) return;
+            messenger.showSnackBar(
+              SnackBar(
+                content: Text(
+                  success
+                      ? 'Microsoft Dev Tunnel sign-in completed.'
+                      : 'Sign-in did not complete. Try running devtunnel user login in Terminal.',
+                ),
+              ),
+            );
+          },
+          child: const Text('Sign In'),
         ),
       ),
     );

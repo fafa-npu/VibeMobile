@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../data/models/settings.dart';
 import '../../domain/services/tunnel_service.dart';
 import 'settings_provider.dart';
 
@@ -103,7 +104,11 @@ class TunnelNotifier extends StateNotifier<TunnelState> {
     final proxyUrl = settings.proxyUrl;
 
     try {
-      await _service.startQuickTunnel(port, proxyUrl: proxyUrl);
+      if (settings.tunnelProvider == RemoteTunnelProvider.microsoftDevTunnel) {
+        await _service.startDevTunnel(port, proxyUrl: proxyUrl);
+      } else {
+        await _service.startQuickTunnel(port, proxyUrl: proxyUrl);
+      }
       // State will be updated via callbacks
     } catch (e) {
       state = state.copyWith(
@@ -179,11 +184,19 @@ class TunnelNotifier extends StateNotifier<TunnelState> {
 
   /// Check if cloudflared is installed.
   Future<bool> isInstalled() async {
+    final settings = _ref.read(settingsProvider);
+    if (settings.tunnelProvider == RemoteTunnelProvider.microsoftDevTunnel) {
+      return await _service.isDevTunnelInstalled();
+    }
     return await _service.isCloudflaredInstalled();
   }
 
-  /// Check if logged in to Cloudflare.
+  /// Check if logged in to the configured tunnel provider.
   Future<bool> isLoggedIn() async {
+    final settings = _ref.read(settingsProvider);
+    if (settings.tunnelProvider == RemoteTunnelProvider.microsoftDevTunnel) {
+      return await _service.isDevTunnelLoggedIn();
+    }
     return await _service.isLoggedIn();
   }
 

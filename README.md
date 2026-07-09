@@ -1,6 +1,6 @@
 # VibeMobile
 
-Remote control for Claude Code sessions from your phone. **macOS only**.
+Remote control for Claude Code sessions from your phone. **macOS desktop host, mobile browser client**.
 
 <p align="center">
   <img src="docs/pictures/mobile-terminal.png" width="400" alt="Desktop App">
@@ -34,7 +34,7 @@ Click **"Start Server"**, then click **"+"** to create a new Claude Code session
 ### 3. Connect from Phone
 
 - **Same network**: Open `http://YOUR_MAC_IP:8765` in your phone browser
-- **Remote access**: Click **"Start Tunnel"** and copy the generated URL
+- **Remote access**: Click **"Start Tunnel"** and copy the generated Microsoft Dev Tunnel URL
 
 
 
@@ -68,9 +68,16 @@ Once paired, you can:
   <img src="docs/pictures/mobile-files.png" width="200" alt="File Browser">
 </p>
 
+## Remote Access Providers
+
+VibeMobile can expose the local server through a tunnel provider so your phone can connect without router or firewall setup.
+
+- **Microsoft Dev Tunnel (default)**: install `devtunnel`, sign in once with `devtunnel user login`, then start the tunnel from VibeMobile.
+- **Cloudflare Tunnel**: still supported for existing users and custom-domain setups; install it with `brew install cloudflare/cloudflare/cloudflared` if needed.
+
 ## Custom Domain (Optional)
 
-The built-in tunnel generates a random URL each time. For a permanent domain:
+The built-in quick tunnel generates a random URL each time. For a permanent domain:
 
 1. Set up a [Cloudflare Tunnel](https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/) with your own domain
 2. Point the tunnel to `http://localhost:8765`
@@ -83,7 +90,7 @@ Download `VibeMobile.dmg` from [Releases](https://github.com/fafa-npu/VibeMobile
 1. Open DMG and drag VibeMobile to Applications
 2. Double-click to run (app is signed and notarized by Apple)
 
-**Requirements**: macOS 12+, Node.js 18+, tmux, cloudflared (`brew install node tmux cloudflare/cloudflare/cloudflared`)
+**Requirements**: macOS 12+, Node.js 18+, tmux, devtunnel (`brew install node tmux microsoft/dev-tunnels/devtunnel`)
 
 ## Troubleshooting
 
