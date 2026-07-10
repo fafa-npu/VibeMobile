@@ -6,15 +6,20 @@ class ConnectionManager {
   private activeConnections: Map<string, WebSocket> = new Map();
   private subscriptions: Map<string, Set<string>> = new Map(); // sessionId -> connectionIds
   private desktopConnections: Set<string> = new Set();
+  private localConnections: Set<string> = new Set();
 
-  connect(websocket: WebSocket, connectionId: string): void {
+  connect(websocket: WebSocket, connectionId: string, isLocal: boolean): void {
     this.activeConnections.set(connectionId, websocket);
+    if (isLocal) {
+      this.localConnections.add(connectionId);
+    }
     console.log(`WebSocket connected: ${connectionId}`);
   }
 
   disconnect(connectionId: string): void {
     this.activeConnections.delete(connectionId);
     this.desktopConnections.delete(connectionId);
+    this.localConnections.delete(connectionId);
 
     // Remove from all subscriptions
     for (const [sessionId, connections] of this.subscriptions) {
@@ -160,6 +165,13 @@ class ConnectionManager {
       }
 
       case 'register_desktop': {
+        if (!this.localConnections.has(connectionId)) {
+          await this.sendPersonal(connectionId, {
+            type: 'error',
+            data: { message: 'Desktop registration is only available locally' },
+          });
+          break;
+        }
         this.registerDesktop(connectionId);
         await this.sendPersonal(connectionId, {
           type: 'desktop_registered',

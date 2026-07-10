@@ -14,7 +14,7 @@ NC='\033[0m' # No Color
 # Configuration
 VIBEMOBILE_DIR="$HOME/.vibemobile"
 APP_NAME="VibeMobile"
-GITHUB_REPO="${GITHUB_REPO:-yourusername/VibeMobile}"  # Set via env or update here
+GITHUB_REPO="${GITHUB_REPO:-fafa-npu/VibeMobile}"
 
 echo -e "${BLUE}"
 echo "╔═══════════════════════════════════════╗"
@@ -71,13 +71,8 @@ install_dep "node" "Node.js"
 echo -e "\n${BLUE}[2/4]${NC} Downloading VibeMobile..."
 
 # Check if DMG download URL is available
-DMG_URL=""
 ARCH=$(uname -m)
-if [[ "$ARCH" == "arm64" ]]; then
-    DMG_URL="https://github.com/$GITHUB_REPO/releases/latest/download/VibeMobile-arm64.dmg"
-else
-    DMG_URL="https://github.com/$GITHUB_REPO/releases/latest/download/VibeMobile-x64.dmg"
-fi
+DMG_URL="https://github.com/$GITHUB_REPO/releases/latest/download/VibeMobile.dmg"
 
 # Try to download DMG
 download_app() {
@@ -145,7 +140,7 @@ mkdir -p "$VIBEMOBILE_DIR"
 # Create default config
 CONFIG_FILE="$VIBEMOBILE_DIR/config.json"
 if [[ ! -f "$CONFIG_FILE" ]]; then
-    cat > "$CONFIG_FILE" << 'EOF'
+    cat > "$CONFIG_FILE" << EOF
 {
   "setup_completed": true,
   "setup_date": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",

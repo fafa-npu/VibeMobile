@@ -51,7 +51,6 @@ export function useSessionOutput(sessionId: string | null) {
       return result;
     },
     enabled: !!sessionId,
-    refetchInterval: 1000, // Poll every 1 second for real-time updates
   });
 
   return {
@@ -95,8 +94,12 @@ export function useWebSocket() {
     // Handle incoming messages
     const unsubMessage = wsManager.onMessage((message: WSIncomingMessage) => {
       if (message.type === 'session.output') {
-        const { sessionId, content } = message.data;
-        appendOutput(sessionId, content);
+        const { sessionId, content, isDiff } = message.data;
+        if (isDiff) {
+          appendOutput(sessionId, content);
+        } else {
+          setFullOutput(sessionId, content);
+        }
       } else if (message.type === 'session.status') {
         const { sessionId, status } = message.data;
         updateSession(sessionId, { status: status as 'active' | 'detached' | 'ended' });
@@ -107,7 +110,7 @@ export function useWebSocket() {
       unsubStatus();
       unsubMessage();
     };
-  }, [setConnectionStatus, appendOutput, updateSession]);
+  }, [setConnectionStatus, appendOutput, setFullOutput, updateSession]);
 
   // Subscribe to current session
   useEffect(() => {

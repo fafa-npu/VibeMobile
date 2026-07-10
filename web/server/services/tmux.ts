@@ -66,6 +66,10 @@ class TmuxManager {
             });
             if (childPs.toLowerCase().includes('claude')) return true;
           }
+
+          private isManagedSessionId(sessionId: string): boolean {
+            return sessionId.startsWith(`${this.prefix}-`);
+          }
         }
       } catch {
         // pgrep might fail if no children
@@ -94,7 +98,7 @@ class TmuxManager {
       const [name, createdTs] = parts;
 
       // Only include sessions with our prefix
-      if (!name.startsWith(this.prefix)) continue;
+      if (!this.isManagedSessionId(name)) continue;
 
       // Convert timestamp
       let createdAt: Date;
@@ -135,11 +139,13 @@ class TmuxManager {
   }
 
   sessionExists(sessionId: string): boolean {
+    if (!this.isManagedSessionId(sessionId)) return false;
     const { success } = this.runTmux(['has-session', '-t', sessionId]);
     return success;
   }
 
   captureOutput(sessionId: string, withAnsi = false): string | null {
+    if (!this.isManagedSessionId(sessionId)) return null;
     const args = ['capture-pane', '-t', sessionId, '-p', '-S', `-${this.captureHistory}`];
     if (withAnsi) args.push('-e');
 
@@ -150,9 +156,7 @@ class TmuxManager {
   sendKeys(sessionId: string, text: string, pressEnter = true): boolean {
     if (!this.sessionExists(sessionId)) return false;
 
-    // Escape special characters for tmux
-    const escapedText = text.replace(/"/g, '\\"');
-    const { success } = this.runTmux(['send-keys', '-t', sessionId, `"${escapedText}"`]);
+    const { success } = this.runTmux(['send-keys', '-l', '-t', sessionId, text]);
 
     if (!success) return false;
 
@@ -190,6 +194,7 @@ class TmuxManager {
   }
 
   killSession(sessionId: string): boolean {
+    if (!this.isManagedSessionId(sessionId)) return false;
     const { success } = this.runTmux(['kill-session', '-t', sessionId]);
     return success;
   }

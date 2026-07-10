@@ -1,5 +1,5 @@
 // Session management API routes
-import { Router } from 'express';
+import { Router, type NextFunction, type Request, type Response } from 'express';
 import { v4 as uuidv4 } from 'uuid';
 import fs from 'fs';
 import path from 'path';
@@ -62,6 +62,32 @@ const upload = multer({
 
 // Apply auth context middleware to all routes
 router.use(authContextMiddleware);
+
+function requireUploadAccess(req: Request, res: Response, next: NextFunction): void {
+  const ctx = req.authContext!;
+  const { sessionId } = req.params;
+
+  if (!canPerform(ctx, 'medium')) {
+    authService.logAudit({
+      deviceId: ctx.device?.id,
+      deviceName: ctx.device?.name,
+      ip: ctx.ip,
+      action: 'file_upload',
+      sessionId,
+      details: 'Blocked: insufficient permission',
+      result: 'blocked',
+    });
+    res.status(403).json({ error: 'Insufficient permission to upload files' });
+    return;
+  }
+
+  if (!tmuxManager.sessionExists(sessionId)) {
+    res.status(404).json({ error: `Session '${sessionId}' not found` });
+    return;
+  }
+
+  next();
+}
 
 // GET /api/sessions - List all sessions
 router.get('/', requireAuth, (req, res) => {
@@ -323,29 +349,9 @@ router.delete('/:sessionId', requireAuth, (req, res) => {
 });
 
 // POST /api/sessions/:sessionId/upload - Upload file
-router.post('/:sessionId/upload', requireAuth, upload.single('file'), (req, res) => {
+router.post('/:sessionId/upload', requireAuth, requireUploadAccess, upload.single('file'), (req, res) => {
   const { sessionId } = req.params;
   const ctx = req.authContext!;
-
-  // MEDIUM risk operation
-  if (!canPerform(ctx, 'medium')) {
-    authService.logAudit({
-      deviceId: ctx.device?.id,
-      deviceName: ctx.device?.name,
-      ip: ctx.ip,
-      action: 'file_upload',
-      sessionId,
-      details: `Blocked: filename=${req.file?.originalname}`,
-      result: 'blocked',
-    });
-    res.status(403).json({ error: 'Insufficient permission to upload files' });
-    return;
-  }
-
-  if (!tmuxManager.sessionExists(sessionId)) {
-    res.status(404).json({ error: `Session '${sessionId}' not found` });
-    return;
-  }
 
   if (!req.file) {
     res.status(400).json({ error: 'No file uploaded' });

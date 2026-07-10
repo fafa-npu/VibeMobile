@@ -268,7 +268,11 @@ class SetupService {
   /// Helper to run a command and capture output.
   Future<SetupResult> _runCommand(String command, List<String> args) async {
     try {
-      final result = await Process.run(command, args);
+      final result = await Process.run(
+        command,
+        args,
+        environment: AppConfig.processEnvironment,
+      );
 
       if (result.exitCode == 0) {
         return SetupResult.ok(result.stdout.toString().trim());

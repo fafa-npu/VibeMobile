@@ -22,6 +22,10 @@ import sessionsRouter from './routes/sessions.js';
 import authRouter from './routes/auth.js';
 import notificationsRouter from './routes/notifications.js';
 import filesRouter from './routes/files.js';
+import {
+  getDeviceFromAccessToken,
+  isLoopbackAddress,
+} from './middleware/auth.js';
 
 // Get current directory - works in both ESM and CJS
 const getCurrentDir = (): string => {
@@ -54,8 +58,19 @@ const getDistPath = (): string => {
 const app = express();
 
 // Middleware
+const trustedOrigins = new Set(
+  (process.env.TRUSTED_ORIGINS || '')
+    .split(',')
+    .map(origin => origin.trim())
+    .filter(Boolean)
+);
+
 app.use(cors({
-  origin: true,
+  origin: (origin, callback) => {
+    const isLocalDevelopment = !!origin &&
+      /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin);
+    callback(null, !origin || isLocalDevelopment || trustedOrigins.has(origin));
+  },
   credentials: true,
 }));
 app.use(express.json());
@@ -91,12 +106,20 @@ const server = http.createServer(app);
 // WebSocket server
 const wss = new WebSocketServer({ server, path: '/ws' });
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-wss.on('connection', (ws: WebSocket, _req) => {
+wss.on('connection', (ws: WebSocket, req) => {
+  const isLocal = isLoopbackAddress(req.socket.remoteAddress);
+  const requestUrl = new URL(req.url || '/ws', 'http://localhost');
+  const token = requestUrl.searchParams.get('token');
+
+  if (!isLocal && (!token || !getDeviceFromAccessToken(token))) {
+    ws.close(4001, 'Unauthorized');
+    return;
+  }
+
   const connectionId = uuidv4();
 
   // Register connection
-  wsManager.connect(ws, connectionId);
+  wsManager.connect(ws, connectionId, isLocal);
 
   ws.on('message', async (data) => {
     try {

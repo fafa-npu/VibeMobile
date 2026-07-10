@@ -14,6 +14,27 @@ class AppConfig {
   /// Default session prefix for tmux sessions.
   static const String defaultSessionPrefix = 'vibe';
 
+  /// Environment for tools installed by Homebrew when launched from Finder.
+  static Map<String, String> get processEnvironment {
+    final environment = Map<String, String>.from(Platform.environment);
+    final currentPath = environment['PATH'] ?? '';
+    const commonPaths = [
+      '/opt/homebrew/bin',
+      '/opt/homebrew/sbin',
+      '/usr/local/bin',
+      '/usr/local/sbin',
+      '/usr/bin',
+      '/bin',
+      '/usr/sbin',
+      '/sbin',
+    ];
+    environment['PATH'] = [
+      ...commonPaths,
+      ...currentPath.split(':').where((entry) => entry.isNotEmpty),
+    ].toSet().join(':');
+    return environment;
+  }
+
   /// Initialize the application configuration.
   /// Should be called before using any config methods.
   static Future<void> initialize() async {

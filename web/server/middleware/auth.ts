@@ -23,28 +23,59 @@ export type RiskLevel = 'low' | 'medium' | 'high';
 
 const HIGH_RISK_KEYS = ['C-c', 'C-d', 'C-z', 'C-\\'];
 
+export function isLoopbackAddress(address: string | undefined): boolean {
+  return address === '127.0.0.1' ||
+    address === '::1' ||
+    address === '::ffff:127.0.0.1';
+}
+
 export function isHighRiskKey(key: string): boolean {
   return HIGH_RISK_KEYS.includes(key);
 }
 
 export function getClientIp(req: Request): string {
-  const forwarded = req.headers['x-forwarded-for'];
-  if (forwarded) {
-    const ip = Array.isArray(forwarded) ? forwarded[0] : forwarded.split(',')[0];
-    return ip.trim();
-  }
+  // Only trust forwarding headers from the local tunnel process.
+  if (isLoopbackAddress(req.socket.remoteAddress)) {
+    const cfIp = req.headers['cf-connecting-ip'];
+    if (cfIp) {
+      return Array.isArray(cfIp) ? cfIp[0] : cfIp;
+    }
 
-  const cfIp = req.headers['cf-connecting-ip'];
-  if (cfIp) {
-    return Array.isArray(cfIp) ? cfIp[0] : cfIp;
+    const forwarded = req.headers['x-forwarded-for'];
+    if (forwarded) {
+      const ip = Array.isArray(forwarded) ? forwarded[0] : forwarded.split(',')[0];
+      return ip.trim();
+    }
   }
 
   return req.socket.remoteAddress || 'unknown';
 }
 
 export function isLocalRequest(req: Request): boolean {
-  const ip = getClientIp(req);
-  return ip === '127.0.0.1' || ip === 'localhost' || ip === '::1' || ip === '::ffff:127.0.0.1';
+  return isLoopbackAddress(req.socket.remoteAddress);
+}
+
+export function isSecureRequest(req: Request): boolean {
+  if (req.secure) return true;
+  if (!isLoopbackAddress(req.socket.remoteAddress)) return false;
+
+  const forwardedProto = req.headers['x-forwarded-proto'];
+  const protocol = Array.isArray(forwardedProto) ? forwardedProto[0] : forwardedProto;
+  return protocol?.split(',')[0].trim() === 'https';
+}
+
+export function getDeviceFromAccessToken(token: string): Device | null {
+  const payload = authService.verifyAccessToken(token);
+  if (!payload) {
+    return null;
+  }
+
+  const device = authService.getDevice(payload.sub);
+  if (!device || !device.isActive) {
+    return null;
+  }
+
+  return device;
 }
 
 export function getDeviceFromToken(req: Request): Device | null {
@@ -53,14 +84,8 @@ export function getDeviceFromToken(req: Request): Device | null {
     return null;
   }
 
-  const token = authHeader.slice(7);
-  const payload = authService.verifyAccessToken(token);
-  if (!payload) {
-    return null;
-  }
-
-  const device = authService.getDevice(payload.sub);
-  if (!device || !device.isActive) {
+  const device = getDeviceFromAccessToken(authHeader.slice(7));
+  if (!device) {
     return null;
   }
 

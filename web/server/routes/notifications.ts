@@ -2,8 +2,11 @@
 import { Router } from 'express';
 import { v4 as uuidv4 } from 'uuid';
 import { wsManager } from '../services/ws.js';
+import { authContextMiddleware, requireLocal } from '../middleware/auth.js';
 
 const router = Router();
+router.use(authContextMiddleware);
+router.use(requireLocal);
 
 // Notification types
 export type NotificationType = 'task_complete' | 'task_error' | 'permission_required' | 'session_idle' | 'custom';

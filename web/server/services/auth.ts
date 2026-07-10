@@ -90,7 +90,7 @@ class AuthService {
     // Clean up expired codes
     this.cleanupExpiredCodes();
 
-    const code = String(Math.floor(100000 + Math.random() * 900000));
+    const code = String(crypto.randomInt(100000, 1000000));
     const pairingCode: PairingCode = {
       code,
       createdAt: new Date(),
@@ -98,7 +98,6 @@ class AuthService {
       used: false,
     };
     this.pairingCodes.set(code, pairingCode);
-    console.log(`Generated pairing code: ${code}`);
     return pairingCode;
   }
 
