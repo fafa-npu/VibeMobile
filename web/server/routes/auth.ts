@@ -15,6 +15,7 @@ const router = Router();
 const pairingAttempts = new Map<string, number[]>();
 const PAIRING_ATTEMPT_WINDOW_MS = 60_000;
 const MAX_PAIRING_ATTEMPTS = 5;
+let lastPairingAttemptCleanup = 0;
 
 // Apply auth context middleware
 router.use(authContextMiddleware);
@@ -50,6 +51,19 @@ router.post('/pair/complete', async (req, res) => {
   const { code, fingerprint } = req.body;
   const clientIp = getClientIp(req);
   const now = Date.now();
+  if (now - lastPairingAttemptCleanup >= PAIRING_ATTEMPT_WINDOW_MS) {
+    for (const [ip, attempts] of pairingAttempts) {
+      const activeAttempts = attempts.filter(
+        timestamp => now - timestamp < PAIRING_ATTEMPT_WINDOW_MS
+      );
+      if (activeAttempts.length === 0) {
+        pairingAttempts.delete(ip);
+      } else {
+        pairingAttempts.set(ip, activeAttempts);
+      }
+    }
+    lastPairingAttemptCleanup = now;
+  }
   const recentAttempts = (pairingAttempts.get(clientIp) || [])
     .filter(timestamp => now - timestamp < PAIRING_ATTEMPT_WINDOW_MS);
 

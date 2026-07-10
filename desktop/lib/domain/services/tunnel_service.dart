@@ -107,7 +107,7 @@ class TunnelService {
 
     try {
       // Set up environment with proxy if provided
-      final environment = AppConfig.processEnvironment;
+      final environment = Map<String, String>.from(AppConfig.processEnvironment);
       if (proxyUrl != null && proxyUrl.isNotEmpty) {
         environment['HTTPS_PROXY'] = proxyUrl;
         environment['HTTP_PROXY'] = proxyUrl;

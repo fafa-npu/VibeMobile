@@ -140,13 +140,8 @@ mkdir -p "$VIBEMOBILE_DIR"
 # Create default config
 CONFIG_FILE="$VIBEMOBILE_DIR/config.json"
 if [[ ! -f "$CONFIG_FILE" ]]; then
-    cat > "$CONFIG_FILE" << EOF
-{
-  "setup_completed": true,
-  "setup_date": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
-  "auto_configured": true
-}
-EOF
+    printf '{\n  "setup_completed": true,\n  "setup_date": "%s",\n  "auto_configured": true\n}\n' \
+        "$(date -u +%Y-%m-%dT%H:%M:%SZ)" > "$CONFIG_FILE"
 fi
 echo -e "  ${GREEN}✓${NC} Configuration created"
 
