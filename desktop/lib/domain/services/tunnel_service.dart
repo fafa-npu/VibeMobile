@@ -40,8 +40,7 @@ class TunnelService {
         'which',
         ['cloudflared'],
         environment: AppConfig.processEnvironment,
-      )
-          .timeout(_processTimeout);
+      ).timeout(_processTimeout);
       return result.exitCode == 0;
     } catch (e) {
       return false;
@@ -55,8 +54,7 @@ class TunnelService {
         'cloudflared',
         ['--version'],
         environment: AppConfig.processEnvironment,
-      )
-          .timeout(_processTimeout);
+      ).timeout(_processTimeout);
       if (result.exitCode == 0) {
         return result.stdout.toString().trim();
       }
@@ -79,8 +77,7 @@ class TunnelService {
         'cloudflared',
         ['tunnel', 'login'],
         environment: AppConfig.processEnvironment,
-      )
-          .timeout(const Duration(minutes: 5));
+      ).timeout(const Duration(minutes: 5));
       return result.exitCode == 0;
     } catch (e) {
       return false;

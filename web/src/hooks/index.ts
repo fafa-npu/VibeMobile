@@ -78,6 +78,7 @@ export function useWebSocket() {
   const {
     setConnectionStatus,
     appendOutput,
+    setFullOutput,
     updateSession,
     currentSessionId,
   } = useAppStore();

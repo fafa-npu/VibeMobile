@@ -24,7 +24,7 @@ import notificationsRouter from './routes/notifications.js';
 import filesRouter from './routes/files.js';
 import {
   getDeviceFromAccessToken,
-  isLoopbackAddress,
+  isLocalConnection,
 } from './middleware/auth.js';
 
 // Get current directory - works in both ESM and CJS
@@ -80,7 +80,7 @@ app.use(cookieParser());
 app.get('/health', (req, res) => {
   res.json({
     status: 'ok',
-    version: '1.0.0',
+    version: process.env.APP_VERSION || '1.0.3',
     uptime: process.uptime(),
   });
 });
@@ -107,7 +107,8 @@ const server = http.createServer(app);
 const wss = new WebSocketServer({ server, path: '/ws' });
 
 wss.on('connection', (ws: WebSocket, req) => {
-  const isLocal = isLoopbackAddress(req.socket.remoteAddress);
+  const forwarded = req.headers['cf-connecting-ip'] || req.headers['x-forwarded-for'];
+  const isLocal = isLocalConnection(req.socket.remoteAddress, forwarded);
   const requestUrl = new URL(req.url || '/ws', 'http://localhost');
   const token = requestUrl.searchParams.get('token');
 

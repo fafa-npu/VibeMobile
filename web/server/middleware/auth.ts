@@ -29,6 +29,17 @@ export function isLoopbackAddress(address: string | undefined): boolean {
     address === '::ffff:127.0.0.1';
 }
 
+export function isLocalConnection(
+  remoteAddress: string | undefined,
+  forwardedAddress?: string | string[]
+): boolean {
+  if (!isLoopbackAddress(remoteAddress)) return false;
+  if (!forwardedAddress) return true;
+
+  const value = Array.isArray(forwardedAddress) ? forwardedAddress[0] : forwardedAddress;
+  return isLoopbackAddress(value.split(',')[0].trim());
+}
+
 export function isHighRiskKey(key: string): boolean {
   return HIGH_RISK_KEYS.includes(key);
 }
@@ -52,7 +63,8 @@ export function getClientIp(req: Request): string {
 }
 
 export function isLocalRequest(req: Request): boolean {
-  return isLoopbackAddress(req.socket.remoteAddress);
+  const forwarded = req.headers['cf-connecting-ip'] || req.headers['x-forwarded-for'];
+  return isLocalConnection(req.socket.remoteAddress, forwarded);
 }
 
 export function isSecureRequest(req: Request): boolean {

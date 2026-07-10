@@ -66,10 +66,6 @@ class TmuxManager {
             });
             if (childPs.toLowerCase().includes('claude')) return true;
           }
-
-          private isManagedSessionId(sessionId: string): boolean {
-            return sessionId.startsWith(`${this.prefix}-`);
-          }
         }
       } catch {
         // pgrep might fail if no children
@@ -79,6 +75,11 @@ class TmuxManager {
     }
 
     return false;
+  }
+
+  private isManagedSessionId(sessionId: string): boolean {
+    return sessionId.startsWith(`${this.prefix}-`) &&
+      /^[A-Za-z0-9_-]+$/.test(sessionId);
   }
 
   listSessions(): Session[] {

@@ -73,9 +73,9 @@ class ServerService {
       // Set environment variables (HTTP by default, Cloudflare handles HTTPS)
       final environment = AppConfig.processEnvironment
         ..addAll({
-        'PORT': port.toString(),
-        'HOST': '0.0.0.0',
-      });
+          'PORT': port.toString(),
+          'HOST': '0.0.0.0',
+        });
 
       AppLogger.info('ServerService: Server directory: $serverDir');
       AppLogger.info('ServerService: Server command: $serverCmd');
