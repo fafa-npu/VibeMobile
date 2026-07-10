@@ -78,8 +78,9 @@ class TmuxManager {
   }
 
   private isManagedSessionId(sessionId: string): boolean {
-    return sessionId.startsWith(`${this.prefix}-`) &&
-      /^[A-Za-z0-9_-]+$/.test(sessionId);
+    const expectedPrefix = `${this.prefix}-`;
+    return sessionId.startsWith(expectedPrefix) &&
+      /^\d+$/.test(sessionId.slice(expectedPrefix.length));
   }
 
   listSessions(): Session[] {
