@@ -2,7 +2,7 @@ name: vibe_mobile_desktop
 description: "VibeMobile Desktop - Local management app for Claude Code sessions"
 publish_to: 'none'
 
-version: 1.0.0+1
+version: 1.0.3+3
 
 environment:
   sdk: ^3.5.3

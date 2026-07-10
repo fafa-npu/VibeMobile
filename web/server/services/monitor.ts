@@ -9,35 +9,6 @@ class OutputMonitor {
   private lastOutputs: Map<string, string> = new Map();
   private running = false;
 
-  private computeDiff(oldStr: string, newStr: string): string | null {
-    if (!oldStr) return newStr;
-
-    const oldLines = oldStr.split('\n');
-    const newLines = newStr.split('\n');
-
-    if (newLines.length <= oldLines.length) {
-      // Screen was likely cleared or scrolled
-      return newStr;
-    }
-
-    // Simple approach: find new lines at the end
-    let commonPrefixLen = 0;
-    for (let i = 0; i < Math.min(oldLines.length, newLines.length); i++) {
-      if (oldLines[i] === newLines[i]) {
-        commonPrefixLen = i + 1;
-      } else {
-        break;
-      }
-    }
-
-    if (commonPrefixLen < newLines.length) {
-      const newContent = newLines.slice(commonPrefixLen).join('\n');
-      return newContent;
-    }
-
-    return null;
-  }
-
   startMonitoring(sessionId: string): void {
     if (this.intervals.has(sessionId)) return;
 
@@ -57,17 +28,13 @@ class OutputMonitor {
         const lastOutput = this.lastOutputs.get(sessionId) || '';
 
         if (currentOutput !== lastOutput) {
-          const diff = this.computeDiff(lastOutput, currentOutput);
-
-          if (diff) {
-            const output: SessionOutput = {
-              sessionId,
-              content: diff,
-              timestamp: new Date(),
-              isDiff: true,
-            };
-            await wsManager.broadcastOutput(output);
-          }
+          const output: SessionOutput = {
+            sessionId,
+            content: currentOutput,
+            timestamp: new Date(),
+            isDiff: false,
+          };
+          await wsManager.broadcastOutput(output);
 
           this.lastOutputs.set(sessionId, currentOutput);
         }

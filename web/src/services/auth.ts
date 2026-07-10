@@ -57,7 +57,7 @@ export const authApi = {
 
     if (!response.ok) {
       const error = await response.json();
-      throw new Error(error.detail || `HTTP ${response.status}`);
+      throw new Error(error.error || error.detail || `HTTP ${response.status}`);
     }
 
     return response.json();
@@ -75,7 +75,7 @@ export const authApi = {
 
     if (!response.ok) {
       const error = await response.json();
-      throw new Error(error.detail || `HTTP ${response.status}`);
+      throw new Error(error.error || error.detail || `HTTP ${response.status}`);
     }
 
     return response.json();

@@ -36,8 +36,11 @@ class TunnelService {
   /// Check if cloudflared is installed.
   Future<bool> isCloudflaredInstalled() async {
     try {
-      final result = await Process.run('which', ['cloudflared'])
-          .timeout(_processTimeout);
+      final result = await Process.run(
+        'which',
+        ['cloudflared'],
+        environment: AppConfig.processEnvironment,
+      ).timeout(_processTimeout);
       return result.exitCode == 0;
     } catch (e) {
       return false;
@@ -47,8 +50,11 @@ class TunnelService {
   /// Get cloudflared version.
   Future<String?> getVersion() async {
     try {
-      final result = await Process.run('cloudflared', ['--version'])
-          .timeout(_processTimeout);
+      final result = await Process.run(
+        'cloudflared',
+        ['--version'],
+        environment: AppConfig.processEnvironment,
+      ).timeout(_processTimeout);
       if (result.exitCode == 0) {
         return result.stdout.toString().trim();
       }
@@ -67,8 +73,11 @@ class TunnelService {
   /// Start cloudflared login process.
   Future<bool> login() async {
     try {
-      final result = await Process.run('cloudflared', ['tunnel', 'login'])
-          .timeout(const Duration(minutes: 5));
+      final result = await Process.run(
+        'cloudflared',
+        ['tunnel', 'login'],
+        environment: AppConfig.processEnvironment,
+      ).timeout(const Duration(minutes: 5));
       return result.exitCode == 0;
     } catch (e) {
       return false;
@@ -98,7 +107,7 @@ class TunnelService {
 
     try {
       // Set up environment with proxy if provided
-      final environment = Map<String, String>.from(Platform.environment);
+      final environment = Map<String, String>.from(AppConfig.processEnvironment);
       if (proxyUrl != null && proxyUrl.isNotEmpty) {
         environment['HTTPS_PROXY'] = proxyUrl;
         environment['HTTP_PROXY'] = proxyUrl;

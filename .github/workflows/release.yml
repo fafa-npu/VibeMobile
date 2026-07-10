@@ -330,82 +330,9 @@ jobs:
           name: VibeMobile-macOS
           path: VibeMobile.dmg
 
-  build-windows:
-    name: Build Windows App with Bundled Server
-    runs-on: windows-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      # ===== Build Web Server =====
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'npm'
-          cache-dependency-path: web/package-lock.json
-
-      - name: Install web dependencies
-        working-directory: web
-        run: npm ci
-
-      - name: Build web server
-        working-directory: web
-        run: npm run build
-
-      # ===== Build Windows App =====
-      - name: Setup Flutter
-        uses: subosito/flutter-action@v2
-        with:
-          flutter-version: '3.24.3'
-          channel: 'stable'
-          cache: true
-
-      - name: Install Flutter dependencies
-        working-directory: desktop
-        run: flutter pub get
-
-      - name: Build Windows app
-        working-directory: desktop
-        run: flutter build windows --release
-
-      # ===== Bundle Server into App =====
-      - name: Bundle server into app
-        shell: pwsh
-        run: |
-          $APP_PATH = "desktop\build\windows\x64\runner\Release"
-          $SERVER_DIR = "$APP_PATH\server"
-
-          # Create server directory
-          New-Item -ItemType Directory -Force -Path $SERVER_DIR
-
-          # Copy server files
-          Copy-Item "web\dist\server.cjs" -Destination $SERVER_DIR
-
-          # Copy frontend static files
-          New-Item -ItemType Directory -Force -Path "$SERVER_DIR\dist"
-          Copy-Item -Recurse "web\dist\*" -Destination "$SERVER_DIR\dist\" -Force
-
-          # Verify bundle
-          Write-Host "=== Bundled server files ==="
-          Get-ChildItem $SERVER_DIR
-
-      # ===== Create ZIP Archive =====
-      - name: Create ZIP archive
-        shell: pwsh
-        run: |
-          $APP_PATH = "desktop\build\windows\x64\runner\Release"
-          Compress-Archive -Path "$APP_PATH\*" -DestinationPath "VibeMobile-Windows.zip" -Force
-
-      - name: Upload artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: VibeMobile-Windows
-          path: VibeMobile-Windows.zip
-
   release:
     name: Create Release
-    needs: [build-macos, build-windows]
+    needs: [build-macos]
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -417,11 +344,6 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: VibeMobile-macOS
-
-      - name: Download Windows artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: VibeMobile-Windows
 
       - name: Get version
         id: version
@@ -441,7 +363,6 @@ jobs:
           prerelease: false
           files: |
             VibeMobile.dmg
-            VibeMobile-Windows.zip
           body: |
             ## VibeMobile ${{ steps.version.outputs.version }}
 
@@ -452,7 +373,6 @@ jobs:
             | Platform | File | Requirements |
             |----------|------|--------------|
             | macOS | `VibeMobile.dmg` | macOS 12.0+, Node.js 18+, tmux |
-            | Windows | `VibeMobile-Windows.zip` | Windows 10+, Node.js 18+ |
 
             ### macOS Installation
 
@@ -461,14 +381,6 @@ jobs:
             3. Run VibeMobile from Applications
 
             **Requirements:** `brew install node tmux`
-
-            ### Windows Installation
-
-            1. Download `VibeMobile-Windows.zip`
-            2. Extract to a folder (e.g., `C:\Program Files\VibeMobile`)
-            3. Run `vibemobile.exe`
-
-            **Requirements:** Install Node.js from [nodejs.org](https://nodejs.org) or via `winget install OpenJS.NodeJS.LTS`
 
             ### Usage
 

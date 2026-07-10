@@ -20,8 +20,6 @@ async function build() {
       format: 'cjs',
       outfile: path.join(__dirname, '../dist/server.cjs'),
       external: [
-        // Native modules that can't be bundled
-        'bcrypt',
         // Keep sharp external if used
         'sharp',
       ],

@@ -147,7 +147,7 @@ class WebSocketManager {
     if (this.ws?.readyState === WebSocket.OPEN) {
       this.ws.send(JSON.stringify({
         type: 'subscribe',
-        sessionIds,
+        data: { sessionIds },
       }));
     }
   }
@@ -158,7 +158,7 @@ class WebSocketManager {
     if (this.ws?.readyState === WebSocket.OPEN) {
       this.ws.send(JSON.stringify({
         type: 'unsubscribe',
-        sessionIds,
+        data: { sessionIds },
       }));
     }
   }

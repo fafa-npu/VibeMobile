@@ -7,10 +7,15 @@ import {
   authContextMiddleware,
   requireLocal,
   getClientIp,
+  isSecureRequest,
   parseUserAgent,
 } from '../middleware/auth.js';
 
 const router = Router();
+const pairingAttempts = new Map<string, number[]>();
+const PAIRING_ATTEMPT_WINDOW_MS = 60_000;
+const MAX_PAIRING_ATTEMPTS = 5;
+let lastPairingAttemptCleanup = 0;
 
 // Apply auth context middleware
 router.use(authContextMiddleware);
@@ -45,6 +50,34 @@ router.post('/pair/initiate', requireLocal, (req, res) => {
 router.post('/pair/complete', async (req, res) => {
   const { code, fingerprint } = req.body;
   const clientIp = getClientIp(req);
+  const now = Date.now();
+  if (now - lastPairingAttemptCleanup >= PAIRING_ATTEMPT_WINDOW_MS) {
+    for (const [ip, attempts] of pairingAttempts) {
+      const activeAttempts = attempts.filter(
+        timestamp => now - timestamp < PAIRING_ATTEMPT_WINDOW_MS
+      );
+      if (activeAttempts.length === 0) {
+        pairingAttempts.delete(ip);
+      } else {
+        pairingAttempts.set(ip, activeAttempts);
+      }
+    }
+    lastPairingAttemptCleanup = now;
+  }
+  const recentAttempts = (pairingAttempts.get(clientIp) || [])
+    .filter(timestamp => now - timestamp < PAIRING_ATTEMPT_WINDOW_MS);
+
+  if (recentAttempts.length >= MAX_PAIRING_ATTEMPTS) {
+    res.status(429).json({ error: 'Too many pairing attempts. Please try again later' });
+    return;
+  }
+  recentAttempts.push(now);
+  pairingAttempts.set(clientIp, recentAttempts);
+
+  if (typeof code !== 'string' || typeof fingerprint !== 'string' || !fingerprint) {
+    res.status(400).json({ error: 'Pairing code and device fingerprint are required' });
+    return;
+  }
 
   // Verify pairing code
   if (!authService.verifyPairingCode(code)) {
@@ -126,7 +159,7 @@ router.post('/pair/complete', async (req, res) => {
   // Set refresh token as HttpOnly cookie and return response
   res.cookie('refresh_token', refreshToken, {
     httpOnly: true,
-    secure: true,
+    secure: isSecureRequest(req),
     sameSite: 'strict',
     maxAge: 30 * 24 * 3600 * 1000, // 30 days
     path: '/api/auth',
